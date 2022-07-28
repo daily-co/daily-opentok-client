@@ -1,14 +1,24 @@
 import * as OT from "@opentok/client";
+import { OTError, Event } from "@opentok/client";
+
+OT.Publisher;
 
 class Publisher {
   constructor(properties) {
     console.log("publisher constructor", properties);
   }
-  publish() {
+  publish(
+    publisher: Publisher,
+    callback?: (error?: OTError) => void
+  ): Publisher {
     console.log("publish");
+    return {} as Publisher;
   }
-
-  once() {
+  once(
+    eventName: string,
+    callback: (event: Event<string, any>) => void,
+    context?: object
+  ): void {
     console.log("once");
   }
 }
@@ -17,13 +27,22 @@ class Session {
   constructor(properties) {
     console.log("session constructor", properties);
   }
-  on() {
+  on(
+    eventName: string,
+    callback: (event: Event<string, any>) => void,
+    context?: object
+  ): void {
+    //todo
     console.log("on");
   }
-  publish() {
+  publish(
+    publisher: Publisher,
+    callback?: (error?: OTError) => void
+  ): Publisher {
     console.log("publish");
+    return {} as Publisher;
   }
-  connect() {
+  connect(token: string, callback: (error?: OT.OTError) => void): void {
     console.log("connect");
   }
   subscribe() {
