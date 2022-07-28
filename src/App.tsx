@@ -1,9 +1,14 @@
 import React from "react";
 import "./App.css";
-import * as OT from "@opentok/client";
-// import * as OT from "./shim";
+// import * as OT from "@opentok/client";
+import * as OT from "./shim";
 
-export const App = ({ apiKey, sessionId, token }) => {
+interface AppProps {
+  apiKey: string;
+  sessionId: string;
+  token: string;
+}
+export const App = ({ apiKey, sessionId, token }: AppProps) => {
   console.log("-- apiKey: ", apiKey);
   console.log("-- sessionId: ", sessionId);
   console.log("-- token: ", token);
@@ -19,6 +24,7 @@ export const App = ({ apiKey, sessionId, token }) => {
   // Subscribe to a newly created stream
   session.on("streamCreated", function streamCreated(event) {
     session.subscribe(
+      //@ts-ignore
       event.stream,
       "subscriber",
       {
@@ -31,6 +37,7 @@ export const App = ({ apiKey, sessionId, token }) => {
   });
 
   session.on("sessionDisconnected", function sessionDisconnected(event) {
+    //@ts-ignore
     console.log("You were disconnected from the session.", event.reason);
   });
 

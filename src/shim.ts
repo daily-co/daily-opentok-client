@@ -1,7 +1,22 @@
-import * as OT from "@opentok/client";
-import { OTError, Event } from "@opentok/client";
+// import * as OT from "@opentok/client";
+import {
+  OTError,
+  Event,
+  Subscriber,
+  Stream,
+  SubscriberProperties,
+} from "@opentok/client";
+import Daily, { DailyCall } from "@daily-co/daily-js";
 
-OT.Publisher;
+const sessionObjects = {
+  // Publishers are id'd by their guid
+  publishers: new Map(),
+  // Subscribers are id'd by their widgetId
+  subscribers: new Map(),
+  sessions: new Map<string, Session>(),
+};
+
+let call: DailyCall | null = null;
 
 class Publisher {
   constructor(properties) {
@@ -24,8 +39,8 @@ class Publisher {
 }
 
 class Session {
-  constructor(properties) {
-    console.log("session constructor", properties);
+  constructor(apiKey, sessionId, opt) {
+    console.log("session constructor", apiKey, sessionId, opt);
   }
   on(
     eventName: string,
@@ -43,35 +58,65 @@ class Session {
     return {} as Publisher;
   }
   connect(token: string, callback: (error?: OT.OTError) => void): void {
-    console.log("connect");
+    if (!call) {
+      console.error("No call");
+      callback({
+        message: "No call (todo find message)",
+        name: "NoCall (todo find name)",
+      });
+      return;
+    }
+
+    call.join({
+      // token,
+      url: "https://hush.daily.co/meet",
+    });
   }
-  subscribe() {
+  subscribe(
+    stream: Stream,
+    targetElement?: HTMLElement | string,
+    properties?: SubscriberProperties,
+    callback?: (error?: OTError) => void
+  ): Subscriber {
     console.log("subscribe");
+    return {} as Subscriber;
   }
 }
 
 export function initSession(
   partnerId: string,
   sessionId: string,
-  options?: any // Use the right open tok type later.
-): OT.Session {
-  if (sessionId == null) {
-    sessionId = apiKey;
-    apiKey = null;
-  } // Allow buggy legacy behavior to succeed, where the client can connect if sessionId
-  // is an array containing one element (the session ID), but fix it so that sessionId
-  // is stored as a string (not an array):
-
-  if (Array.isArray(sessionId) && sessionId.length === 1) {
-    sessionId = sessionId[0];
+  options?: {
+    connectionEventsSuppressed?: boolean;
+    iceConfig?: {
+      includeServers: "all" | "custom";
+      transportPolicy: "all" | "relay";
+      customServers: {
+        urls: string | string[];
+        username?: string;
+        credential?: string;
+      }[];
+    };
+    ipWhitelist?: boolean;
+    encryptionSecret?: string;
   }
+): Session {
+  // let session = sessionObjects.sessions.get(sessionId);
 
-  let session = sessionObjects.sessions.get(sessionId);
+  // if (!session) {
+  //   // session = new Session(apiKey, sessionId, opt);
+  //   session = new Session("", sessionId, options);
 
-  if (!session) {
-    session = new Session(apiKey, sessionId, opt);
-    sessionObjects.sessions.add(session);
-  }
+  //   // sessionObjects.sessions.add(session);
+  // }
+
+  const session = new Session("", sessionId, options);
+
+  call = Daily.createCallObject({
+    dailyConfig: {
+      experimentalChromeVideoMuteLightOff: true,
+    },
+  });
 
   return session;
 }
@@ -80,7 +125,7 @@ export function initPublisher(
   targetElement?: string | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OT.OTError | undefined) => void) | undefined
-): OT.Publisher {
+): Publisher {
   // TODO(jamsea): Need checking to make sure that the target element is a valid element.
 
   const publisher = new Publisher(properties || {});
@@ -91,9 +136,9 @@ export function initPublisher(
     callback(err);
   }
 
-  publisher.once("initSuccess", removeInitSuccessAndCallComplete);
-  publisher.once("publishComplete", removeHandlersAndCallComplete);
-  publisher.publish(targetElement);
+  // publisher.once("initSuccess", removeInitSuccessAndCallComplete);
+  // publisher.once("publishComplete", removeHandlersAndCallComplete);
+  // publisher.publish(targetElement);
   return publisher;
 }
 
