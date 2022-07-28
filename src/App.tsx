@@ -1,6 +1,7 @@
 import React from "react";
 import "./App.css";
 import * as OT from "@opentok/client";
+// import * as OT from "./shim";
 
 export const App = ({ apiKey, sessionId, token }) => {
   console.log("-- apiKey: ", apiKey);

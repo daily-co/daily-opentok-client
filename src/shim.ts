@@ -17,20 +17,17 @@ class Session {
   constructor(properties) {
     console.log("session constructor", properties);
   }
+  on() {
+    console.log("on");
+  }
+  publish() {
+    console.log("publish");
+  }
   connect() {
     console.log("connect");
   }
-  disconnect() {
-    console.log("disconnect");
-  }
   subscribe() {
     console.log("subscribe");
-  }
-  unsubscribe() {
-    console.log("unsubscribe");
-  }
-  once() {
-    console.log("once");
   }
 }
 
