@@ -1,5 +1,6 @@
 import React from "react";
 import "./App.css";
+import * as OT from "@opentok/client";
 
 export const App = ({ apiKey, sessionId, token }) => {
   console.log("-- apiKey: ", apiKey);
@@ -12,19 +13,18 @@ export const App = ({ apiKey, sessionId, token }) => {
     }
   }
 
-  var session = window.OT.initSession(apiKey, sessionId);
+  var session = OT.initSession(apiKey, sessionId);
 
   // Subscribe to a newly created stream
   session.on("streamCreated", function streamCreated(event) {
-    var subscriberOptions = {
-      insertMode: "append",
-      width: "100%",
-      height: "100%",
-    };
     session.subscribe(
       event.stream,
       "subscriber",
-      subscriberOptions,
+      {
+        insertMode: "append",
+        width: "100%",
+        height: "100%",
+      },
       handleError
     );
   });
@@ -33,15 +33,13 @@ export const App = ({ apiKey, sessionId, token }) => {
     console.log("You were disconnected from the session.", event.reason);
   });
 
-  // initialize the publisher
-  var publisherOptions = {
-    insertMode: "append",
-    width: "100%",
-    height: "100%",
-  };
-  var publisher = window.OT.initPublisher(
+  const publisher = OT.initPublisher(
     "publisher",
-    publisherOptions,
+    {
+      insertMode: "append",
+      width: "100%",
+      height: "100%",
+    },
     handleError
   );
 

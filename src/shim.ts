@@ -1,55 +1,85 @@
-function initSession(apiKey: string, sessionId: string) {
-  
-}
+import * as OT from "@opentok/client";
 
-function initPublisher(type: string, publisherOptions: any, handleError: any) {
-  
-}
+class Publisher {
+  constructor(properties) {
+    console.log("publisher constructor", properties);
+  }
+  publish() {
+    console.log("publish");
+  }
 
-
-
-window.OT.initSession = initSession;
-
-function handleError(error) {
-  if (error) {
-    console.error(error);
+  once() {
+    console.log("once");
   }
 }
 
-var session = window.OT.initSession(apiKey, sessionId);
-
-// Subscribe to a newly created stream
-session.on("streamCreated", function streamCreated(event) {
-  var subscriberOptions = {
-    insertMode: "append",
-    width: "100%",
-    height: "100%",
-  };
-  session.subscribe(event.stream, "subscriber", subscriberOptions, handleError);
-});
-
-session.on("sessionDisconnected", function sessionDisconnected(event) {
-  console.log("You were disconnected from the session.", event.reason);
-});
-
-// initialize the publisher
-var publisherOptions = {
-  insertMode: "append",
-  width: "100%",
-  height: "100%",
-};
-var publisher = window.OT.initPublisher(
-  "publisher",
-  publisherOptions,
-  handleError
-);
-
-// Connect to the session
-session.connect(token, function callback(error) {
-  if (error) {
-    handleError(error);
-  } else {
-    // If the connection is successful, publish the publisher to the session
-    session.publish(publisher, handleError);
+class Session {
+  constructor(properties) {
+    console.log("session constructor", properties);
   }
-});
+  connect() {
+    console.log("connect");
+  }
+  disconnect() {
+    console.log("disconnect");
+  }
+  subscribe() {
+    console.log("subscribe");
+  }
+  unsubscribe() {
+    console.log("unsubscribe");
+  }
+  once() {
+    console.log("once");
+  }
+}
+
+export function initSession(
+  partnerId: string,
+  sessionId: string,
+  options?: any // Use the right open tok type later.
+): OT.Session {
+  if (sessionId == null) {
+    sessionId = apiKey;
+    apiKey = null;
+  } // Allow buggy legacy behavior to succeed, where the client can connect if sessionId
+  // is an array containing one element (the session ID), but fix it so that sessionId
+  // is stored as a string (not an array):
+
+  if (Array.isArray(sessionId) && sessionId.length === 1) {
+    sessionId = sessionId[0];
+  }
+
+  let session = sessionObjects.sessions.get(sessionId);
+
+  if (!session) {
+    session = new Session(apiKey, sessionId, opt);
+    sessionObjects.sessions.add(session);
+  }
+
+  return session;
+}
+
+export function initPublisher(
+  targetElement?: string | HTMLElement | undefined,
+  properties?: OT.PublisherProperties | undefined,
+  callback?: ((error?: OT.OTError | undefined) => void) | undefined
+): OT.Publisher {
+  // TODO(jamsea): Need checking to make sure that the target element is a valid element.
+
+  const publisher = new Publisher(properties || {});
+
+  const err = null;
+
+  if (err && callback) {
+    callback(err);
+  }
+
+  publisher.once("initSuccess", removeInitSuccessAndCallComplete);
+  publisher.once("publishComplete", removeHandlersAndCallComplete);
+  publisher.publish(targetElement);
+  return publisher;
+}
+
+// window.OT.initSession = initSession;
+// window.OT.initPublisher = initPublisher;
