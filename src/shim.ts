@@ -20,17 +20,24 @@ const sessionObjects = {
   sessions: new Map<string, Session>(),
 };
 
-// let call: DailyCall | null = null;
+let call: DailyCall | null = null;
 
 class Publisher {
   constructor(properties) {
     console.log("publisher constructor", properties);
   }
-  publish(
-    publisher: Publisher,
-    callback?: (error?: OTError) => void
-  ): Publisher {
+  publish(targetElement: HTMLElement): Publisher {
     console.log("publish");
+    if (!call) {
+      console.error("todo publisher error handling");
+      return {} as Publisher;
+    }
+
+    // call.participants().local.tracks.video.state
+    // call.participants().local.tracks.audio.state
+    // call.participants().local.audioTrack?.
+    // call.participants().local.videoTrack?.
+
     return {} as Publisher;
   }
   once(
@@ -54,6 +61,7 @@ class Session {
         experimentalChromeVideoMuteLightOff: true,
       },
     });
+    call = this.#call;
   }
   on(
     eventName: string,
@@ -68,14 +76,14 @@ class Session {
     function startTrack(evt) {
       console.log("Track started: ", evt);
       if (evt.track.kind === "audio" && evt.participant.local === false) {
-        let audiosDiv = document.getElementById("audios") as HTMLElement;
+        let audiosDiv = document.getElementById("audio") as HTMLElement;
         let audioEl = document.createElement("audio");
         audiosDiv.appendChild(audioEl);
         audioEl.style.width = "100%";
         audioEl.srcObject = new MediaStream([evt.track]);
         audioEl.play();
       } else if (evt.track.kind === "video") {
-        let videosDiv = document.getElementById("videos") as HTMLElement;
+        let videosDiv = document.getElementById("video") as HTMLElement;
         let videoEl = document.createElement("video");
         videosDiv.appendChild(videoEl);
         videoEl.style.width = "100%";
@@ -176,11 +184,16 @@ export function initSession(
 }
 
 export function initPublisher(
-  targetElement?: string | HTMLElement | undefined,
+  targetElement?: string, // | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OT.OTError | undefined) => void) | undefined
 ): Publisher {
   // TODO(jamsea): Need checking to make sure that the target element is a valid element.
+
+  if (!callback || !targetElement) {
+    console.error("TODO call back logic");
+    return {} as Publisher;
+  }
 
   const publisher = new Publisher(properties || {});
 
@@ -190,9 +203,16 @@ export function initPublisher(
     callback(err);
   }
 
+  const elm = document.getElementById(targetElement);
+  if (!elm) {
+    console.error("No element found for targetElement");
+    callback({ name: "error", message: "No element found for targetElement" });
+    return {} as Publisher;
+  }
+
   // publisher.once("initSuccess", removeInitSuccessAndCallComplete);
   // publisher.once("publishComplete", removeHandlersAndCallComplete);
-  // publisher.publish(targetElement);
+  publisher.publish(elm);
   return publisher;
 }
 

@@ -7,6 +7,7 @@ interface AppProps {
   apiKey: string;
   sessionId: string;
   token: string;
+  isDaily: boolean;
 }
 
 export const App = ({ apiKey, sessionId, token }: AppProps) => {
