@@ -55,6 +55,8 @@ class Session {
     callback?: (error?: OTError) => void
   ): Publisher {
     console.log("publish");
+    if (!call) return {} as Publisher;
+
     return {} as Publisher;
   }
   connect(token: string, callback: (error?: OT.OTError) => void): void {
@@ -67,10 +69,39 @@ class Session {
       return;
     }
 
-    call.join({
-      // token,
-      url: "https://hush.daily.co/meet",
-    });
+    call
+      .join({
+        url: "https://hush.daily.co/meet",
+      })
+      .catch((err) => {
+        console.error(err);
+        callback({
+          message: err,
+          name: "DailyError",
+        });
+      });
+
+    function startTrack(evt) {
+      console.log("Track started: ", evt);
+      if (evt.track.kind === "audio" && evt.participant.local === false) {
+        let audiosDiv = document.getElementById("audios") as HTMLElement;
+        let audioEl = document.createElement("audio");
+        audiosDiv.appendChild(audioEl);
+        audioEl.style.width = "100%";
+        audioEl.srcObject = new MediaStream([evt.track]);
+        audioEl.play();
+      } else if (evt.track.kind === "video") {
+        let videosDiv = document.getElementById("videos") as HTMLElement;
+        let videoEl = document.createElement("video");
+        videosDiv.appendChild(videoEl);
+        videoEl.style.width = "100%";
+        videoEl.srcObject = new MediaStream([evt.track]);
+        console.log("-- videoEl", videoEl);
+        videoEl.play();
+      }
+    }
+
+    call.on("track-started", startTrack);
   }
   subscribe(
     stream: Stream,
@@ -113,6 +144,9 @@ export function initSession(
   const session = new Session("", sessionId, options);
 
   call = Daily.createCallObject({
+    subscribeToTracksAutomatically: true,
+    //videoSource: false,
+    //audioSource: false,
     dailyConfig: {
       experimentalChromeVideoMuteLightOff: true,
     },
