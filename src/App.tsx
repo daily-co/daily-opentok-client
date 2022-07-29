@@ -20,12 +20,12 @@ export const App = ({ apiKey, sessionId, token }: AppProps) => {
     }
   }
 
+  // sessionId becomes daily's room url
   var session = OT.initSession(apiKey, sessionId);
 
   // Subscribe to a newly created stream
   session.on("streamCreated", function streamCreated(event) {
     session.subscribe(
-      //@ts-ignore
       event.stream,
       "subscriber",
       {
@@ -38,7 +38,6 @@ export const App = ({ apiKey, sessionId, token }: AppProps) => {
   });
 
   session.on("sessionDisconnected", function sessionDisconnected(event) {
-    //@ts-ignore
     console.log("You were disconnected from the session.", event.reason);
   });
 

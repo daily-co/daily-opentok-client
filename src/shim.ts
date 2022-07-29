@@ -8,6 +8,10 @@ import {
 } from "@opentok/client";
 import Daily, { DailyCall } from "@daily-co/daily-js";
 
+type StreamCreatedEvent = Event<"streamCreated", Session> & {
+  stream: Stream;
+};
+
 const sessionObjects = {
   // Publishers are id'd by their guid
   publishers: new Map(),
@@ -16,7 +20,7 @@ const sessionObjects = {
   sessions: new Map<string, Session>(),
 };
 
-let call: DailyCall | null = null;
+// let call: DailyCall | null = null;
 
 class Publisher {
   constructor(properties) {
@@ -39,47 +43,27 @@ class Publisher {
 }
 
 class Session {
+  #call;
   constructor(apiKey, sessionId, opt) {
     console.log("session constructor", apiKey, sessionId, opt);
+    this.#call = Daily.createCallObject({
+      subscribeToTracksAutomatically: true,
+      //videoSource: false,
+      //audioSource: false,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
   }
   on(
     eventName: string,
     callback: (event: Event<string, any>) => void,
     context?: object
   ): void {
-    //todo
-    console.log("on");
-  }
-  publish(
-    publisher: Publisher,
-    callback?: (error?: OTError) => void
-  ): Publisher {
-    console.log("publish");
-    if (!call) return {} as Publisher;
-
-    return {} as Publisher;
-  }
-  connect(token: string, callback: (error?: OT.OTError) => void): void {
-    if (!call) {
-      console.error("No call");
-      callback({
-        message: "No call (todo find message)",
-        name: "NoCall (todo find name)",
-      });
+    if (!this.#call) {
+      console.error("No daily call object");
       return;
     }
-
-    call
-      .join({
-        url: "https://hush.daily.co/meet",
-      })
-      .catch((err) => {
-        console.error(err);
-        callback({
-          message: err,
-          name: "DailyError",
-        });
-      });
 
     function startTrack(evt) {
       console.log("Track started: ", evt);
@@ -101,7 +85,52 @@ class Session {
       }
     }
 
-    call.on("track-started", startTrack);
+    switch (eventName) {
+      case "streamCreated":
+        console.log("streamCreated");
+        this.#call.on("track-started", startTrack);
+        const streamEvent: StreamCreatedEvent = {
+          cancelable: false,
+          stream: {
+            streamId: "streamId",
+          },
+        };
+        callback(streamEvent);
+        break;
+      default:
+        break;
+    }
+  }
+  publish(
+    publisher: Publisher,
+    callback?: (error?: OTError) => void
+  ): Publisher {
+    console.log("publish");
+    if (!this.#call) return {} as Publisher;
+
+    return {} as Publisher;
+  }
+  connect(token: string, callback: (error?: OT.OTError) => void): void {
+    if (!this.#call) {
+      console.error("No call");
+      callback({
+        message: "No call (todo find message)",
+        name: "NoCall (todo find name)",
+      });
+      return;
+    }
+
+    this.#call
+      .join({
+        url: "https://hush.daily.co/meet",
+      })
+      .catch((err) => {
+        console.error(err);
+        callback({
+          message: err,
+          name: "DailyError",
+        });
+      });
   }
   subscribe(
     stream: Stream,
@@ -115,8 +144,8 @@ class Session {
 }
 
 export function initSession(
-  partnerId: string,
-  sessionId: string,
+  partnerId: string, // probably don't need the daily server API key here
+  roomUrl: string, // originally sessionId
   options?: {
     connectionEventsSuppressed?: boolean;
     iceConfig?: {
@@ -141,16 +170,7 @@ export function initSession(
   //   // sessionObjects.sessions.add(session);
   // }
 
-  const session = new Session("", sessionId, options);
-
-  call = Daily.createCallObject({
-    subscribeToTracksAutomatically: true,
-    //videoSource: false,
-    //audioSource: false,
-    dailyConfig: {
-      experimentalChromeVideoMuteLightOff: true,
-    },
-  });
+  const session = new Session(partnerId, roomUrl, options);
 
   return session;
 }
