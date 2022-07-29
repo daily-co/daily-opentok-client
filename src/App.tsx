@@ -8,6 +8,7 @@ interface AppProps {
   sessionId: string;
   token: string;
 }
+
 export const App = ({ apiKey, sessionId, token }: AppProps) => {
   console.log("-- apiKey: ", apiKey);
   console.log("-- sessionId: ", sessionId);
