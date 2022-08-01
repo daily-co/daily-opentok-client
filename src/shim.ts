@@ -15,42 +15,8 @@ ee.on("message", function (text) {
 });
 ee.emit("message", "hello world");
 
-// ee.on("streamCreated", (stream) => {
-//   console.log("[streamCreated] shim.ts: ", stream);
-//   function startTrack(evt) {
-//     console.log("Track started: ", evt);
-
-//     const streamEvent: StreamCreatedEvent = {
-//       type: "streamCreated",
-//       isDefaultPrevented: () => true,
-//       preventDefault: () => {},
-//       target: {} as Session,
-//       cancelable: false,
-//       stream: {
-//         streamId: "streamId",
-//         frameRate: 30,
-//         hasAudio: true,
-//         hasVideo: true,
-//         name: "name",
-//         videoDimensions: {
-//           height: 720,
-//           width: 1280,
-//         },
-//         videoType: "camera",
-//         creationTime: new Date().getTime(),
-//         connection: {
-//           connectionId: "connectionId",
-//           creationTime: new Date().getTime(),
-//           data: "",
-//         },
-//       },
-//     };
-//     // callback(streamEvent);
-//   }
-
-//   // this.#call.on("track-started", startTrack);
-// });
-
+// publish(publisher: Publisher, callback?: (error?: OTError) => void): Publisher;
+// publish(targetElement: string | HTMLElement, properties?: PublisherProperties, callback?: (error?: OTError) => void): Publisher;
 type DailyStream = Stream & {
   dailyEvent: DailyEventObjectTrack;
 };
@@ -66,9 +32,22 @@ const sessionObjects = {
   sessions: new Map<string, Session>(),
 };
 
+interface PublisherProps {
+  dailyElementId: string;
+}
+
 class Publisher {
-  constructor(properties) {
+  dailyElementId: string;
+  accessAllowed: boolean;
+  constructor(properties: PublisherProps) {
     console.log("publisher constructor", properties);
+
+    return {
+      accessAllowed: true,
+      once: this.once,
+      publish: this.publish,
+      dailyElementId: properties.dailyElementId,
+    };
   }
   publish(targetElement: HTMLElement): Publisher {
     console.log("publish");
@@ -149,6 +128,28 @@ class Session {
   ): Publisher {
     console.log("publish");
     // if (!this.#call) return {} as Publisher;
+
+    if (!window.call) {
+      console.error("No daily call object");
+      return {} as Publisher;
+    }
+
+    console.debug("window.call.participants()", window.call);
+
+    const videoTrack = window.call.participants().local.videoTrack;
+
+    if (!videoTrack) {
+      console.debug("No local video track");
+      return {} as Publisher;
+    }
+
+    const t = document.getElementById(publisher.dailyElementId) as HTMLElement;
+    const videoEl = document.createElement("video");
+    t.appendChild(videoEl);
+    videoEl.style.width = "100%";
+    videoEl.srcObject = new MediaStream([videoTrack]);
+    videoEl.play();
+
     window.call
       .join({
         url: "https://hush.daily.co/demo",
@@ -255,7 +256,10 @@ export function initPublisher(
     return {} as Publisher;
   }
 
-  const publisher = new Publisher(properties || {});
+  const publisher = new Publisher({
+    ...properties,
+    dailyElementId: targetElement,
+  });
 
   const err = null;
 
