@@ -26,6 +26,7 @@ export const App = ({ apiKey, sessionId, token }: AppProps) => {
 
   // Subscribe to a newly created stream
   session.on("streamCreated", function streamCreated(event) {
+    console.log("[streamCreated] App.tsx: ", event);
     session.subscribe(
       event.stream,
       "subscriber",

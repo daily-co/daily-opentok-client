@@ -6,10 +6,56 @@ import {
   Stream,
   SubscriberProperties,
 } from "@opentok/client";
-import Daily, { DailyCall } from "@daily-co/daily-js";
+import Daily, { DailyCall, DailyEventObjectTrack } from "@daily-co/daily-js";
+import * as EventEmitter from "events";
 
+const ee = new EventEmitter();
+ee.on("message", function (text) {
+  console.log(text);
+});
+ee.emit("message", "hello world");
+
+// ee.on("streamCreated", (stream) => {
+//   console.log("[streamCreated] shim.ts: ", stream);
+//   function startTrack(evt) {
+//     console.log("Track started: ", evt);
+
+//     const streamEvent: StreamCreatedEvent = {
+//       type: "streamCreated",
+//       isDefaultPrevented: () => true,
+//       preventDefault: () => {},
+//       target: {} as Session,
+//       cancelable: false,
+//       stream: {
+//         streamId: "streamId",
+//         frameRate: 30,
+//         hasAudio: true,
+//         hasVideo: true,
+//         name: "name",
+//         videoDimensions: {
+//           height: 720,
+//           width: 1280,
+//         },
+//         videoType: "camera",
+//         creationTime: new Date().getTime(),
+//         connection: {
+//           connectionId: "connectionId",
+//           creationTime: new Date().getTime(),
+//           data: "",
+//         },
+//       },
+//     };
+//     // callback(streamEvent);
+//   }
+
+//   // this.#call.on("track-started", startTrack);
+// });
+
+type DailyStream = Stream & {
+  dailyEvent: DailyEventObjectTrack;
+};
 type StreamCreatedEvent = Event<"streamCreated", Session> & {
-  stream: Stream;
+  stream: DailyStream;
 };
 
 const sessionObjects = {
@@ -20,15 +66,13 @@ const sessionObjects = {
   sessions: new Map<string, Session>(),
 };
 
-let call: DailyCall | null = null;
-
 class Publisher {
   constructor(properties) {
     console.log("publisher constructor", properties);
   }
   publish(targetElement: HTMLElement): Publisher {
     console.log("publish");
-    if (!call) {
+    if (!window.call) {
       console.error("todo publisher error handling");
       return {} as Publisher;
     }
@@ -50,62 +94,52 @@ class Publisher {
 }
 
 class Session {
-  #call;
   constructor(apiKey, sessionId, opt) {
     console.log("session constructor", apiKey, sessionId, opt);
-    this.#call = Daily.createCallObject({
-      subscribeToTracksAutomatically: true,
-      //videoSource: false,
-      //audioSource: false,
-      dailyConfig: {
-        experimentalChromeVideoMuteLightOff: true,
-      },
-    });
-    call = this.#call;
   }
   on(
     eventName: string,
     callback: (event: Event<string, any>) => void,
     context?: object
   ): void {
-    if (!this.#call) {
-      console.error("No daily call object");
-      return;
-    }
-
-    function startTrack(evt) {
-      console.log("Track started: ", evt);
-      if (evt.track.kind === "audio" && evt.participant.local === false) {
-        let audiosDiv = document.getElementById("audio") as HTMLElement;
-        let audioEl = document.createElement("audio");
-        audiosDiv.appendChild(audioEl);
-        audioEl.style.width = "100%";
-        audioEl.srcObject = new MediaStream([evt.track]);
-        audioEl.play();
-      } else if (evt.track.kind === "video") {
-        let videosDiv = document.getElementById("video") as HTMLElement;
-        let videoEl = document.createElement("video");
-        videosDiv.appendChild(videoEl);
-        videoEl.style.width = "100%";
-        videoEl.srcObject = new MediaStream([evt.track]);
-        console.log("-- videoEl", videoEl);
-        videoEl.play();
-      }
-    }
-
     switch (eventName) {
       case "streamCreated":
-        console.log("streamCreated");
-        this.#call.on("track-started", startTrack);
-        const streamEvent: StreamCreatedEvent = {
-          cancelable: false,
-          stream: {
-            streamId: "streamId",
-          },
-        };
-        callback(streamEvent);
+        ee.on("streamCreated", (dailyEvent: DailyEventObjectTrack) => {
+          console.log("dailyEvent", dailyEvent);
+
+          const streamEvent: StreamCreatedEvent = {
+            type: "streamCreated",
+            isDefaultPrevented: () => true,
+            preventDefault: () => {},
+            target: this,
+            cancelable: false,
+            stream: {
+              // Maybe this is like participant id?
+              streamId: dailyEvent.participant?.user_id as string,
+              frameRate: 30,
+              hasAudio: true,
+              hasVideo: true,
+              name: "name",
+              videoDimensions: {
+                height: 720,
+                width: 1280,
+              },
+              videoType: "camera",
+              creationTime: new Date().getTime(),
+              connection: {
+                connectionId: "connectionId",
+                creationTime: new Date().getTime(),
+                data: "",
+              },
+              dailyEvent,
+            },
+          };
+
+          callback(streamEvent);
+        });
         break;
       default:
+        console.log("default");
         break;
     }
   }
@@ -114,12 +148,12 @@ class Session {
     callback?: (error?: OTError) => void
   ): Publisher {
     console.log("publish");
-    if (!this.#call) return {} as Publisher;
+    // if (!this.#call) return {} as Publisher;
 
     return {} as Publisher;
   }
   connect(token: string, callback: (error?: OT.OTError) => void): void {
-    if (!this.#call) {
+    if (!window.call) {
       console.error("No call");
       callback({
         message: "No call (todo find message)",
@@ -128,9 +162,9 @@ class Session {
       return;
     }
 
-    this.#call
+    window.call
       .join({
-        url: "https://hush.daily.co/meet",
+        url: "https://hush.daily.co/demo",
       })
       .catch((err) => {
         console.error(err);
@@ -141,12 +175,27 @@ class Session {
       });
   }
   subscribe(
-    stream: Stream,
-    targetElement?: HTMLElement | string,
+    stream: DailyStream,
+    targetElement?: string, // | HTMLElement,
     properties?: SubscriberProperties,
     callback?: (error?: OTError) => void
   ): Subscriber {
     console.log("subscribe");
+    if (!window.call) {
+      console.error("No daily call object");
+      return {} as Subscriber;
+    }
+    if (!targetElement) {
+      console.error("No target element");
+      return {} as Subscriber;
+    }
+
+    const t = document.getElementById(targetElement) as HTMLElement;
+    const videoEl = document.createElement("video");
+    t.appendChild(videoEl);
+    videoEl.style.width = "100%";
+    videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
+    videoEl.play();
     return {} as Subscriber;
   }
 }
@@ -177,6 +226,20 @@ export function initSession(
 
   //   // sessionObjects.sessions.add(session);
   // }
+
+  window.call = Daily.createCallObject({
+    subscribeToTracksAutomatically: true,
+    //videoSource: false,
+    //audioSource: false,
+    dailyConfig: {
+      experimentalChromeVideoMuteLightOff: true,
+    },
+  });
+
+  window.call.on("track-started", (evt) => {
+    // format as openTok event?
+    ee.emit("streamCreated", evt);
+  });
 
   const session = new Session(partnerId, roomUrl, options);
 
