@@ -149,6 +149,13 @@ class Session {
   ): Publisher {
     console.log("publish");
     // if (!this.#call) return {} as Publisher;
+    window.call
+      .join({
+        url: "https://hush.daily.co/demo",
+      })
+      .catch((err) => {
+        console.error(err);
+      });
 
     return {} as Publisher;
   }
@@ -162,17 +169,7 @@ class Session {
       return;
     }
 
-    window.call
-      .join({
-        url: "https://hush.daily.co/demo",
-      })
-      .catch((err) => {
-        console.error(err);
-        callback({
-          message: err,
-          name: "DailyError",
-        });
-      });
+    callback();
   }
   subscribe(
     stream: DailyStream,
@@ -275,7 +272,7 @@ export function initPublisher(
 
   // publisher.once("initSuccess", removeInitSuccessAndCallComplete);
   // publisher.once("publishComplete", removeHandlersAndCallComplete);
-  publisher.publish(elm);
+  // publisher.publish(elm);
   return publisher;
 }
 
