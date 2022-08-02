@@ -10,10 +10,6 @@ import Daily, { DailyCall, DailyEventObjectTrack } from "@daily-co/daily-js";
 import * as EventEmitter from "events";
 
 const ee = new EventEmitter();
-ee.on("message", function (text) {
-  console.log(text);
-});
-ee.emit("message", "hello world");
 
 // publish(publisher: Publisher, callback?: (error?: OTError) => void): Publisher;
 // publish(targetElement: string | HTMLElement, properties?: PublisherProperties, callback?: (error?: OTError) => void): Publisher;
