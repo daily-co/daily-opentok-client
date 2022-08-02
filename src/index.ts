@@ -1,3 +1,6 @@
+// import { Event as OTEvent, Session } from "@opentok/client";
+// type StreamCreatedEvent = OTEvent<"streamCreated", Session>;
+
 import "./App.css";
 // import * as OT from "@opentok/client";
 // const {
@@ -23,7 +26,7 @@ console.log("-- apiKey: ", apiKey);
 console.log("-- sessionId: ", sessionId);
 console.log("-- token: ", token);
 
-function handleError(error) {
+function handleError(error: any) {
   if (error) {
     console.error(error);
   }
@@ -33,7 +36,7 @@ function handleError(error) {
 var session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream
-session.on("streamCreated", function streamCreated(event) {
+session.on("streamCreated", function streamCreated(event: any) {
   console.log("[streamCreated] index.ts: ", event);
   // This is daily remote user stuff
   session.subscribe(
@@ -49,6 +52,7 @@ session.on("streamCreated", function streamCreated(event) {
 });
 
 session.on("sessionDisconnected", function sessionDisconnected(event) {
+  //@ts-ignore
   console.log("You were disconnected from the session.", event.reason);
 });
 

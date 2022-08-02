@@ -7,7 +7,7 @@ import {
   SubscriberProperties,
 } from "@opentok/client";
 import Daily, { DailyCall, DailyEventObjectTrack } from "@daily-co/daily-js";
-import * as EventEmitter from "events";
+import { EventEmitter } from "events";
 
 const ee = new EventEmitter();
 
@@ -16,7 +16,7 @@ const ee = new EventEmitter();
 type DailyStream = Stream & {
   dailyEvent: DailyEventObjectTrack;
 };
-type StreamCreatedEvent = Event<"streamCreated", Session> & {
+export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
 };
 
@@ -38,12 +38,8 @@ class Publisher {
   constructor(properties: PublisherProps) {
     console.log("publisher constructor", properties);
 
-    return {
-      accessAllowed: true,
-      once: this.once,
-      publish: this.publish,
-      dailyElementId: properties.dailyElementId,
-    };
+    this.dailyElementId = properties.dailyElementId;
+    this.accessAllowed = true;
   }
   publish(targetElement: HTMLElement): Publisher {
     console.log("publish");
@@ -69,7 +65,7 @@ class Publisher {
 }
 
 class Session {
-  constructor(apiKey, sessionId, opt) {
+  constructor(apiKey: string, sessionId: string, opt: any) {
     console.log("session constructor", apiKey, sessionId, opt);
   }
   on(
@@ -77,15 +73,7 @@ class Session {
     callback: (event: Event<string, any>) => void,
     context?: object
   ): void {
-    switch (eventName) {
-      case "streamCreated":
-        console.log("[streamCreated] CASE");
-        ee.on("streamCreated", callback);
-        break;
-      default:
-        console.log("default");
-        break;
-    }
+    ee.on(eventName, callback);
   }
   publish(
     publisher: Publisher,
@@ -105,6 +93,8 @@ class Session {
       })
       .then((participants) => {
         console.debug("participants", participants);
+        if (!participants) return;
+
         const videoTrack = participants.local.videoTrack;
         if (!videoTrack) {
           console.debug("No local video track");
@@ -205,17 +195,21 @@ export function initSession(
     },
   });
 
-  window.call.on("track-started", (dailyEvent: DailyEventObjectTrack) => {
+  window.call.on("track-started", (dailyEvent) => {
+    if (!dailyEvent) {
+      console.debug("No Daily event");
+      return;
+    }
     // Format as opentok event
     const streamEvent: StreamCreatedEvent = {
       type: "streamCreated",
       isDefaultPrevented: () => true,
       preventDefault: () => {},
-      target: this,
+      target: {} as Session, //TODO fix this
       cancelable: false,
       stream: {
         // Maybe this is like participant id?
-        streamId: dailyEvent.participant?.user_id as string,
+        streamId: dailyEvent.participant?.user_id || "",
         frameRate: 30,
         hasAudio: true,
         hasVideo: true,
