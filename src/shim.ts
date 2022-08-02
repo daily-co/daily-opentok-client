@@ -11,21 +11,11 @@ import { EventEmitter } from "events";
 
 const ee = new EventEmitter();
 
-// publish(publisher: Publisher, callback?: (error?: OTError) => void): Publisher;
-// publish(targetElement: string | HTMLElement, properties?: PublisherProperties, callback?: (error?: OTError) => void): Publisher;
 type DailyStream = Stream & {
   dailyEvent: DailyEventObjectTrack;
 };
 export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
-};
-
-const sessionObjects = {
-  // Publishers are id'd by their guid
-  publishers: new Map(),
-  // Subscribers are id'd by their widgetId
-  subscribers: new Map(),
-  sessions: new Map<string, Session>(),
 };
 
 interface PublisherProps {
@@ -47,11 +37,6 @@ class Publisher {
       console.error("todo publisher error handling");
       return {} as Publisher;
     }
-
-    // call.participants().local.tracks.video.state
-    // call.participants().local.tracks.audio.state
-    // call.participants().local.audioTrack?.
-    // call.participants().local.videoTrack?.
 
     return {} as Publisher;
   }
