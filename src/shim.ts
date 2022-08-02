@@ -32,7 +32,6 @@ class Publisher {
     this.accessAllowed = true;
   }
   publish(targetElement: HTMLElement): Publisher {
-    console.log("publish");
     if (!window.call) {
       console.error("todo publisher error handling");
       return {} as Publisher;
@@ -59,6 +58,10 @@ class Session {
     context?: object
   ): void {
     ee.on(eventName, callback);
+    console.debug(
+      "ee.listenerCount: " + eventName,
+      ee.listenerCount(eventName)
+    );
   }
   publish(
     publisher: Publisher,
@@ -70,14 +73,12 @@ class Session {
       return publisher;
     }
 
-    console.debug("window.call.participants()", window.call);
-
     window.call
       .join({
         url: "https://hush.daily.co/demo",
       })
       .then((participants) => {
-        console.debug("participants", participants);
+        console.debug("publish participants:", participants);
         if (!participants) return;
 
         const videoTrack = participants.local.videoTrack;
@@ -181,8 +182,14 @@ export function initSession(
   });
 
   window.call.on("track-started", (dailyEvent) => {
+    console.debug("window.call.on track-started", dailyEvent);
     if (!dailyEvent) {
       console.debug("No Daily event");
+      return;
+    }
+
+    if (dailyEvent.participant?.local) {
+      console.debug("Local participant");
       return;
     }
     // Format as opentok event

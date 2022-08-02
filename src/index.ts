@@ -37,7 +37,7 @@ var session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream
 session.on("streamCreated", function streamCreated(event: any) {
-  console.log("[streamCreated] index.ts: ", event);
+  console.debug("[streamCreated] index.ts: ", event);
   // This is daily remote user stuff
   session.subscribe(
     event.stream,
