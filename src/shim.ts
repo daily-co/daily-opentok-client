@@ -130,13 +130,26 @@ class Session {
       return {} as Subscriber;
     }
 
-    if (stream.dailyEvent.participant?.local) {
+    if (!stream.dailyEvent.participant) {
+      console.error("No participant");
       return {} as Subscriber;
     }
 
+    if (stream.dailyEvent.participant.local) {
+      return {} as Subscriber;
+    }
+
+    const {
+      dailyEvent: {
+        participant: { user_id },
+      },
+    } = stream;
+
     const t = document.getElementById(targetElement) as HTMLElement;
-    const videoEl = document.createElement("video");
-    videoEl.className = stream.dailyEvent.participant?.user_id || "";
+    const videoEl =
+      (document.getElementById(user_id) as HTMLVideoElement) ??
+      document.createElement("video");
+    videoEl.id = stream.dailyEvent.participant.user_id;
     t.appendChild(videoEl);
     videoEl.style.width = "100%";
     videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
@@ -171,6 +184,8 @@ export function initSession(
 
   //   // sessionObjects.sessions.add(session);
   // }
+
+  console.info("--- initSession");
 
   window.call = Daily.createCallObject({
     subscribeToTracksAutomatically: true,
