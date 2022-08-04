@@ -15,20 +15,13 @@ const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
 const sessionId = "https://hush.daily.co/meet/";
 const token = "";
 
-interface AppProps {
-  apiKey: string;
-  sessionId: string;
-  token: string;
-  isDaily: boolean;
-}
-
 console.log("-- apiKey: ", apiKey);
 console.log("-- sessionId: ", sessionId);
 console.log("-- token: ", token);
 
 function handleError(error: any) {
   if (error) {
-    console.error(error);
+    console.error("handleError: ", error);
   }
 }
 
@@ -52,7 +45,6 @@ session.on("streamCreated", function streamCreated(event: any) {
 });
 
 session.on("sessionDisconnected", function sessionDisconnected(event) {
-  //@ts-ignore
   console.log("You were disconnected from the session.", event.reason);
 });
 

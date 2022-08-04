@@ -19,24 +19,30 @@ export type StreamCreatedEvent = Event<"streamCreated", Session> & {
 };
 
 interface PublisherProps {
+  insertMode: string;
+  width: string;
+  height: string;
   dailyElementId: string;
 }
 
 class Publisher {
   dailyElementId: string;
   accessAllowed: boolean;
+  width: string;
+  height: string;
+  insertMode: string;
   constructor(properties: PublisherProps) {
     console.log("publisher constructor", properties);
+
+    this.width = properties.width;
+    this.height = properties.height;
+    this.insertMode = properties.insertMode;
 
     this.dailyElementId = properties.dailyElementId;
     this.accessAllowed = true;
   }
   publish(targetElement: HTMLElement): Publisher {
-    if (!window.call) {
-      console.error("todo publisher error handling");
-      return {} as Publisher;
-    }
-
+    console.log("publisher.publish");
     return {} as Publisher;
   }
   once(
@@ -58,10 +64,14 @@ class Session {
     context?: object
   ): void {
     ee.on(eventName, callback);
-    console.debug(
-      "ee.listenerCount: " + eventName,
-      ee.listenerCount(eventName)
-    );
+  }
+
+  once(
+    eventName: string,
+    callback: (event: Event<string, any>) => void,
+    context?: object
+  ): void {
+    ee.once(eventName, callback);
   }
   publish(
     publisher: Publisher,
@@ -90,9 +100,17 @@ class Session {
         const t = document.getElementById(
           publisher.dailyElementId
         ) as HTMLElement;
-        const videoEl = document.createElement("video");
-        t.appendChild(videoEl);
-        videoEl.style.width = "100%";
+
+        const videoEl =
+          (t.children[0] as HTMLVideoElement) ??
+          document.createElement("video");
+
+        // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+        if (publisher.insertMode === "append") {
+          t.appendChild(videoEl);
+        }
+        videoEl.style.width = publisher.width;
+        videoEl.style.height = publisher.height;
         videoEl.srcObject = new MediaStream([videoTrack]);
         videoEl.play();
       })
@@ -147,11 +165,14 @@ class Session {
 
     const t = document.getElementById(targetElement) as HTMLElement;
     const videoEl =
-      (document.getElementById(user_id) as HTMLVideoElement) ??
+      (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
       document.createElement("video");
-    videoEl.id = stream.dailyEvent.participant.user_id;
+    videoEl.id = `video-${user_id}`;
     t.appendChild(videoEl);
-    videoEl.style.width = "100%";
+    if (properties) {
+      videoEl.style.width = properties.width?.toString() || "";
+      videoEl.style.height = properties.height?.toString() || "";
+    }
     videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
     videoEl.play();
     return {} as Subscriber;
@@ -176,71 +197,125 @@ export function initSession(
     encryptionSecret?: string;
   }
 ): Session {
-  // let session = sessionObjects.sessions.get(sessionId);
-
-  // if (!session) {
-  //   // session = new Session(apiKey, sessionId, opt);
-  //   session = new Session("", sessionId, options);
-
-  //   // sessionObjects.sessions.add(session);
-  // }
-
-  console.info("--- initSession");
-
   window.call = Daily.createCallObject({
     subscribeToTracksAutomatically: true,
-    //videoSource: false,
-    //audioSource: false,
     dailyConfig: {
       experimentalChromeVideoMuteLightOff: true,
     },
   });
 
-  window.call.on("track-started", (dailyEvent) => {
-    console.debug("window.call.on track-started", dailyEvent);
-    if (!dailyEvent) {
-      console.debug("No Daily event");
-      return;
-    }
+  window.call
+    .on("track-started", (dailyEvent) => {
+      // Maybe participant joined?
+      console.debug("window.call.on track-started", dailyEvent);
+      if (!dailyEvent) {
+        console.debug("No Daily event");
+        return;
+      }
 
-    if (dailyEvent.participant?.local) {
-      console.debug("Local participant");
-      return;
-    }
-    // Format as opentok event
-    const streamEvent: StreamCreatedEvent = {
-      type: "streamCreated",
-      isDefaultPrevented: () => true,
-      preventDefault: () => {},
-      target: {} as Session, //TODO fix this
-      cancelable: false,
-      stream: {
-        // Maybe this is like participant id?
-        streamId: dailyEvent.participant?.user_id || "",
-        frameRate: 30,
-        hasAudio: true,
-        hasVideo: true,
-        name: "name",
-        videoDimensions: {
-          height: 720,
-          width: 1280,
-        },
-        videoType: "camera",
-        creationTime: new Date().getTime(),
-        connection: {
-          connectionId: "connectionId",
+      if (dailyEvent.participant?.local) {
+        console.debug("Local participant");
+        return;
+      }
+      // Format as opentok event
+      const streamEvent: StreamCreatedEvent = {
+        type: "streamCreated",
+        isDefaultPrevented: () => true,
+        preventDefault: () => {},
+        target: {} as Session, //TODO fix this
+        cancelable: false,
+        stream: {
+          // Maybe this is like participant id?
+          streamId: dailyEvent.participant?.user_id || "",
+          frameRate: 30,
+          hasAudio: true,
+          hasVideo: true,
+          name: "name",
+          videoDimensions: {
+            height: 720,
+            width: 1280,
+          },
+          videoType: "camera",
           creationTime: new Date().getTime(),
-          data: "",
+          connection: {
+            connectionId: "connectionId",
+            creationTime: new Date().getTime(),
+            data: "",
+          },
+          dailyEvent,
         },
-        dailyEvent,
-      },
-    };
+      };
 
-    ee.emit("streamCreated", streamEvent);
-  });
+      ee.emit("streamCreated", streamEvent);
+    })
+    .on("track-stopped", (dailyEvent) => {})
+    .on("error", (error) => {})
+    .on("nonfatal-error", (error) => {})
+    .on("network-connection", (dailyEvent) => {
+      console.debug("network-connection", dailyEvent);
+      if (!dailyEvent) {
+        return;
+      }
+
+      switch (dailyEvent.event) {
+        case "interrupted":
+          const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
+            reason: string;
+          } = {
+            type: "sessionDisconnected",
+            isDefaultPrevented: () => true,
+            preventDefault: () => {},
+            cancelable: false,
+            target: {} as OT.Session, //TODO fix this
+            reason: "networkDisconnected",
+          };
+          ee.emit("sessionDisconnected", tokboxEvent);
+          break;
+        case "connected":
+          console.debug("connected");
+          break;
+        default:
+          break;
+      }
+    })
+    .on("network-quality-change", (dailyEvent) => {})
+    .on("left-meeting", (dailyEvent) => {
+      console.debug("left-meeting", dailyEvent);
+      if (!dailyEvent) {
+        return;
+      }
+      const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
+        reason: string;
+      } = {
+        type: "sessionDisconnected",
+        isDefaultPrevented: () => false,
+        preventDefault: () => {},
+        cancelable: false,
+        target: {} as OT.Session, //TODO fix this
+        reason: "clientDisconnected",
+      };
+
+      if (!tokboxEvent.isDefaultPrevented()) {
+        // By default Tokbox removes all subscriber elements from the DOM
+        // if the user calls `preventDefault` this behavior is prevented.
+      }
+
+      ee.emit("sessionDisconnected", tokboxEvent);
+    })
+    .on("participant-left", (dailyEvent) => {
+      if (!dailyEvent) return;
+
+      const v = document.getElementById(
+        `video-${dailyEvent.participant.user_id}`
+      );
+
+      console.debug("participant-left v", v);
+      if (v) {
+        v.remove();
+      }
+    });
 
   const session = new Session(partnerId, roomUrl, options);
-
   return session;
 }
 
@@ -252,7 +327,7 @@ export function initPublisher(
   // TODO(jamsea): Need checking to make sure that the target element is a valid element.
 
   if (!callback || !targetElement) {
-    console.error("TODO call back logic");
+    console.error("No target element or callback");
     return {} as Publisher;
   }
 
@@ -271,12 +346,9 @@ export function initPublisher(
   if (!elm) {
     console.error("No element found for targetElement");
     callback({ name: "error", message: "No element found for targetElement" });
-    return {} as Publisher;
+    return publisher;
   }
 
-  // publisher.once("initSuccess", removeInitSuccessAndCallComplete);
-  // publisher.once("publishComplete", removeHandlersAndCallComplete);
-  // publisher.publish(elm);
   return publisher;
 }
 
