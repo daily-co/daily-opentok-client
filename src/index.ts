@@ -1,3 +1,4 @@
+// @ts-nocheck
 // import { Event as OTEvent, Session } from "@opentok/client";
 // type StreamCreatedEvent = OTEvent<"streamCreated", Session>;
 
@@ -12,7 +13,7 @@ import "./App.css";
 import * as OT from "./shim";
 
 const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
-const sessionId = "https://hush.daily.co/meet/";
+const sessionId = "https://hush.daily.co/demo/";
 const token = "";
 
 console.log("-- apiKey: ", apiKey);

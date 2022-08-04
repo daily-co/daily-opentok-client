@@ -18,27 +18,20 @@ export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
 };
 
-interface PublisherProps {
-  insertMode: string;
-  width: string;
-  height: string;
-  dailyElementId: string;
-}
+type PublisherProps = OT.PublisherProperties & { dailyElementId: string };
 
 class Publisher {
   dailyElementId: string;
   accessAllowed: boolean;
-  width: string;
-  height: string;
-  insertMode: string;
-  constructor(properties: PublisherProps) {
-    console.log("publisher constructor", properties);
+  width?: string;
+  height?: string;
+  insertMode?: "replace" | "after" | "before" | "append";
+  constructor({ width, height, insertMode, dailyElementId }: PublisherProps) {
+    this.width = width ? width.toString() : undefined;
+    this.height = height ? height.toString() : undefined;
+    this.insertMode = insertMode;
 
-    this.width = properties.width;
-    this.height = properties.height;
-    this.insertMode = properties.insertMode;
-
-    this.dailyElementId = properties.dailyElementId;
+    this.dailyElementId = dailyElementId;
     this.accessAllowed = true;
   }
   publish(targetElement: HTMLElement): Publisher {
@@ -55,8 +48,10 @@ class Publisher {
 }
 
 class Session {
+  sessionId: string;
   constructor(apiKey: string, sessionId: string, opt: any) {
     console.log("session constructor", apiKey, sessionId, opt);
+    this.sessionId = sessionId;
   }
   on(
     eventName: string,
@@ -85,7 +80,7 @@ class Session {
 
     window.call
       .join({
-        url: "https://hush.daily.co/demo",
+        url: this.sessionId,
       })
       .then((participants) => {
         console.debug("publish participants:", participants);
@@ -109,8 +104,8 @@ class Session {
         if (publisher.insertMode === "append") {
           t.appendChild(videoEl);
         }
-        videoEl.style.width = publisher.width;
-        videoEl.style.height = publisher.height;
+        videoEl.style.width = publisher.width ?? "";
+        videoEl.style.height = publisher.height ?? "";
         videoEl.srcObject = new MediaStream([videoTrack]);
         videoEl.play();
       })
@@ -283,6 +278,10 @@ export function initSession(
             target: {} as OT.Session, //TODO fix this
             reason: "networkDisconnected",
           };
+          if (!tokboxEvent.isDefaultPrevented()) {
+            // By default Tokbox removes all subscriber elements from the DOM
+            // if the user calls `preventDefault` this behavior is prevented.
+          }
           ee.emit("sessionDisconnected", tokboxEvent);
           break;
         case "connected":
@@ -345,10 +344,12 @@ export function initPublisher(
     return {} as Publisher;
   }
 
-  const publisher = new Publisher({
-    ...properties,
-    dailyElementId: targetElement,
-  });
+  const publisher = properties
+    ? new Publisher({
+        ...properties,
+        dailyElementId: targetElement,
+      })
+    : new Publisher();
 
   const err = null;
 
