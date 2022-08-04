@@ -164,17 +164,30 @@ class Session {
     } = stream;
 
     const t = document.getElementById(targetElement) as HTMLElement;
-    const videoEl =
-      (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
-      document.createElement("video");
-    videoEl.id = `video-${user_id}`;
-    t.appendChild(videoEl);
-    if (properties) {
-      videoEl.style.width = properties.width?.toString() || "";
-      videoEl.style.height = properties.height?.toString() || "";
+    if (stream.hasVideo) {
+      const videoEl =
+        (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
+        document.createElement("video");
+      videoEl.id = `video-${user_id}`;
+      t.appendChild(videoEl);
+      if (properties) {
+        videoEl.style.width = properties.width?.toString() || "";
+        videoEl.style.height = properties.height?.toString() || "";
+      }
+      videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
+      videoEl.play();
     }
-    videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-    videoEl.play();
+
+    if (stream.hasAudio) {
+      const audioEl =
+        (document.getElementById(`audio-${user_id}`) as HTMLAudioElement) ??
+        document.createElement("audio");
+      audioEl.id = `audio-${user_id}`;
+      t.appendChild(audioEl);
+      audioEl.srcObject = new MediaStream([stream.dailyEvent.track]);
+      audioEl.play();
+    }
+
     return {} as Subscriber;
   }
 }
@@ -217,6 +230,7 @@ export function initSession(
         console.debug("Local participant");
         return;
       }
+
       // Format as opentok event
       const streamEvent: StreamCreatedEvent = {
         type: "streamCreated",
@@ -228,8 +242,8 @@ export function initSession(
           // Maybe this is like participant id?
           streamId: dailyEvent.participant?.user_id || "",
           frameRate: 30,
-          hasAudio: true,
-          hasVideo: true,
+          hasAudio: dailyEvent.track.kind === "audio",
+          hasVideo: dailyEvent.track.kind === "video",
           name: "name",
           videoDimensions: {
             height: 720,
