@@ -11,7 +11,7 @@ import "./example.css";
 //   VITE_TOKBOX_TOKEN: token = "",
 // } = import.meta.env;
 
-import * as OT from "./shim";
+import * as OT from "./";
 
 const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
 const sessionId = "https://hush.daily.co/demo/";

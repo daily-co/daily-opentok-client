@@ -10,8 +10,8 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
   console.log("isBuild", isBuild);
 
   const entry = isBuild
-    ? dirname(fileURLToPath(import.meta.url)) + "/src/shim.ts"
-    : dirname(fileURLToPath(import.meta.url)) + "/src/index.ts";
+    ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"
+    : dirname(fileURLToPath(import.meta.url)) + "/src/example.ts";
 
   const fileName = isBuild ? "daily-tokbox" : "index";
 
