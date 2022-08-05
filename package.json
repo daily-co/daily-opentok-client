@@ -1,7 +1,19 @@
 {
-  "name": "glitch-hello-react",
+  "name": "daily-tokbox",
   "version": "0.0.5",
-  "description": "A simple React single page app, built with Vite and React.",
+  "description": "",
+  "type": "module",
+  "files": [
+    "build"
+  ],
+  "main": "./dist/daily-tokbox.umd.js",
+  "module": "./dist/daily-tokbox.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/daily-tokbox.es.js",
+      "require": "./dist/daily-tokbox.umd.js"
+    }
+  },
   "scripts": {
     "start": "vite",
     "build": "vite build",
