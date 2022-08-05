@@ -104,8 +104,12 @@ class Session {
           document.body.appendChild(t);
         }
 
-        const videoEl =
-          t.getElementsByTagName("video")[0] ?? document.createElement("video");
+        let videoEl = t.getElementsByTagName("video")[0];
+
+        if (!t.getElementsByTagName("video")[0]) {
+          videoEl = document.createElement("video");
+          t.appendChild(videoEl);
+        }
 
         // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
         if (publisher.insertMode === "append") {
