@@ -1,8 +1,9 @@
 // @ts-nocheck
+import "./example.css";
+
 // import { Event as OTEvent, Session } from "@opentok/client";
 // type StreamCreatedEvent = OTEvent<"streamCreated", Session>;
 
-import "./App.css";
 // import * as OT from "@opentok/client";
 // const {
 //   VITE_TOKBOX_API_KEY: apiKey = "",
