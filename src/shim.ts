@@ -19,7 +19,7 @@ export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
 };
 
-type PublisherProps = OT.PublisherProperties & { dailyElementId: string };
+type PublisherProps = OT.PublisherProperties & { dailyElementId?: string };
 
 class Publisher {
   dailyElementId?: string;
@@ -360,5 +360,6 @@ export function initPublisher(
   return publisher;
 }
 
+window.OT = {};
 window.OT.initSession = initSession;
 window.OT.initPublisher = initPublisher;

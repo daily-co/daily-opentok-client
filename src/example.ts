@@ -3,18 +3,18 @@
 // type StreamCreatedEvent = OTEvent<"streamCreated", Session>;
 
 import "./App.css";
-import * as OT from "@opentok/client";
-const {
-  VITE_TOKBOX_API_KEY: apiKey = "",
-  VITE_TOKBOX_SESSION_ID: sessionId = "",
-  VITE_TOKBOX_TOKEN: token = "",
-} = import.meta.env;
+// import * as OT from "@opentok/client";
+// const {
+//   VITE_TOKBOX_API_KEY: apiKey = "",
+//   VITE_TOKBOX_SESSION_ID: sessionId = "",
+//   VITE_TOKBOX_TOKEN: token = "",
+// } = import.meta.env;
 
-// import * as OT from "./shim";
+import * as OT from "./shim";
 
-// const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
-// const sessionId = "https://hush.daily.co/demo/";
-// const token = "";
+const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
+const sessionId = "https://hush.daily.co/demo/";
+const token = "";
 
 function handleError(error: any) {
   if (error) {

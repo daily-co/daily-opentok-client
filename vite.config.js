@@ -23,11 +23,11 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
     fileName,
   };
 
-  console.log(lib);
-
   return {
     plugins: [react(), mkcert()],
-
+    build: {
+      lib,
+    },
     server: { https: true },
   };
 });
