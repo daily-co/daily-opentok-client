@@ -363,7 +363,3 @@ export function initPublisher(
 
   return publisher;
 }
-
-window.OT = {};
-window.OT.initSession = initSession;
-window.OT.initPublisher = initPublisher;
