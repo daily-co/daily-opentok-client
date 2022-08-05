@@ -21,7 +21,7 @@ export type StreamCreatedEvent = Event<"streamCreated", Session> & {
 type PublisherProps = OT.PublisherProperties & { dailyElementId: string };
 
 class Publisher {
-  dailyElementId: string;
+  dailyElementId?: string;
   accessAllowed: boolean;
   width?: string;
   height?: string;
@@ -92,9 +92,16 @@ class Session {
           return publisher;
         }
 
-        const t = document.getElementById(
-          publisher.dailyElementId
-        ) as HTMLElement;
+        let t =
+          publisher.dailyElementId !== undefined
+            ? document.getElementById(publisher.dailyElementId)
+            : null;
+
+        if (t === null) {
+          console.log(t);
+          t = document.createElement<"div">("div");
+          document.body.appendChild(t);
+        }
 
         const videoEl =
           (t.children[0] as HTMLVideoElement) ??
@@ -333,23 +340,16 @@ export function initSession(
 }
 
 export function initPublisher(
-  targetElement?: string, // | HTMLElement | undefined,
+  targetElement?: string | undefined, // | HTMLElement,
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OT.OTError | undefined) => void) | undefined
 ): Publisher {
   // TODO(jamsea): Need checking to make sure that the target element is a valid element.
 
-  if (!callback || !targetElement) {
-    console.error("No target element or callback");
-    return {} as Publisher;
-  }
-
-  const publisher = properties
-    ? new Publisher({
-        ...properties,
-        dailyElementId: targetElement,
-      })
-    : new Publisher();
+  const publisher = new Publisher({
+    ...properties,
+    dailyElementId: targetElement,
+  });
 
   const err = null;
 
@@ -357,15 +357,8 @@ export function initPublisher(
     callback(err);
   }
 
-  const elm = document.getElementById(targetElement);
-  if (!elm) {
-    console.error("No element found for targetElement");
-    callback({ name: "error", message: "No element found for targetElement" });
-    return publisher;
-  }
-
   return publisher;
 }
 
-// window.OT.initSession = initSession;
-// window.OT.initPublisher = initPublisher;
+window.OT.initSession = initSession;
+window.OT.initPublisher = initPublisher;

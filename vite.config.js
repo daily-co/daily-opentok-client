@@ -2,10 +2,11 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), mkcert()],
   build: {
     lib: {
       entry: dirname(fileURLToPath(import.meta.url)) + "/src/shim.ts",
@@ -26,10 +27,5 @@ export default defineConfig({
     //   },
     // },
   },
-  server: {
-    strictPort: true,
-    hmr: {
-      port: 443, // Run the websocket server on the SSL port
-    },
-  },
+  server: { https: true },
 });
