@@ -1,4 +1,5 @@
 // import * as OT from "@opentok/client";
+// https://codepen.io/samuveljohns/pen/jOOoZvy
 import {
   OTError,
   Event,
@@ -104,8 +105,7 @@ class Session {
         }
 
         const videoEl =
-          (t.children[0] as HTMLVideoElement) ??
-          document.createElement("video");
+          t.getElementsByTagName("video")[0] ?? document.createElement("video");
 
         // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
         if (publisher.insertMode === "append") {
