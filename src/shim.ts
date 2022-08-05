@@ -1,5 +1,3 @@
-// import * as OT from "@opentok/client";
-// https://codepen.io/samuveljohns/pen/jOOoZvy
 import {
   OTError,
   Event,
@@ -7,7 +5,7 @@ import {
   Stream,
   SubscriberProperties,
 } from "@opentok/client";
-import Daily, { DailyCall, DailyEventObjectTrack } from "@daily-co/daily-js";
+import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { EventEmitter } from "events";
 
 const ee = new EventEmitter();
@@ -147,10 +145,6 @@ class Session {
     console.log("subscribe.dailyEvent", stream.dailyEvent);
     if (!window.call) {
       console.error("No daily call object");
-      return {} as Subscriber;
-    }
-    if (!targetElement) {
-      console.error("No target element");
       return {} as Subscriber;
     }
 
@@ -332,8 +326,6 @@ export function initSession(
       const v = document.getElementById(
         `video-${dailyEvent.participant.user_id}`
       );
-
-      console.debug("participant-left v", v);
       if (v) {
         v.remove();
       }
@@ -348,10 +340,12 @@ export function initPublisher(
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OT.OTError | undefined) => void) | undefined
 ): Publisher {
-  // TODO(jamsea): Need checking to make sure that the target element is a valid element.
-
+  // TODO(jamsea): initPublisher function signature needs
+  // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
   const publisher = new Publisher({
-    ...properties,
+    width: properties?.width || "100%",
+    height: properties?.height || "100%",
+    insertMode: properties?.insertMode,
     dailyElementId: targetElement,
   });
 
