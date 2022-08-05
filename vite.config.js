@@ -1,24 +1,35 @@
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
-
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { defineConfig } from "vite";
+import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
-export default ({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+export default defineConfig(({ command, mode, ssrBuild }) => {
+  const isBuild = command === "build";
 
+  console.log("isBuild", isBuild);
 
-  console.log("env: ", env.VITE_TOKBOX_TOKEN);  
+  const entry = isBuild
+    ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"
+    : dirname(fileURLToPath(import.meta.url)) + "/src/example.ts";
 
-  return defineConfig({
-    plugins: [react()],
+  const fileName = isBuild ? "daily-tokbox" : "index";
+
+  const lib = {
+    entry,
+    name: "OT",
+    // the proper extensions will be added
+    fileName,
+  };
+
+  return {
+    plugins: [mkcert()],
     build: {
-      outDir: "build",
-    },
-    server: {
-      strictPort: true,
-      hmr: {
-        port: 443, // Run the websocket server on the SSL port
+      lib,
+      rollupOptions: {
+        output: { format: "iife", name: "OT" },
       },
     },
-  });
-};
+    server: { https: true },
+  };
+});
