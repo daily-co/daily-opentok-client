@@ -5,18 +5,29 @@ import react from "@vitejs/plugin-react";
 import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react(), mkcert()],
-  build: {
-    lib: {
-      entry: dirname(fileURLToPath(import.meta.url)) + "/src/shim.ts",
-      name: "OT",
-      // the proper extensions will be added
-      fileName: "daily-tokbox",
-    },
-    rollupOptions: {
-      external: ["react"],
-    },
-  },
-  server: { https: true },
+export default defineConfig(({ command, mode, ssrBuild }) => {
+  const isBuild = command === "build";
+
+  console.log("isBuild", isBuild);
+
+  const entry = isBuild
+    ? dirname(fileURLToPath(import.meta.url)) + "/src/shim.ts"
+    : dirname(fileURLToPath(import.meta.url)) + "/src/index.ts";
+
+  const fileName = isBuild ? "daily-tokbox" : "index";
+
+  const lib = {
+    entry,
+    name: "OT",
+    // the proper extensions will be added
+    fileName,
+  };
+
+  console.log(lib);
+
+  return {
+    plugins: [react(), mkcert()],
+
+    server: { https: true },
+  };
 });
