@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Event } from "@opentok/client";
 import { EventEmitter } from "events";
 
@@ -27,8 +29,12 @@ export class OTEventEmitter<EventMap> {
 
   on(eventMap: object, context?: object): void;
 
-  on(eventName: string | object, callback: any, context?: object): void {
-    if (typeof eventName === "string" && typeof callback === "function") {
+  on(
+    eventName: string | object,
+    callback: object | ((event: Event<string, any>) => void),
+    context?: object
+  ): void {
+    if (typeof eventName === "string" && typeof callback !== "object") {
       this.ee.on(eventName, callback);
     }
   }
@@ -47,14 +53,14 @@ export class OTEventEmitter<EventMap> {
 
   once(eventMap: object, context?: object): void;
 
-  once(eventName: any, callback: any, context?: any): void {
-    if (typeof eventName !== "string") {
-      throw new Error("eventName must be a string");
+  once(
+    eventName: any,
+    callback: object | ((event: Event<string, any>) => void),
+    context?: any
+  ): void {
+    if (typeof eventName === "string" && typeof callback !== "object") {
+      this.ee.once(eventName, callback);
     }
-    if (typeof callback !== "function") {
-      throw new Error("callback must be a function");
-    }
-    this.ee.once(eventName, callback);
   }
 
   off<EventName extends keyof EventMap>(
