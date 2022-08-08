@@ -14,7 +14,7 @@ import "./example.css";
 import * as OT from "./";
 
 const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
-const sessionId = "https://hush.daily.co/demo/";
+const sessionId = "https://hush.daily.co/meet";
 const token = "";
 
 function handleError(error: any) {

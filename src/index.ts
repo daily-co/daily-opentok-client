@@ -1,4 +1,5 @@
 import {
+  Connection,
   OTError,
   Event,
   Stream,
@@ -8,9 +9,10 @@ import {
   PublisherRtcStatsReportArr,
 } from "@opentok/client";
 import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
-import { EventEmitter } from "events";
+import { OTEventEmitter } from "./OTEventEmitter";
+import { Subscriber } from "./Subscriber";
 
-const ee = new EventEmitter();
+const ee = new OTEventEmitter();
 
 type DailyStream = Stream & {
   dailyEvent: DailyEventObjectTrack;
@@ -18,183 +20,6 @@ type DailyStream = Stream & {
 export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
 };
-
-class OTEventEmitter<EventMap> {
-  on<EventName extends keyof EventMap>(
-    eventName: EventName,
-    callback: (event: EventMap[EventName]) => void,
-    context?: object
-  ): void;
-
-  on(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void;
-
-  on(eventName: string | object, callback: any, context?: object): void {
-    if (typeof eventName === "string") {
-      ee.on(eventName, callback);
-    }
-  }
-
-  once<EventName extends keyof EventMap>(
-    eventName: EventName,
-    callback: (event: EventMap[EventName]) => void,
-    context?: object
-  ): void;
-
-  once(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void;
-
-  once(eventMap: object, context?: object): void;
-
-  once(eventName: any, callback: any, context?: any): void {
-    if (typeof eventName !== "string") {
-      throw new Error("eventName must be a string");
-    }
-    if (typeof callback !== "function") {
-      throw new Error("callback must be a function");
-    }
-    ee.once(eventName, callback);
-  }
-
-  off<EventName extends keyof EventMap>(
-    eventName?: EventName,
-    callback?: (event: EventMap[EventName]) => void,
-    context?: object
-  ): void;
-
-  off(
-    eventName?: string,
-    callback?: (event: Event<string, any>) => void,
-    context?: object
-  ): void;
-
-  off(eventMap: object, context?: object): void;
-
-  off(eventName: any, callback: any, context?: any): void {
-    if (typeof eventName !== "string") {
-      throw new Error("eventName must be a string");
-    }
-    if (typeof callback !== "function") {
-      throw new Error("callback must be a function");
-    }
-    ee.off(eventName, callback);
-  }
-}
-
-class Subscriber extends OTEventEmitter<{
-  audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
-    audioLevel: number;
-  };
-
-  connected: Event<"connected", Subscriber>;
-
-  captionReceived: Event<"captionReceived", Subscriber> & {
-    streamId: string;
-    caption: string;
-  };
-
-  destroyed: Event<"destroyed", Subscriber> & {
-    reason: string;
-  };
-
-  encryptionSecretMismatch: Event<"encryptionSecretMismatch", Subscriber>;
-
-  encryptionSecretMatch: Event<"encryptionSecretMatch", Subscriber>;
-
-  videoDimensionsChanged: OT.VideoDimensionsChangedEvent<Subscriber>;
-
-  videoDisabled: Event<"videoDisabled", Subscriber> & {
-    reason: string;
-  };
-
-  videoDisableWarning: Event<"videoDisableWarning", Subscriber>;
-  videoDisableWarningLifted: Event<"videoDisableWarningLifted", Subscriber>;
-
-  videoElementCreated: Event<"videoElementCreated", Subscriber> & {
-    element: HTMLVideoElement | HTMLObjectElement;
-  };
-
-  videoEnabled: Event<"videoEnabled", Subscriber> & {
-    reason: string;
-  };
-}> {
-  element?: HTMLElement;
-  id?: string;
-  stream?: Stream;
-
-  constructor(
-    targetElement: HTMLElement,
-    options: any = {},
-    completionHandler: any = () => {}
-  ) {
-    super();
-    this.element = targetElement;
-    this.id = options?.id;
-    this.stream = options?.stream;
-  }
-
-  getAudioVolume(): number {
-    throw new Error("Method not implemented.");
-  }
-  getImgData(): string | null {
-    throw new Error("Method not implemented.");
-  }
-  getStats(
-    callback: (error?: OTError, stats?: OT.SubscriberStats) => void
-  ): void {
-    throw new Error("Method not implemented.");
-  }
-  getRtcStatsReport(): Promise<RTCStatsReport> {
-    throw new Error("Method not implemented.");
-  }
-  subscribeToCaptions(value: boolean): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  isSubscribedToCaptions(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  isAudioBlocked(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  restrictFrameRate(value: boolean): void {
-    throw new Error("Method not implemented.");
-  }
-  setAudioVolume(volume: number): void {
-    throw new Error("Method not implemented.");
-  }
-  setPreferredFrameRate(frameRate: number): void {
-    throw new Error("Method not implemented.");
-  }
-  setPreferredResolution(resolution: OT.Dimensions): void {
-    throw new Error("Method not implemented.");
-  }
-  subscribeToAudio(value: boolean): void {
-    throw new Error("Method not implemented.");
-  }
-  subscribeToVideo(value: boolean): void {
-    throw new Error("Method not implemented.");
-  }
-
-  setStyle<Style extends keyof OT.SubscriberStyle>(
-    style: Style,
-    value: OT.SubscriberStyle[Style]
-  ): void {
-    throw new Error("Method not implemented.");
-  }
-
-  videoHeight(): number | undefined {
-    throw new Error("Method not implemented.");
-  }
-  videoWidth(): number | undefined {
-    throw new Error("Method not implemented.");
-  }
-}
 
 type PublisherProperties = OT.PublisherProperties & { dailyElementId?: string };
 
@@ -309,7 +134,64 @@ class Publisher {
   }
 }
 
-class Session {
+class Session extends OTEventEmitter<{
+  archiveStarted: Event<"archiveStarted", Session> & {
+    id: string;
+    name: string;
+  };
+
+  archiveStopped: Event<"archiveStopped", Session> & {
+    id: string;
+    name: string;
+  };
+
+  connectionCreated: Event<"connectionCreated", Session> & {
+    connection: Connection;
+  };
+
+  connectionDestroyed: Event<"connectionDestroyed", Session> & {
+    connection: Connection;
+    reason: string;
+  };
+
+  sessionConnected: Event<"sessionConnected", Session>;
+
+  sessionDisconnected: Event<"sessionDisconnected", Session> & {
+    reason: string;
+  };
+
+  sessionReconnected: Event<"sessionReconnected", Session>;
+  sessionReconnecting: Event<"sessionReconnecting", Session>;
+
+  signal: Event<"signal", Session> & {
+    type?: string;
+    data?: string;
+    from: OT.Connection | null;
+  };
+
+  streamCreated: Event<"streamCreated", Session> & {
+    stream: Stream;
+  };
+
+  streamDestroyed: Event<"streamDestroyed", Session> & {
+    stream: Stream;
+    reason: string;
+  };
+
+  streamPropertyChanged: Event<"streamPropertyChanged", Session> & {
+    stream: Stream;
+  } & (
+      | { changedProperty: "hasAudio"; oldValue: boolean; newValue: boolean }
+      | { changedProperty: "hasVideo"; oldValue: boolean; newValue: boolean }
+      | {
+          changedProperty: "videoDimensions";
+          oldValue: OT.Dimensions;
+          newValue: OT.Dimensions;
+        }
+    );
+
+  muteForced: Event<"muteForced", Session>;
+}> {
   capabilities: {
     forceDisconnect: number;
     forceUnpublish: number;
@@ -321,6 +203,7 @@ class Session {
   connection?: OT.Connection;
 
   constructor(apiKey: string, sessionId: string, opt: any) {
+    super();
     this.sessionId = sessionId;
 
     // TODO(jamsea): Figure out how to connect this to the daily call object
@@ -640,7 +523,7 @@ export function initSession(
         },
       };
 
-      ee.emit("streamCreated", streamEvent);
+      session.ee.emit("streamCreated", streamEvent);
     })
     .on("track-stopped", (dailyEvent) => {})
     .on("error", (error) => {})
@@ -675,7 +558,7 @@ export function initSession(
             target: session,
             reason: "networkDisconnected",
           };
-          ee.emit("sessionDisconnected", tokboxEvent);
+          session.ee.emit("sessionDisconnected", tokboxEvent);
           break;
         case "connected":
           console.debug("connected");
@@ -714,7 +597,7 @@ export function initSession(
         reason: "clientDisconnected",
       };
 
-      ee.emit("sessionDisconnected", tokboxEvent);
+      session.ee.emit("sessionDisconnected", tokboxEvent);
     })
     .on("participant-left", (dailyEvent) => {
       if (!dailyEvent) return;
