@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import {
   Connection,
   OTError,
@@ -119,7 +121,7 @@ export class Session extends OTEventEmitter<{
 
     if (!window.call) {
       console.error("No daily call object");
-      return publisher as Publisher;
+      return publisher;
     }
 
     window.call
@@ -161,7 +163,9 @@ export class Session extends OTEventEmitter<{
         videoEl.style.width = publisher.width ?? "";
         videoEl.style.height = publisher.height ?? "";
         videoEl.srcObject = new MediaStream([videoTrack]);
-        videoEl.play();
+        videoEl.play().catch((e) => {
+          console.error(e);
+        });
       })
       .catch((err) => {
         console.error(err);
@@ -224,9 +228,11 @@ export class Session extends OTEventEmitter<{
     }
 
     if (stream.hasVideo) {
+      const elm = document.getElementById(`video-${user_id}`);
+
       const videoEl =
-        (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
-        document.createElement("video");
+        elm instanceof HTMLVideoElement ? elm : document.createElement("video");
+
       videoEl.id = `video-${user_id}`;
       t.appendChild(videoEl);
       if (properties) {
@@ -234,17 +240,23 @@ export class Session extends OTEventEmitter<{
         videoEl.style.height = properties.height?.toString() || "";
       }
       videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      videoEl.play();
+      videoEl.play().catch((e) => {
+        console.error(e);
+      });
     }
 
     if (stream.hasAudio) {
+      const elm = document.getElementById(`video-${user_id}`);
+
       const audioEl =
-        (document.getElementById(`audio-${user_id}`) as HTMLAudioElement) ??
-        document.createElement("audio");
+        elm instanceof HTMLAudioElement ? elm : document.createElement("audio");
+
       audioEl.id = `audio-${user_id}`;
       t.appendChild(audioEl);
       audioEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      audioEl.play();
+      audioEl.play().catch((e) => {
+        console.error(e);
+      });
     }
 
     return subscriber;
@@ -277,7 +289,6 @@ export class Session extends OTEventEmitter<{
   getSubscribersForStream(stream: Stream): [Subscriber] {
     throw new Error("Method not implemented.");
   }
-  off() {}
   setEncryptionSecret(secret: string): Promise<void> {
     return new Promise((resolve, reject) => {
       reject(new Error("Method not implemented."));

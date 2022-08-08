@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Dimensions,
   Event,
@@ -52,13 +53,17 @@ export class Subscriber extends OTEventEmitter<{
 
   constructor(
     targetElement: HTMLElement,
-    options: any = {},
-    completionHandler: any = () => {}
+    options: { stream?: Stream; id?: string } = {},
+    completionHandler: () => void = () => {
+      return void 0;
+    }
   ) {
     super();
+
     this.element = targetElement;
-    this.id = options?.id;
-    this.stream = options?.stream;
+    this.id = options.id;
+    this.stream = options.stream;
+    completionHandler();
   }
 
   getAudioVolume(): number {
