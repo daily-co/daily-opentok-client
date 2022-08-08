@@ -1,4 +1,3 @@
-// @ts-nocheck
 import "./example.css";
 
 // import { Event as OTEvent, Session } from "@opentok/client";
@@ -24,10 +23,10 @@ function handleError(error: any) {
 }
 
 // sessionId becomes daily's room url
-var session = OT.initSession(apiKey, sessionId);
+const session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream
-session.on("streamCreated", function streamCreated(event: any) {
+session.on("streamCreated", function streamCreated(event) {
   console.debug("[streamCreated] index.ts: ", event);
   // This is daily remote user stuff
   session.subscribe(

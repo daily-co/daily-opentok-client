@@ -4,10 +4,8 @@ import { defineConfig } from "vite";
 import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode, ssrBuild }) => {
+export default defineConfig(({ command }) => {
   const isBuild = command === "build";
-
-  console.log("isBuild", isBuild);
 
   const entry = isBuild
     ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"

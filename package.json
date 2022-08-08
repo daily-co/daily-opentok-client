@@ -18,7 +18,8 @@
     "start": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "lint": "eslint . --cache --cache-location node_modules/.eslintcache"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.29.0",
@@ -26,9 +27,13 @@
     "events": "^3.3.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^1.3.2",
     "@types/events": "^3.0.0",
     "@types/node": "^18.6.4",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
+    "@typescript-eslint/parser": "^5.32.0",
+    "@vitejs/plugin-react": "^1.3.2",
+    "eslint": "^8.21.0",
+    "eslint-config-prettier": "^8.5.0",
     "prettier": "2.7.1",
     "typescript": "^4.7.4",
     "vite": "^2.4.4",

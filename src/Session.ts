@@ -182,14 +182,17 @@ export class Session extends OTEventEmitter<{
     callback();
   }
   subscribe(
-    stream: DailyStream,
+    stream: DailyStream | Stream,
     targetElement?: string | HTMLElement,
     properties?: SubscriberProperties,
     callback?: (error?: OTError) => void
   ): Subscriber {
-    console.log("subscribe.dailyEvent", stream.dailyEvent);
     if (!window.call) {
       throw new Error("No daily call object");
+    }
+
+    if (!("dailyEvent" in stream)) {
+      throw new Error("Wrong type of stream.");
     }
 
     if (!stream.dailyEvent.participant) {

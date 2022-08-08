@@ -63,27 +63,19 @@ export function initSession(
         : new Date().getTime();
 
       let defaultPrevented = false;
-      const cancelable = true;
 
       // Format as opentok event
       const streamEvent: StreamCreatedEvent = {
         type: "streamCreated",
         isDefaultPrevented: () => defaultPrevented,
         preventDefault: () => {
-          if (cancelable) {
-            defaultPrevented = true;
-          } else {
-            console.warn(
-              "Event.preventDefault :: Trying to preventDefault on an " +
-                "event that isn't cancelable"
-            );
-          }
+          defaultPrevented = true;
         },
         target: session,
-        cancelable,
+        cancelable: true,
         stream: {
           // Maybe this is like user_id in daily?
-          streamId: dailyEvent.participant?.user_id || "",
+          streamId: dailyEvent.participant?.user_id ?? "",
           frameRate,
           hasAudio: dailyEvent.track.kind === "audio",
           hasVideo: dailyEvent.track.kind === "video",
@@ -110,9 +102,15 @@ export function initSession(
 
       session.ee.emit("streamCreated", streamEvent);
     })
-    .on("track-stopped", (dailyEvent) => {})
-    .on("error", (error) => {})
-    .on("nonfatal-error", (error) => {})
+    .on("track-stopped", () => {
+      // TODO(jamsea): emit streamDestroyed event
+    })
+    .on("error", () => {
+      // TODO(jamsea): emit error event
+    })
+    .on("nonfatal-error", () => {
+      // TODO(jamsea): emit error event
+    })
     .on("network-connection", (dailyEvent) => {
       console.debug("network-connection", dailyEvent);
       if (!dailyEvent) {
@@ -120,29 +118,21 @@ export function initSession(
       }
 
       let defaultPrevented = false;
-      const cancelable = true;
+      const tokboxEvent: Event<"sessionDisconnected", Session> & {
+        reason: string;
+      } = {
+        type: "sessionDisconnected",
+        isDefaultPrevented: () => defaultPrevented,
+        preventDefault: () => {
+          defaultPrevented = true;
+        },
+        cancelable: true,
+        target: session,
+        reason: "networkDisconnected",
+      };
 
       switch (dailyEvent.event) {
         case "interrupted":
-          const tokboxEvent: Event<"sessionDisconnected", Session> & {
-            reason: string;
-          } = {
-            type: "sessionDisconnected",
-            isDefaultPrevented: () => defaultPrevented,
-            preventDefault: () => {
-              if (cancelable) {
-                defaultPrevented = true;
-              } else {
-                console.warn(
-                  "Event.preventDefault :: Trying to preventDefault on an " +
-                    "event that isn't cancelable"
-                );
-              }
-            },
-            cancelable,
-            target: session,
-            reason: "networkDisconnected",
-          };
           session.ee.emit("sessionDisconnected", tokboxEvent);
           break;
         case "connected":
@@ -152,7 +142,9 @@ export function initSession(
           break;
       }
     })
-    .on("network-quality-change", (dailyEvent) => {})
+    .on("network-quality-change", () => {
+      // TODO(jamsea): emit networkQualityChange event
+    })
     .on("left-meeting", (dailyEvent) => {
       console.debug("left-meeting", dailyEvent);
       if (!dailyEvent) {
@@ -160,7 +152,6 @@ export function initSession(
       }
 
       let defaultPrevented = false;
-      const cancelable = true;
 
       const tokboxEvent: Event<"sessionDisconnected", OT.Session> & {
         reason: string;
@@ -168,16 +159,9 @@ export function initSession(
         type: "sessionDisconnected",
         isDefaultPrevented: () => defaultPrevented,
         preventDefault: () => {
-          if (cancelable) {
-            defaultPrevented = true;
-          } else {
-            console.warn(
-              "Event.preventDefault :: Trying to preventDefault on an " +
-                "event that isn't cancelable"
-            );
-          }
+          defaultPrevented = true;
         },
-        cancelable: false,
+        cancelable: true,
         target: session,
         reason: "clientDisconnected",
       };
@@ -199,24 +183,30 @@ export function initSession(
 }
 
 export function initPublisher(
-  targetElement?: string | undefined, // | HTMLElement,
+  targetElement?: string | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
   // TODO(jamsea): initPublisher function signature needs
   // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
-  const publisher = new Publisher({
-    width: properties?.width || "100%",
-    height: properties?.height || "100%",
-    insertMode: properties?.insertMode,
-    dailyElementId: targetElement,
-  });
 
-  const err = null;
-
-  if (err && callback) {
-    callback(err);
+  if (!targetElement) {
+    callback?.({
+      message: "No target element provided",
+      name: "OTError",
+    });
+    throw new Error("No target element provided");
   }
+
+  const dailyElementId =
+    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
+
+  const publisher = new Publisher({
+    width: properties?.width ?? "100%",
+    height: properties?.height ?? "100%",
+    insertMode: properties?.insertMode,
+    dailyElementId,
+  });
 
   return publisher;
 }
