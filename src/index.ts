@@ -4,6 +4,10 @@ import {
   Subscriber,
   Stream,
   SubscriberProperties,
+  VideoFilter,
+  PublisherStatsArr,
+  PublisherRtcStatsReportArr,
+  PublisherProperties,
 } from "@opentok/client";
 import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { EventEmitter } from "events";
@@ -33,16 +37,95 @@ class Publisher {
     this.dailyElementId = dailyElementId;
     this.accessAllowed = true;
   }
-  publish(targetElement: HTMLElement): Publisher {
-    console.log("publisher.publish");
-    return {} as Publisher;
+
+  on(eventName: any, callback: any, context?: any): void {
+    throw new Error("Not implemented");
   }
-  once(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
+
+  off(eventName?: any, callback?: any, context?: any): void {
+    throw new Error("Not implemented");
+  }
+
+  once(eventName: any, callback: any, context?: any): void {
+    throw new Error("Not implemented");
+  }
+  destroy(): void {}
+  getImgData(): string | null {
+    return null;
+  }
+  getStats(
+    callback: (error?: OTError, stats?: PublisherStatsArr) => void
+  ): void {}
+  getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  getStyle(): PublisherProperties {
+    throw new Error("Not implemented");
+  }
+  applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  getVideoFilter(): VideoFilter | null {
+    return null;
+  }
+  clearVideoFilter(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  publishAudio(value: boolean): void {
+    throw new Error("Not implemented");
+  }
+  publishVideo(value: boolean): void {
+    throw new Error("Not implemented");
+  }
+  publishCaptions(value: boolean): void {
+    throw new Error("Not implemented");
+  }
+  cycleVideo(): Promise<{ deviceId: string }> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  getAudioSource(): MediaStreamTrack {
+    throw new Error("Not implemented");
+  }
+  setVideoSource(videoSourceId: string): Promise<undefined> {
+    return new Promise((resolve, reject) => {
+      reject(new Error("Not implemented"));
+    });
+  }
+  getVideoContentHint(): OT.VideoContentHint {
+    throw new Error("Not implemented");
+  }
+  setVideoContentHint(hint: OT.VideoContentHint): void {}
+  getVideoSource(): {
+    deviceId: string | null;
+    type: string | null;
+    track: MediaStreamTrack | null;
+  } {
+    throw new Error("Not implemented");
+  }
+  setStyle<Style extends keyof OT.PublisherStyle>(
+    style: Style,
+    value: OT.PublisherStyle[Style]
   ): void {
-    console.log("once");
+    throw new Error("Not implemented");
+  }
+  videoWidth(): number | undefined {
+    throw new Error("Not implemented");
+  }
+  videoHeight(): number | undefined {
+    throw new Error("Not implemented");
   }
 }
 
@@ -70,19 +153,28 @@ class Session {
       subscribe: 1,
     };
   }
+
   on(
     eventName: string,
     callback: (event: Event<string, any>) => void,
     context?: object
-  ): void {
-    ee.on(eventName, callback);
+  ): void;
+
+  on(eventMap: object, context?: object): void;
+
+  on(eventName: string | object, callback: any, context?: object): void {
+    if (typeof eventName === "string") {
+      ee.on(eventName, callback);
+    }
   }
 
-  once(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void {
+  once(eventName: any, callback: any, context?: any): void {
+    if (typeof eventName !== "string") {
+      throw new Error("eventName must be a string");
+    }
+    if (typeof callback !== "function") {
+      throw new Error("callback must be a function");
+    }
     ee.once(eventName, callback);
   }
 
