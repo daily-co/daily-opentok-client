@@ -382,7 +382,7 @@ export function initSession(
     encryptionSecret?: string;
   }
 ): Session {
-  const session: OT.Session = new Session(partnerId, roomUrl, options);
+  const session = new Session(partnerId, roomUrl, options);
 
   window.call = Daily.createCallObject({
     subscribeToTracksAutomatically: true,
