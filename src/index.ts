@@ -470,22 +470,30 @@ export function initSession(
         return;
       }
 
+      let defaultPrevented = false;
+      const cancelable = true;
+
       switch (dailyEvent.event) {
         case "interrupted":
           const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
             reason: string;
           } = {
             type: "sessionDisconnected",
-            isDefaultPrevented: () => true, //TODO
-            preventDefault: () => {},
-            cancelable: false,
+            isDefaultPrevented: () => defaultPrevented,
+            preventDefault: () => {
+              if (cancelable) {
+                defaultPrevented = true;
+              } else {
+                console.warn(
+                  "Event.preventDefault :: Trying to preventDefault on an " +
+                    "event that isn't cancelable"
+                );
+              }
+            },
+            cancelable,
             target: session,
             reason: "networkDisconnected",
           };
-          if (!tokboxEvent.isDefaultPrevented()) {
-            // By default Tokbox removes all subscriber elements from the DOM
-            // if the user calls `preventDefault` this behavior is prevented.
-          }
           ee.emit("sessionDisconnected", tokboxEvent);
           break;
         case "connected":
@@ -501,21 +509,29 @@ export function initSession(
       if (!dailyEvent) {
         return;
       }
+
+      let defaultPrevented = false;
+      const cancelable = true;
+
       const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
         reason: string;
       } = {
         type: "sessionDisconnected",
-        isDefaultPrevented: () => false,
-        preventDefault: () => {},
+        isDefaultPrevented: () => defaultPrevented,
+        preventDefault: () => {
+          if (cancelable) {
+            defaultPrevented = true;
+          } else {
+            console.warn(
+              "Event.preventDefault :: Trying to preventDefault on an " +
+                "event that isn't cancelable"
+            );
+          }
+        },
         cancelable: false,
         target: session,
         reason: "clientDisconnected",
       };
-
-      if (!tokboxEvent.isDefaultPrevented()) {
-        // By default Tokbox removes all subscriber elements from the DOM
-        // if the user calls `preventDefault` this behavior is prevented.
-      }
 
       ee.emit("sessionDisconnected", tokboxEvent);
     })
