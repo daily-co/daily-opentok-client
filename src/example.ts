@@ -16,13 +16,14 @@ const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
 const sessionId = "https://hush.daily.co/meet";
 const token = "";
 
-function handleError(error: any) {
+function handleError(error: unknown) {
   if (error) {
     console.error("handleError: ", error);
   }
 }
 
 // sessionId becomes daily's room url
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream

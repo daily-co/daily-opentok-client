@@ -23,7 +23,7 @@ export class OTEventEmitter<EventMap> {
 
   on(
     eventName: string,
-    callback: (event: Event<string, any>) => void,
+    callback: (event: Event<string, unknown>) => void,
     context?: object
   ): void;
 
@@ -31,7 +31,7 @@ export class OTEventEmitter<EventMap> {
 
   on(
     eventName: string | object,
-    callback: object | ((event: Event<string, any>) => void),
+    callback: object | ((event: Event<string, unknown>) => void),
     context?: object
   ): void {
     if (typeof eventName === "string" && typeof callback !== "object") {
@@ -47,16 +47,16 @@ export class OTEventEmitter<EventMap> {
 
   once(
     eventName: string,
-    callback: (event: Event<string, any>) => void,
+    callback: (event: Event<string, unknown>) => void,
     context?: object
   ): void;
 
   once(eventMap: object, context?: object): void;
 
   once(
-    eventName: any,
-    callback: object | ((event: Event<string, any>) => void),
-    context?: any
+    eventName: string | object,
+    callback: object | ((event: Event<string, unknown>) => void),
+    context?: object
   ): void {
     if (typeof eventName === "string" && typeof callback !== "object") {
       this.ee.once(eventName, callback);
@@ -71,19 +71,23 @@ export class OTEventEmitter<EventMap> {
 
   off(
     eventName?: string,
-    callback?: (event: Event<string, any>) => void,
+    callback?: (event: Event<string, unknown>) => void,
     context?: object
   ): void;
 
   off(eventMap: object, context?: object): void;
 
-  off(eventName: any, callback: any, context?: any): void {
-    if (typeof eventName !== "string") {
-      throw new Error("eventName must be a string");
+  off(
+    eventName: string | object | undefined,
+    callback?: object | ((event: Event<string, unknown>) => void),
+    context?: object
+  ): void {
+    if (
+      typeof eventName === "string" &&
+      callback &&
+      typeof callback !== "object"
+    ) {
+      this.ee.off(eventName, callback);
     }
-    if (typeof callback !== "function") {
-      throw new Error("callback must be a function");
-    }
-    this.ee.off(eventName, callback);
   }
 }

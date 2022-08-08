@@ -6,6 +6,7 @@ import {
   Event,
   Stream,
   SubscriberProperties,
+  PublisherProperties,
 } from "@opentok/client";
 import { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
@@ -84,7 +85,7 @@ export class Session extends OTEventEmitter<{
   sessionId: string;
   connection?: OT.Connection;
 
-  constructor(apiKey: string, sessionId: string, opt: any) {
+  constructor(apiKey: string, sessionId: string, opt: unknown) {
     super();
     this.sessionId = sessionId;
 
@@ -106,13 +107,13 @@ export class Session extends OTEventEmitter<{
 
   publish(
     targetElement: string | HTMLElement,
-    properties?: OT.PublisherProperties,
+    properties?: PublisherProperties,
     callback?: (error?: OTError) => void
   ): Publisher;
 
   publish(
     publisher: string | HTMLElement | Publisher,
-    properties?: any,
+    properties?: ((error?: OTError) => void) | PublisherProperties,
     callback?: (error?: OTError) => void
   ): Publisher {
     if (typeof publisher === "string" || publisher instanceof HTMLElement) {
@@ -121,6 +122,10 @@ export class Session extends OTEventEmitter<{
 
     if (!window.call) {
       console.error("No daily call object");
+      callback?.({
+        message: "No call",
+        name: "NoCall",
+      });
       return publisher;
     }
 
@@ -149,12 +154,7 @@ export class Session extends OTEventEmitter<{
           document.body.appendChild(t);
         }
 
-        let videoEl = t.getElementsByTagName("video")[0];
-
-        if (!t.getElementsByTagName("video")[0]) {
-          videoEl = document.createElement("video");
-          t.appendChild(videoEl);
-        }
+        const videoEl = t.getElementsByTagName("video")[0];
 
         // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
         if (publisher.insertMode === "append") {
@@ -236,8 +236,8 @@ export class Session extends OTEventEmitter<{
       videoEl.id = `video-${user_id}`;
       t.appendChild(videoEl);
       if (properties) {
-        videoEl.style.width = properties.width?.toString() || "";
-        videoEl.style.height = properties.height?.toString() || "";
+        videoEl.style.width = properties.width?.toString() ?? "";
+        videoEl.style.height = properties.height?.toString() ?? "";
       }
       videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
       videoEl.play().catch((e) => {
