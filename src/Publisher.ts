@@ -1,12 +1,13 @@
 import {
-  Connection,
-  OTError,
   Event,
-  Stream,
-  SubscriberProperties,
-  VideoFilter,
-  PublisherStatsArr,
+  OTError,
   PublisherRtcStatsReportArr,
+  PublisherStatsArr,
+  PublisherStyle,
+  Stream,
+  VideoContentHint,
+  VideoDimensionsChangedEvent,
+  VideoFilter,
 } from "@opentok/client";
 import { OTEventEmitter } from "./OTEventEmitter";
 
@@ -37,7 +38,7 @@ export class Publisher extends OTEventEmitter<{
     reason: string;
   };
 
-  videoDimensionsChanged: OT.VideoDimensionsChangedEvent<Publisher>;
+  videoDimensionsChanged: VideoDimensionsChangedEvent<Publisher>;
 
   videoElementCreated: Event<"videoElementCreated", Publisher> & {
     element: HTMLVideoElement | HTMLObjectElement;
@@ -65,13 +66,17 @@ export class Publisher extends OTEventEmitter<{
     this.accessAllowed = true;
   }
 
-  destroy(): void {}
+  destroy(): void {
+    throw new Error("Method not implemented.");
+  }
   getImgData(): string | null {
-    return null;
+    throw new Error("Method not implemented.");
   }
   getStats(
     callback: (error?: OTError, stats?: PublisherStatsArr) => void
-  ): void {}
+  ): void {
+    throw new Error("Method not implemented.");
+  }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
       reject(new Error("Not implemented"));
@@ -86,7 +91,7 @@ export class Publisher extends OTEventEmitter<{
     });
   }
   getVideoFilter(): VideoFilter | null {
-    return null;
+    throw new Error("Method not implemented.");
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -94,13 +99,13 @@ export class Publisher extends OTEventEmitter<{
     });
   }
   publishAudio(value: boolean): void {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   publishVideo(value: boolean): void {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   publishCaptions(value: boolean): void {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     return new Promise((resolve, reject) => {
@@ -109,38 +114,40 @@ export class Publisher extends OTEventEmitter<{
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      throw new Error("Method not implemented.");
     });
   }
   getAudioSource(): MediaStreamTrack {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   setVideoSource(videoSourceId: string): Promise<undefined> {
     return new Promise((resolve, reject) => {
       reject(new Error("Not implemented"));
     });
   }
-  getVideoContentHint(): OT.VideoContentHint {
-    throw new Error("Not implemented");
+  getVideoContentHint(): VideoContentHint {
+    throw new Error("Method not implemented.");
   }
-  setVideoContentHint(hint: OT.VideoContentHint): void {}
+  setVideoContentHint(hint: VideoContentHint): void {
+    throw new Error("Method not implemented.");
+  }
   getVideoSource(): {
     deviceId: string | null;
     type: string | null;
     track: MediaStreamTrack | null;
   } {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
-  setStyle<Style extends keyof OT.PublisherStyle>(
+  setStyle<Style extends keyof PublisherStyle>(
     style: Style,
-    value: OT.PublisherStyle[Style]
+    value: PublisherStyle[Style]
   ): void {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   videoWidth(): number | undefined {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   videoHeight(): number | undefined {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
 }

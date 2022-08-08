@@ -97,30 +97,6 @@ export class Session extends OTEventEmitter<{
     };
   }
 
-  on(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void;
-
-  on(eventMap: object, context?: object): void;
-
-  on(eventName: string | object, callback: any, context?: object): void {
-    if (typeof eventName === "string") {
-      this.ee.on(eventName, callback);
-    }
-  }
-
-  once(eventName: any, callback: any, context?: any): void {
-    if (typeof eventName !== "string") {
-      throw new Error("eventName must be a string");
-    }
-    if (typeof callback !== "function") {
-      throw new Error("callback must be a function");
-    }
-    this.ee.once(eventName, callback);
-  }
-
   publish(
     publisher: Publisher,
     callback?: (error?: OTError) => void
@@ -270,38 +246,50 @@ export class Session extends OTEventEmitter<{
 
     return subscriber;
   }
-  disconnect(): void {}
+  disconnect(): void {
+    throw new Error("Method not implemented.");
+  }
   forceDisconnect(
     connection: OT.Connection,
     callback: (error?: OTError) => void
-  ): void {}
-  forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {}
+  ): void {
+    throw new Error("Method not implemented.");
+  }
+  forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {
+    throw new Error("Method not implemented.");
+  }
   forceMuteStream(stream: Stream): Promise<void> {
     return new Promise((resolve, reject) => {
-      resolve();
+      reject(new Error("Method not implemented."));
     });
   }
   forceMuteAll(excludedStreams?: Stream[]): Promise<void> {
     return new Promise((resolve, reject) => {
-      resolve();
+      reject(new Error("Method not implemented."));
     });
   }
   getPublisherForStream(stream: Stream): Publisher | undefined {
-    return undefined;
+    throw new Error("Method not implemented.");
   }
   getSubscribersForStream(stream: Stream): [Subscriber] {
-    return [{}] as [Subscriber];
+    throw new Error("Method not implemented.");
   }
   off() {}
   setEncryptionSecret(secret: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      resolve();
+      reject(new Error("Method not implemented."));
     });
   }
   signal(
     signal: { type?: string; data?: string; to?: OT.Connection },
     callback: (error?: OTError) => void
-  ): void {}
-  unpublish(publisher: Publisher): void {}
-  unsubscribe(subscriber: Subscriber): void {}
+  ): void {
+    throw new Error("Method not implemented.");
+  }
+  unpublish(publisher: Publisher): void {
+    throw new Error("Method not implemented.");
+  }
+  unsubscribe(subscriber: Subscriber): void {
+    throw new Error("Method not implemented.");
+  }
 }

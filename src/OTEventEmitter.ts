@@ -25,8 +25,10 @@ export class OTEventEmitter<EventMap> {
     context?: object
   ): void;
 
+  on(eventMap: object, context?: object): void;
+
   on(eventName: string | object, callback: any, context?: object): void {
-    if (typeof eventName === "string") {
+    if (typeof eventName === "string" && typeof callback === "function") {
       this.ee.on(eventName, callback);
     }
   }

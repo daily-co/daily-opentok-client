@@ -1,4 +1,12 @@
-import { OTError, Event, Stream } from "@opentok/client";
+import {
+  Dimensions,
+  Event,
+  OTError,
+  Stream,
+  SubscriberStats,
+  SubscriberStyle,
+  VideoDimensionsChangedEvent,
+} from "@opentok/client";
 import { OTEventEmitter } from "./OTEventEmitter";
 
 export class Subscriber extends OTEventEmitter<{
@@ -21,7 +29,7 @@ export class Subscriber extends OTEventEmitter<{
 
   encryptionSecretMatch: Event<"encryptionSecretMatch", Subscriber>;
 
-  videoDimensionsChanged: OT.VideoDimensionsChangedEvent<Subscriber>;
+  videoDimensionsChanged: VideoDimensionsChangedEvent<Subscriber>;
 
   videoDisabled: Event<"videoDisabled", Subscriber> & {
     reason: string;
@@ -59,9 +67,7 @@ export class Subscriber extends OTEventEmitter<{
   getImgData(): string | null {
     throw new Error("Method not implemented.");
   }
-  getStats(
-    callback: (error?: OTError, stats?: OT.SubscriberStats) => void
-  ): void {
+  getStats(callback: (error?: OTError, stats?: SubscriberStats) => void): void {
     throw new Error("Method not implemented.");
   }
   getRtcStatsReport(): Promise<RTCStatsReport> {
@@ -85,7 +91,7 @@ export class Subscriber extends OTEventEmitter<{
   setPreferredFrameRate(frameRate: number): void {
     throw new Error("Method not implemented.");
   }
-  setPreferredResolution(resolution: OT.Dimensions): void {
+  setPreferredResolution(resolution: Dimensions): void {
     throw new Error("Method not implemented.");
   }
   subscribeToAudio(value: boolean): void {
@@ -95,9 +101,9 @@ export class Subscriber extends OTEventEmitter<{
     throw new Error("Method not implemented.");
   }
 
-  setStyle<Style extends keyof OT.SubscriberStyle>(
+  setStyle<Style extends keyof SubscriberStyle>(
     style: Style,
-    value: OT.SubscriberStyle[Style]
+    value: SubscriberStyle[Style]
   ): void {
     throw new Error("Method not implemented.");
   }
