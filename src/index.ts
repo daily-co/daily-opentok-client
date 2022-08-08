@@ -47,10 +47,28 @@ class Publisher {
 }
 
 class Session {
+  capabilities: {
+    forceDisconnect: number;
+    forceUnpublish: number;
+    forceMute: number;
+    publish: number;
+    subscribe: number;
+  };
   sessionId: string;
+  connection?: OT.Connection;
+
   constructor(apiKey: string, sessionId: string, opt: any) {
-    console.log("session constructor", apiKey, sessionId, opt);
     this.sessionId = sessionId;
+
+    // TODO(jamsea): Figure out how to connect this to the daily call object
+    // seems related to room tokens https://tokbox.com/developer/sdks/js/reference/Capabilities.html
+    this.capabilities = {
+      forceDisconnect: 1,
+      forceUnpublish: 1,
+      forceMute: 1,
+      publish: 1,
+      subscribe: 1,
+    };
   }
   on(
     eventName: string,
@@ -67,14 +85,30 @@ class Session {
   ): void {
     ee.once(eventName, callback);
   }
+
   publish(
     publisher: Publisher,
     callback?: (error?: OTError) => void
+  ): Publisher;
+
+  publish(
+    targetElement: string | HTMLElement,
+    properties?: OT.PublisherProperties,
+    callback?: (error?: OTError) => void
+  ): Publisher;
+
+  publish(
+    publisher: string | HTMLElement | Publisher,
+    properties?: any,
+    callback?: (error?: OTError) => void
   ): Publisher {
-    console.log("publish");
+    if (typeof publisher === "string" || publisher instanceof HTMLElement) {
+      throw new Error("Not yet implemented");
+    }
+
     if (!window.call) {
       console.error("No daily call object");
-      return publisher;
+      return publisher as Publisher;
     }
 
     window.call
@@ -138,23 +172,25 @@ class Session {
   }
   subscribe(
     stream: DailyStream,
-    targetElement?: string, // | HTMLElement,
+    targetElement?: string | HTMLElement,
     properties?: SubscriberProperties,
     callback?: (error?: OTError) => void
   ): Subscriber {
     console.log("subscribe.dailyEvent", stream.dailyEvent);
     if (!window.call) {
-      console.error("No daily call object");
-      return {} as Subscriber;
+      throw new Error("No daily call object");
     }
 
     if (!stream.dailyEvent.participant) {
-      console.error("No participant");
-      return {} as Subscriber;
+      throw new Error("No daily participant object");
     }
 
     if (stream.dailyEvent.participant.local) {
       return {} as Subscriber;
+    }
+
+    if (!targetElement) {
+      throw new Error("No target element");
     }
 
     const {
@@ -163,7 +199,15 @@ class Session {
       },
     } = stream;
 
-    const t = document.getElementById(targetElement) as HTMLElement;
+    const t =
+      targetElement instanceof HTMLElement
+        ? targetElement
+        : document.getElementById(targetElement);
+
+    if (!t) {
+      throw new Error("No target element");
+    }
+
     if (stream.hasVideo) {
       const videoEl =
         (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
@@ -190,11 +234,47 @@ class Session {
 
     return {} as Subscriber;
   }
+  disconnect(): void {}
+  forceDisconnect(
+    connection: OT.Connection,
+    callback: (error?: OTError) => void
+  ): void {}
+  forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {}
+  forceMuteStream(stream: Stream): Promise<void> {
+    return new Promise((resolve, reject) => {
+      resolve();
+    });
+  }
+  forceMuteAll(excludedStreams?: Stream[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      resolve();
+    });
+  }
+  getPublisherForStream(stream: Stream): OT.Publisher | undefined {
+    return undefined;
+  }
+  getSubscribersForStream(stream: Stream): [Subscriber] {
+    return [{}] as [Subscriber];
+  }
+  off() {}
+  setEncryptionSecret(secret: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      resolve();
+    });
+  }
+  signal(
+    signal: { type?: string; data?: string; to?: OT.Connection },
+    callback: (error?: OTError) => void
+  ): void {}
+  unpublish(publisher: Publisher): void {}
+  unsubscribe(subscriber: Subscriber): void {}
 }
 
 export function initSession(
-  partnerId: string, // probably don't need the daily server API key here
-  roomUrl: string, // originally sessionId
+  // Doesn't look like Daily needs this at all, but it's required by the opentok API
+  partnerId: string,
+  // sessionId in tokbox, renamed this to roomUrl to match the Daily API
+  roomUrl: string,
   options?: {
     connectionEventsSuppressed?: boolean;
     iceConfig?: {
@@ -210,6 +290,8 @@ export function initSession(
     encryptionSecret?: string;
   }
 ): Session {
+  const session: OT.Session = new Session(partnerId, roomUrl, options);
+
   window.call = Daily.createCallObject({
     subscribeToTracksAutomatically: true,
     dailyConfig: {
@@ -219,43 +301,68 @@ export function initSession(
 
   window.call
     .on("track-started", (dailyEvent) => {
-      // Maybe participant joined?
-      console.debug("window.call.on track-started", dailyEvent);
       if (!dailyEvent) {
         console.debug("No Daily event");
         return;
       }
 
       if (dailyEvent.participant?.local) {
-        console.debug("Local participant");
+        console.debug("Local participant, do not fire opentok event.");
         return;
       }
+
+      const {
+        frameRate = 0,
+        height = 0,
+        width = 0,
+      } = dailyEvent.track.getSettings();
+
+      const creationTime = dailyEvent.participant?.joined_at
+        ? dailyEvent.participant.joined_at.getTime()
+        : new Date().getTime();
+
+      let defaultPrevented = false;
+      const cancelable = true;
 
       // Format as opentok event
       const streamEvent: StreamCreatedEvent = {
         type: "streamCreated",
-        isDefaultPrevented: () => true,
-        preventDefault: () => {},
-        target: {} as Session, //TODO fix this
-        cancelable: false,
+        isDefaultPrevented: () => defaultPrevented,
+        preventDefault: () => {
+          if (cancelable) {
+            defaultPrevented = true;
+          } else {
+            console.warn(
+              "Event.preventDefault :: Trying to preventDefault on an " +
+                "event that isn't cancelable"
+            );
+          }
+        },
+        target: session,
+        cancelable,
         stream: {
-          // Maybe this is like participant id?
+          // Maybe this is like user_id in daily?
           streamId: dailyEvent.participant?.user_id || "",
-          frameRate: 30,
+          frameRate,
           hasAudio: dailyEvent.track.kind === "audio",
           hasVideo: dailyEvent.track.kind === "video",
-          name: "name",
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
           videoDimensions: {
-            height: 720,
-            width: 1280,
+            height,
+            width,
           },
-          videoType: "camera",
-          creationTime: new Date().getTime(),
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime,
           connection: {
-            connectionId: "connectionId",
-            creationTime: new Date().getTime(),
+            connectionId: "connectionId", // TODO
+            creationTime,
+            // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+            // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+            // we need to listen to participant-joined instead of track-started
             data: "",
           },
+          // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
           dailyEvent,
         },
       };
@@ -277,10 +384,10 @@ export function initSession(
             reason: string;
           } = {
             type: "sessionDisconnected",
-            isDefaultPrevented: () => true,
+            isDefaultPrevented: () => true, //TODO
             preventDefault: () => {},
             cancelable: false,
-            target: {} as OT.Session, //TODO fix this
+            target: session,
             reason: "networkDisconnected",
           };
           if (!tokboxEvent.isDefaultPrevented()) {
@@ -309,7 +416,7 @@ export function initSession(
         isDefaultPrevented: () => false,
         preventDefault: () => {},
         cancelable: false,
-        target: {} as OT.Session, //TODO fix this
+        target: session,
         reason: "clientDisconnected",
       };
 
@@ -331,7 +438,6 @@ export function initSession(
       }
     });
 
-  const session = new Session(partnerId, roomUrl, options);
   return session;
 }
 
