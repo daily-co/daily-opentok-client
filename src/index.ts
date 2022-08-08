@@ -1,13 +1,11 @@
 import {
   OTError,
   Event,
-  Subscriber,
   Stream,
   SubscriberProperties,
   VideoFilter,
   PublisherStatsArr,
   PublisherRtcStatsReportArr,
-  PublisherProperties,
 } from "@opentok/client";
 import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { EventEmitter } from "events";
@@ -21,7 +19,116 @@ export type StreamCreatedEvent = Event<"streamCreated", Session> & {
   stream: DailyStream;
 };
 
-type PublisherProps = OT.PublisherProperties & { dailyElementId?: string };
+type PublisherProperties = OT.PublisherProperties & { dailyElementId?: string };
+
+class Subscriber extends OT.OTEventEmitter<{
+  audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
+    audioLevel: number;
+  };
+
+  connected: Event<"connected", Subscriber>;
+
+  captionReceived: Event<"captionReceived", Subscriber> & {
+    streamId: string;
+    caption: string;
+  };
+
+  destroyed: Event<"destroyed", Subscriber> & {
+    reason: string;
+  };
+
+  encryptionSecretMismatch: Event<"encryptionSecretMismatch", Subscriber>;
+
+  encryptionSecretMatch: Event<"encryptionSecretMatch", Subscriber>;
+
+  videoDimensionsChanged: OT.VideoDimensionsChangedEvent<Subscriber>;
+
+  videoDisabled: Event<"videoDisabled", Subscriber> & {
+    reason: string;
+  };
+
+  videoDisableWarning: Event<"videoDisableWarning", Subscriber>;
+  videoDisableWarningLifted: Event<"videoDisableWarningLifted", Subscriber>;
+
+  videoElementCreated: Event<"videoElementCreated", Subscriber> & {
+    element: HTMLVideoElement | HTMLObjectElement;
+  };
+
+  videoEnabled: Event<"videoEnabled", Subscriber> & {
+    reason: string;
+  };
+}> {
+  element?: HTMLElement;
+  id?: string;
+  stream?: Stream;
+
+  constructor(
+    targetElement: HTMLElement,
+    options: any = {},
+    completionHandler: any = () => {}
+  ) {
+    super();
+    this.element = targetElement;
+    this.id = options?.id;
+    this.stream = options?.stream;
+  }
+
+  getAudioVolume(): number {
+    throw new Error("Method not implemented.");
+  }
+  getImgData(): string | null {
+    throw new Error("Method not implemented.");
+  }
+  getStats(
+    callback: (error?: OTError, stats?: OT.SubscriberStats) => void
+  ): void {
+    throw new Error("Method not implemented.");
+  }
+  getRtcStatsReport(): Promise<RTCStatsReport> {
+    throw new Error("Method not implemented.");
+  }
+  subscribeToCaptions(value: boolean): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  isSubscribedToCaptions(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  isAudioBlocked(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  restrictFrameRate(value: boolean): void {
+    throw new Error("Method not implemented.");
+  }
+  setAudioVolume(volume: number): void {
+    throw new Error("Method not implemented.");
+  }
+  setPreferredFrameRate(frameRate: number): void {
+    throw new Error("Method not implemented.");
+  }
+  setPreferredResolution(resolution: OT.Dimensions): void {
+    throw new Error("Method not implemented.");
+  }
+  subscribeToAudio(value: boolean): void {
+    throw new Error("Method not implemented.");
+  }
+  subscribeToVideo(value: boolean): void {
+    throw new Error("Method not implemented.");
+  }
+
+  setStyle<Style extends keyof OT.SubscriberStyle>(
+    style: Style,
+    value: OT.SubscriberStyle[Style]
+  ): void {
+    throw new Error("Method not implemented.");
+  }
+
+  videoHeight(): number | undefined {
+    throw new Error("Method not implemented.");
+  }
+  videoWidth(): number | undefined {
+    throw new Error("Method not implemented.");
+  }
+}
 
 class Publisher {
   dailyElementId?: string;
@@ -29,7 +136,12 @@ class Publisher {
   width?: string;
   height?: string;
   insertMode?: "replace" | "after" | "before" | "append";
-  constructor({ width, height, insertMode, dailyElementId }: PublisherProps) {
+  constructor({
+    width,
+    height,
+    insertMode,
+    dailyElementId,
+  }: PublisherProperties) {
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
@@ -250,7 +362,7 @@ class Session {
 
     return publisher;
   }
-  connect(token: string, callback: (error?: OT.OTError) => void): void {
+  connect(token: string, callback: (error?: OTError) => void): void {
     if (!window.call) {
       console.error("No call");
       callback({
@@ -277,10 +389,6 @@ class Session {
       throw new Error("No daily participant object");
     }
 
-    if (stream.dailyEvent.participant.local) {
-      return {} as Subscriber;
-    }
-
     if (!targetElement) {
       throw new Error("No target element");
     }
@@ -298,6 +406,11 @@ class Session {
 
     if (!t) {
       throw new Error("No target element");
+    }
+
+    const subscriber = new Subscriber(t);
+    if (stream.dailyEvent.participant.local) {
+      return subscriber;
     }
 
     if (stream.hasVideo) {
@@ -324,7 +437,7 @@ class Session {
       audioEl.play();
     }
 
-    return {} as Subscriber;
+    return subscriber;
   }
   disconnect(): void {}
   forceDisconnect(
@@ -342,7 +455,7 @@ class Session {
       resolve();
     });
   }
-  getPublisherForStream(stream: Stream): OT.Publisher | undefined {
+  getPublisherForStream(stream: Stream): Publisher | undefined {
     return undefined;
   }
   getSubscribersForStream(stream: Stream): [Subscriber] {
@@ -475,7 +588,7 @@ export function initSession(
 
       switch (dailyEvent.event) {
         case "interrupted":
-          const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
+          const tokboxEvent: Event<"sessionDisconnected", Session> & {
             reason: string;
           } = {
             type: "sessionDisconnected",
@@ -513,7 +626,7 @@ export function initSession(
       let defaultPrevented = false;
       const cancelable = true;
 
-      const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
+      const tokboxEvent: Event<"sessionDisconnected", OT.Session> & {
         reason: string;
       } = {
         type: "sessionDisconnected",
@@ -552,7 +665,7 @@ export function initSession(
 export function initPublisher(
   targetElement?: string | undefined, // | HTMLElement,
   properties?: OT.PublisherProperties | undefined,
-  callback?: ((error?: OT.OTError | undefined) => void) | undefined
+  callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
   // TODO(jamsea): initPublisher function signature needs
   // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
