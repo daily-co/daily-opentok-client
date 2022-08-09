@@ -3,14 +3,6 @@ import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 
-type DailyStream = Stream & {
-  dailyEvent: DailyEventObjectTrack;
-};
-
-type StreamCreatedEvent = Event<"streamCreated", Session> & {
-  stream: DailyStream;
-};
-
 export function initSession(
   // Doesn't look like Daily needs this at all, but it's required by the opentok API
   partnerId: string,
@@ -64,7 +56,14 @@ export function initSession(
 
       let defaultPrevented = false;
 
-      // Format as opentok event
+      type DailyStream = Stream & {
+        dailyEvent: DailyEventObjectTrack;
+      };
+      type StreamCreatedEvent = Event<"streamCreated", Session> & {
+        stream: DailyStream;
+      };
+
+      // Format as an opentok event
       const streamEvent: StreamCreatedEvent = {
         type: "streamCreated",
         isDefaultPrevented: () => defaultPrevented,

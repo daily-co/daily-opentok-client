@@ -210,11 +210,7 @@ export class Session extends OTEventEmitter<{
       throw new Error("No target element");
     }
 
-    const {
-      dailyEvent: {
-        participant: { user_id },
-      },
-    } = stream;
+    const { streamId } = stream;
 
     const t =
       targetElement instanceof HTMLElement
@@ -231,12 +227,12 @@ export class Session extends OTEventEmitter<{
     }
 
     if (stream.hasVideo) {
-      const elm = document.getElementById(`video-${user_id}`);
+      const elm = document.getElementById(`video-${streamId}`);
 
       const videoEl =
         elm instanceof HTMLVideoElement ? elm : document.createElement("video");
 
-      videoEl.id = `video-${user_id}`;
+      videoEl.id = `video-${streamId}`;
       t.appendChild(videoEl);
       if (properties) {
         videoEl.style.width = properties.width?.toString() ?? "";
@@ -249,12 +245,12 @@ export class Session extends OTEventEmitter<{
     }
 
     if (stream.hasAudio) {
-      const elm = document.getElementById(`video-${user_id}`);
+      const elm = document.getElementById(`video-${streamId}`);
 
       const audioEl =
         elm instanceof HTMLAudioElement ? elm : document.createElement("audio");
 
-      audioEl.id = `audio-${user_id}`;
+      audioEl.id = `audio-${streamId}`;
       t.appendChild(audioEl);
       audioEl.srcObject = new MediaStream([stream.dailyEvent.track]);
       audioEl.play().catch((e) => {
