@@ -1,19 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { Event } from "@opentok/client";
 import { EventEmitter } from "events";
 
-interface EventEmitterOptions {
-  /**
-   * Enables automatic capturing of promise rejection.
-   */
-  captureRejections?: boolean | undefined;
-}
-
 export class OTEventEmitter<EventMap> {
   ee: EventEmitter;
-  constructor(options?: EventEmitterOptions | undefined) {
-    this.ee = new EventEmitter(options);
+  constructor() {
+    this.ee = new EventEmitter();
   }
   on<EventName extends keyof EventMap>(
     eventName: EventName,

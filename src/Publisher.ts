@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import {
   Event,
   OTError,
@@ -81,15 +80,15 @@ export class Publisher extends OTEventEmitter<{
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      reject(new Error("Method not implemented."));
     });
   }
   getStyle(): PublisherProperties {
-    throw new Error("Not implemented");
+    throw new Error("Method not implemented.");
   }
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      reject(new Error("Method not implemented."));
     });
   }
   getVideoFilter(): VideoFilter | null {
@@ -97,7 +96,7 @@ export class Publisher extends OTEventEmitter<{
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      reject(new Error("Method not implemented."));
     });
   }
   publishAudio(value: boolean): void {
@@ -111,7 +110,7 @@ export class Publisher extends OTEventEmitter<{
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      reject(new Error("Method not implemented."));
     });
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
@@ -124,7 +123,7 @@ export class Publisher extends OTEventEmitter<{
   }
   setVideoSource(videoSourceId: string): Promise<undefined> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Not implemented"));
+      reject(new Error("Method not implemented."));
     });
   }
   getVideoContentHint(): VideoContentHint {

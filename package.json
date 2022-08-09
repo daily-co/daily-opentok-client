@@ -19,7 +19,10 @@
     "build": "vite build",
     "serve": "vite preview",
     "prepublishOnly": "npm run build",
-    "lint": "eslint . --cache --cache-location node_modules/.eslintcache"
+    "test": "npm run lint",
+    "lint": "npm run lint:ts && npm run lint:js",
+    "lint:js": "eslint . --cache --cache-location node_modules/.eslintcache",
+    "lint:ts": "tsc --noEmit"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.29.0",

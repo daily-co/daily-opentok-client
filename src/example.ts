@@ -12,7 +12,8 @@ import "./example.css";
 
 import * as OT from "./";
 
-const { VITE_DAILY_TOKEN: apiKey = "" } = import.meta.env;
+const { VITE_DAILY_TOKEN } = import.meta.env;
+const apiKey = typeof VITE_DAILY_TOKEN === "string" ? VITE_DAILY_TOKEN : "";
 const sessionId = "https://hush.daily.co/meet";
 const token = "";
 
@@ -23,7 +24,6 @@ function handleError(error: unknown) {
 }
 
 // sessionId becomes daily's room url
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream

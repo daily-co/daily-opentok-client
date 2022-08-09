@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import {
   Connection,
   OTError,
@@ -204,6 +203,10 @@ export class Session extends OTEventEmitter<{
     }
 
     if (!targetElement) {
+      callback?.({
+        message: "No target element",
+        name: "NoTargetElement",
+      });
       throw new Error("No target element");
     }
 
