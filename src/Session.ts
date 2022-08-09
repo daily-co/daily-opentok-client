@@ -198,10 +198,6 @@ export class Session extends OTEventEmitter<{
       throw new Error("Wrong type of stream.");
     }
 
-    if (!stream.dailyEvent.participant) {
-      throw new Error("No daily participant object");
-    }
-
     if (!targetElement) {
       callback?.({
         message: "No target element",
@@ -222,7 +218,7 @@ export class Session extends OTEventEmitter<{
     }
 
     const subscriber = new Subscriber(t);
-    if (stream.dailyEvent.participant.local) {
+    if (stream.dailyEvent.participant?.local) {
       return subscriber;
     }
 
