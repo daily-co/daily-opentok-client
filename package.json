@@ -1,10 +1,10 @@
 {
   "name": "@daily-co/daily-tokbox",
   "version": "0.0.0",
-  "description": "",
+  "description": "Daily Tokbox shim",
   "type": "module",
   "files": [
-    "build"
+    "dist"
   ],
   "main": "./dist/daily-tokbox.umd.js",
   "module": "./dist/daily-tokbox.es.js",
@@ -50,7 +50,7 @@
     "node": "16.x"
   },
   "repository": {
-    "url": "https://glitch.com/edit/#!/glitch-hello-react"
+    "url": "https://github.com/daily-solutions/daily-tokbox"
   },
   "glitch": {
     "projectType": "generated_static"
