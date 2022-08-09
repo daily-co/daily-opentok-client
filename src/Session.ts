@@ -147,13 +147,19 @@ export class Session extends OTEventEmitter<{
             ? document.getElementById(publisher.dailyElementId)
             : null;
 
+        console.log("t: ", t);
+
         if (t === null) {
-          console.log(t);
           t = document.createElement<"div">("div");
           document.body.appendChild(t);
         }
 
-        const videoEl = t.getElementsByTagName("video")[0];
+        const videoElements = t.getElementsByTagName("video");
+
+        const videoEl =
+          videoElements.length > 0
+            ? videoElements[0]
+            : document.createElement<"video">("video");
 
         // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
         if (publisher.insertMode === "append") {
