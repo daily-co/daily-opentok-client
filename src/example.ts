@@ -12,10 +12,11 @@ import "./example.css";
 
 import * as OT from "./";
 
-const { VITE_DAILY_TOKEN } = import.meta.env;
+const { VITE_DAILY_TOKEN, VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 const apiKey = typeof VITE_DAILY_TOKEN === "string" ? VITE_DAILY_TOKEN : "";
-const sessionId = "https://hush.daily.co/meet";
-const token = "";
+const sessionId = "https://hush.daily.co/private";
+const token =
+  typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
 function handleError(error: unknown) {
   if (error) {

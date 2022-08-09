@@ -128,53 +128,43 @@ export class Session extends OTEventEmitter<{
       return publisher;
     }
 
-    window.call
-      .join({
-        url: this.sessionId,
-      })
-      .then((participants) => {
-        console.debug("publish participants:", participants);
-        if (!participants) return;
+    const participants = window.call.participants();
 
-        const videoTrack = participants.local.videoTrack;
-        if (!videoTrack) {
-          console.debug("No local video track");
-          return publisher;
-        }
+    console.debug("publish participants:", participants);
 
-        let t =
-          publisher.dailyElementId !== undefined
-            ? document.getElementById(publisher.dailyElementId)
-            : null;
+    const videoTrack = participants.local.videoTrack;
+    if (!videoTrack) {
+      console.debug("No local video track");
+      return publisher;
+    }
 
-        console.log("t: ", t);
+    let t =
+      publisher.dailyElementId !== undefined
+        ? document.getElementById(publisher.dailyElementId)
+        : null;
 
-        if (t === null) {
-          t = document.createElement<"div">("div");
-          document.body.appendChild(t);
-        }
+    if (t === null) {
+      t = document.createElement<"div">("div");
+      document.body.appendChild(t);
+    }
 
-        const videoElements = t.getElementsByTagName("video");
+    const videoElements = t.getElementsByTagName("video");
 
-        const videoEl =
-          videoElements.length > 0
-            ? videoElements[0]
-            : document.createElement<"video">("video");
+    const videoEl =
+      videoElements.length > 0
+        ? videoElements[0]
+        : document.createElement<"video">("video");
 
-        // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-        if (publisher.insertMode === "append") {
-          t.appendChild(videoEl);
-        }
-        videoEl.style.width = publisher.width ?? "";
-        videoEl.style.height = publisher.height ?? "";
-        videoEl.srcObject = new MediaStream([videoTrack]);
-        videoEl.play().catch((e) => {
-          console.error(e);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    if (publisher.insertMode === "append") {
+      t.appendChild(videoEl);
+    }
+    videoEl.style.width = publisher.width ?? "";
+    videoEl.style.height = publisher.height ?? "";
+    videoEl.srcObject = new MediaStream([videoTrack]);
+    videoEl.play().catch((e) => {
+      console.error(e);
+    });
 
     return publisher;
   }
@@ -188,7 +178,18 @@ export class Session extends OTEventEmitter<{
       return;
     }
 
-    callback();
+    window.call
+      .join({
+        url: this.sessionId,
+        token,
+      })
+      .then((participants) => {
+        // Make sure participants are ready before calling the callback
+        callback();
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
   subscribe(
     stream: DailyStream | Stream,
