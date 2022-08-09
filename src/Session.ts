@@ -247,7 +247,7 @@ export class Session extends OTEventEmitter<{
     }
 
     if (stream.hasAudio) {
-      const elm = document.getElementById(`video-${streamId}`);
+      const elm = document.getElementById(`audio-${streamId}`);
 
       const audioEl =
         elm instanceof HTMLAudioElement ? elm : document.createElement("audio");
