@@ -8,6 +8,7 @@ import {
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
+import { notImplemented } from ".";
 import { OTEventEmitter } from "./OTEventEmitter";
 
 export class Subscriber extends OTEventEmitter<{
@@ -67,56 +68,56 @@ export class Subscriber extends OTEventEmitter<{
   }
 
   getAudioVolume(): number {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getImgData(): string | null {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getStats(callback: (error?: OTError, stats?: SubscriberStats) => void): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getRtcStatsReport(): Promise<RTCStatsReport> {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   subscribeToCaptions(value: boolean): Promise<void> {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   isSubscribedToCaptions(): boolean {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   isAudioBlocked(): boolean {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   restrictFrameRate(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   setAudioVolume(volume: number): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   setPreferredFrameRate(frameRate: number): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   setPreferredResolution(resolution: Dimensions): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   subscribeToAudio(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   subscribeToVideo(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
 
   setStyle<Style extends keyof SubscriberStyle>(
     style: Style,
     value: SubscriberStyle[Style]
   ): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
 
   videoHeight(): number | undefined {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   videoWidth(): number | undefined {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
 }

@@ -17,7 +17,6 @@ const apiKey = typeof VITE_DAILY_TOKEN === "string" ? VITE_DAILY_TOKEN : "";
 const sessionId = "https://hush.daily.co/private";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
-
 function handleError(error: unknown) {
   if (error) {
     console.error("handleError: ", error);

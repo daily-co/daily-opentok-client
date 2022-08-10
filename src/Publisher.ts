@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Event,
   OTError,
@@ -11,6 +10,7 @@ import {
   VideoFilter,
 } from "@opentok/client";
 import { OTEventEmitter } from "./OTEventEmitter";
+import { notImplemented } from "./";
 
 type PublisherProperties = OT.PublisherProperties & { dailyElementId?: string };
 
@@ -47,7 +47,7 @@ export class Publisher extends OTEventEmitter<{
 
   muteForced: Event<"muteForced", Publisher>;
 }> {
-  dailyElementId?: string;
+  readonly dailyElementId?: string;
   accessAllowed: boolean;
   width?: string;
   height?: string;
@@ -68,15 +68,16 @@ export class Publisher extends OTEventEmitter<{
   }
 
   destroy(): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getImgData(): string | null {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getStats(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError, stats?: PublisherStatsArr) => void
   ): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
@@ -84,71 +85,80 @@ export class Publisher extends OTEventEmitter<{
     });
   }
   getStyle(): PublisherProperties {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
       reject(new Error("Method not implemented."));
     });
   }
   getVideoFilter(): VideoFilter | null {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
       reject(new Error("Method not implemented."));
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishAudio(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishVideo(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishCaptions(value: boolean): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   cycleVideo(): Promise<{ deviceId: string }> {
-    return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
-    return new Promise((resolve, reject) => {
-      throw new Error("Method not implemented.");
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
   getAudioSource(): MediaStreamTrack {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setVideoSource(videoSourceId: string): Promise<undefined> {
-    return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
   getVideoContentHint(): VideoContentHint {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setVideoContentHint(hint: VideoContentHint): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getVideoSource(): {
     deviceId: string | null;
     type: string | null;
     track: MediaStreamTrack | null;
   } {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   setStyle<Style extends keyof PublisherStyle>(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     style: Style,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: PublisherStyle[Style]
   ): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   videoWidth(): number | undefined {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   videoHeight(): number | undefined {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
 }

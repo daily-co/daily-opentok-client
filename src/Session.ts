@@ -11,6 +11,7 @@ import { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
+import { notImplemented } from ".";
 
 type DailyStream = Stream & {
   dailyEvent: DailyEventObjectTrack;
@@ -264,48 +265,48 @@ export class Session extends OTEventEmitter<{
     return subscriber;
   }
   disconnect(): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   forceDisconnect(
     connection: OT.Connection,
     callback: (error?: OTError) => void
   ): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   forceMuteStream(stream: Stream): Promise<void> {
-    return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
   forceMuteAll(excludedStreams?: Stream[]): Promise<void> {
-    return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
   getPublisherForStream(stream: Stream): Publisher | undefined {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   getSubscribersForStream(stream: Stream): [Subscriber] {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   setEncryptionSecret(secret: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+    return new Promise((_, reject) => {
+      reject(notImplemented());
     });
   }
   signal(
     signal: { type?: string; data?: string; to?: OT.Connection },
     callback: (error?: OTError) => void
   ): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   unpublish(publisher: Publisher): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
   unsubscribe(subscriber: Subscriber): void {
-    throw new Error("Method not implemented.");
+    notImplemented();
   }
 }

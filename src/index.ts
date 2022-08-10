@@ -3,6 +3,32 @@ import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 
+export function notImplemented(): never {
+  throw new Error("Method not implemented.");
+}
+
+export function checkSystemRequirements() {
+  return Daily.supportedBrowser();
+}
+
+export function upgradeSystemRequirements() {
+  // Left empty
+  console.debug("upgradeSystemRequirements called");
+}
+
+export function getDevices(
+  callback: (error: OTError | undefined, devices?: OT.Device[]) => void
+): void {
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: true,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
+}
+
 export function initSession(
   // Doesn't look like Daily needs this at all, but it's required by the opentok API
   partnerId: string,
@@ -25,12 +51,14 @@ export function initSession(
 ): Session {
   const session = new Session(partnerId, roomUrl, options);
 
-  window.call = Daily.createCallObject({
-    subscribeToTracksAutomatically: true,
-    dailyConfig: {
-      experimentalChromeVideoMuteLightOff: true,
-    },
-  });
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: true,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
 
   window.call
     .on("track-started", (dailyEvent) => {

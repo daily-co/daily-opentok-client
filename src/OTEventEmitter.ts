@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Event } from "@opentok/client";
 import { EventEmitter } from "events";
 
@@ -24,6 +23,7 @@ export class OTEventEmitter<EventMap> {
   on(
     eventName: string | object,
     callback: object | ((event: Event<string, unknown>) => void),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context?: object
   ): void {
     if (typeof eventName === "string" && typeof callback !== "object") {
@@ -48,6 +48,7 @@ export class OTEventEmitter<EventMap> {
   once(
     eventName: string | object,
     callback: object | ((event: Event<string, unknown>) => void),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context?: object
   ): void {
     if (typeof eventName === "string" && typeof callback !== "object") {
@@ -72,6 +73,7 @@ export class OTEventEmitter<EventMap> {
   off(
     eventName: string | object | undefined,
     callback?: object | ((event: Event<string, unknown>) => void),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context?: object
   ): void {
     if (
