@@ -25,7 +25,7 @@
     "lint:ts": "tsc --noEmit"
   },
   "dependencies": {
-    "@daily-co/daily-js": "^0.29.0",
+    "@daily-co/daily-js": "0.29.0",
     "@opentok/client": "^2.23.0",
     "events": "^3.3.0"
   },

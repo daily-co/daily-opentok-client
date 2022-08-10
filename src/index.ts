@@ -1,5 +1,5 @@
 import { OTError, Event, Stream } from "@opentok/client";
-import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
+import Daily, { DailyEventObjectParticipant } from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 
@@ -62,31 +62,27 @@ export function initSession(
     });
 
   window.call
-    .on("track-started", (dailyEvent) => {
+    .on("participant-joined", (dailyEvent) => {
       if (!dailyEvent) {
         console.debug("No Daily event");
         return;
       }
 
-      if (dailyEvent.participant?.local) {
+      if (dailyEvent.participant.local) {
         console.debug("Local participant, do not fire opentok event.");
         return;
       }
 
-      const {
-        frameRate = 0,
-        height = 0,
-        width = 0,
-      } = dailyEvent.track.getSettings();
+      const settings = dailyEvent.participant.videoTrack?.getSettings() ?? {};
 
-      const creationTime = dailyEvent.participant?.joined_at
-        ? dailyEvent.participant.joined_at.getTime()
-        : new Date().getTime();
+      const { frameRate = 0, height = 0, width = 0 } = settings;
+
+      const creationTime = dailyEvent.participant.joined_at.getTime();
 
       let defaultPrevented = false;
 
       type DailyStream = Stream & {
-        dailyEvent: DailyEventObjectTrack;
+        dailyEvent: DailyEventObjectParticipant;
       };
       type StreamCreatedEvent = Event<"streamCreated", Session> & {
         stream: DailyStream;
@@ -102,11 +98,10 @@ export function initSession(
         target: session,
         cancelable: true,
         stream: {
-          // Maybe this is like user_id in daily?
-          streamId: dailyEvent.participant?.user_id ?? "",
+          streamId: dailyEvent.participant.session_id,
           frameRate,
-          hasAudio: dailyEvent.track.kind === "audio",
-          hasVideo: dailyEvent.track.kind === "video",
+          hasAudio: dailyEvent.participant.audio,
+          hasVideo: dailyEvent.participant.video,
           // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
           name: "",
           videoDimensions: {
@@ -120,7 +115,6 @@ export function initSession(
             creationTime,
             // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
             // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-            // we need to listen to participant-joined instead of track-started
             data: "",
           },
           // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
