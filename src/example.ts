@@ -12,8 +12,9 @@ import "./example.css";
 
 import * as OT from "./";
 
-const { VITE_DAILY_TOKEN, VITE_DAILY_MEETING_TOKEN } = import.meta.env;
-const apiKey = typeof VITE_DAILY_TOKEN === "string" ? VITE_DAILY_TOKEN : "";
+const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
+// apiKey can be blank, Daily's API key is not needed for the shim to work
+const apiKey = "";
 const sessionId = "https://hush.daily.co/private";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";

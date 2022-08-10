@@ -141,11 +141,11 @@ export class Session extends OTEventEmitter<{
 
     let t =
       publisher.dailyElementId !== undefined
-        ? document.getElementById(publisher.dailyElementId)
+        ? (document.getElementById(publisher.dailyElementId) as HTMLDivElement)
         : null;
 
     if (t === null) {
-      t = document.createElement<"div">("div");
+      t = document.createElement("div");
       document.body.appendChild(t);
     }
 

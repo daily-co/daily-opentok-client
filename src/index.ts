@@ -17,6 +17,7 @@ export function upgradeSystemRequirements() {
 }
 
 export function getDevices(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   callback: (error: OTError | undefined, devices?: OT.Device[]) => void
 ): void {
   window.call =
