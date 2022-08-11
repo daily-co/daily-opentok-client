@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import Daily, { DailyEventObjectParticipant } from "@daily-co/daily-js";
 import {
   Connection,
   OTError,
@@ -129,71 +130,219 @@ export class Session extends OTEventEmitter<{
       return publisher;
     }
 
+    // this.sessionId
+
     const participants = window.call.participants();
 
     console.debug("publish participants:", participants);
 
-    const videoTrack = participants.local.videoTrack;
-    if (!videoTrack) {
-      console.debug("No local video track");
-      return publisher;
-    }
+    // const videoTrack = participants.local.videoTrack;
+    // if (!videoTrack) {
+    //   console.debug("No local video track");
+    //   return publisher;
+    // }
 
-    let t =
-      publisher.dailyElementId !== undefined
-        ? (document.getElementById(publisher.dailyElementId) as HTMLDivElement)
-        : null;
+    // let t =
+    //   publisher.dailyElementId !== undefined
+    //     ? (document.getElementById(publisher.dailyElementId) as HTMLDivElement)
+    //     : null;
 
-    if (t === null) {
-      t = document.createElement("div");
-      document.body.appendChild(t);
-    }
+    // if (t === null) {
+    //   t = document.createElement("div");
+    //   document.body.appendChild(t);
+    // }
 
-    const videoElements = t.getElementsByTagName("video");
+    // const videoElements = t.getElementsByTagName("video");
 
-    const videoEl =
-      videoElements.length > 0
-        ? videoElements[0]
-        : document.createElement<"video">("video");
+    // const videoEl =
+    //   videoElements.length > 0
+    //     ? videoElements[0]
+    //     : document.createElement<"video">("video");
 
-    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-    if (publisher.insertMode === "append") {
-      t.appendChild(videoEl);
-    }
-    videoEl.style.width = publisher.width ?? "";
-    videoEl.style.height = publisher.height ?? "";
-    videoEl.srcObject = new MediaStream([videoTrack]);
-    videoEl.play().catch((e) => {
-      console.error(e);
-    });
+    // // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    // if (publisher.insertMode === "append") {
+    //   t.appendChild(videoEl);
+    // }
+    // videoEl.style.width = publisher.width ?? "";
+    // videoEl.style.height = publisher.height ?? "";
+    // videoEl.srcObject = new MediaStream([videoTrack]);
+    // videoEl.play().catch((e) => {
+    //   console.error(e);
+    // });
 
     return publisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
-    if (!window.call) {
-      console.error("No call");
-      callback({
-        message: "No call (todo find message)",
-        name: "NoCall (todo find name)",
-      });
-      return;
-    }
+    window.call =
+      window.call != undefined
+        ? window.call
+        : Daily.createCallObject({
+            subscribeToTracksAutomatically: true,
+            dailyConfig: {
+              experimentalChromeVideoMuteLightOff: true,
+            },
+          });
+
+    // .join({ url: this.sessionId })
+    // .then((foo) => {
+    //   // callback();
+    // })
+    // window.call.catch((e) => {
+    //   console.error(e);
+    // });
 
     window.call
-      .join({
-        url: this.sessionId,
-        token,
+      .on("started-camera", (participant) => {
+        console.log(participant);
       })
-      .then((participants) => {
-        // Make sure participants are ready before calling the callback
-        callback();
+      .on("participant-joined", (dailyEvent) => {
+        if (!dailyEvent) {
+          console.debug("No Daily event");
+          return;
+        }
+
+        if (dailyEvent.participant.local) {
+          console.debug(
+            "Local participant, do not fire opentok subscriber event."
+          );
+          return;
+        }
+
+        const settings =
+          dailyEvent.participant.tracks.video.track?.getSettings() ?? {};
+
+        const { frameRate = 0, height = 0, width = 0 } = settings;
+
+        const creationTime = dailyEvent.participant.joined_at.getTime();
+
+        let defaultPrevented = false;
+
+        type DailyStream = Stream & {
+          dailyEvent: DailyEventObjectParticipant;
+        };
+        type StreamCreatedEvent = Event<"streamCreated", Session> & {
+          stream: DailyStream;
+        };
+
+        // Format as an opentok event
+        const streamEvent: StreamCreatedEvent = {
+          type: "streamCreated",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          target: this,
+          cancelable: true,
+          stream: {
+            streamId: dailyEvent.participant.session_id,
+            frameRate,
+            hasAudio: dailyEvent.participant.audio,
+            hasVideo: dailyEvent.participant.video,
+            // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+            name: "",
+            videoDimensions: {
+              height,
+              width,
+            },
+            videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+            creationTime,
+            connection: {
+              connectionId: "connectionId", // TODO
+              creationTime,
+              // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+              // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+              data: "",
+            },
+            // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
+            dailyEvent,
+          },
+        };
+
+        this.ee.emit("streamCreated", streamEvent);
       })
-      .catch((err) => {
-        console.error(err);
+      // .on("track-started", () => {
+      //   // Make sure the track has started before publishing the session
+      //   // TODO(jamsea): need to figure out the error handling here.
+      // })
+      .on("track-stopped", () => {
+        // TODO(jamsea): emit streamDestroyed event
+      })
+      .on("error", () => {
+        // TODO(jamsea): emit error event
+      })
+      .on("nonfatal-error", () => {
+        // TODO(jamsea): emit error event
+      })
+      .on("network-connection", (dailyEvent) => {
+        console.debug("network-connection", dailyEvent);
+        if (!dailyEvent) {
+          return;
+        }
+
+        let defaultPrevented = false;
+        const tokboxEvent: Event<"sessionDisconnected", Session> & {
+          reason: string;
+        } = {
+          type: "sessionDisconnected",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          cancelable: true,
+          target: this,
+          reason: "networkDisconnected",
+        };
+
+        switch (dailyEvent.event) {
+          case "interrupted":
+            this.ee.emit("sessionDisconnected", tokboxEvent);
+            break;
+          case "connected":
+            console.debug("connected");
+            break;
+          default:
+            break;
+        }
+      })
+      .on("network-quality-change", () => {
+        // TODO(jamsea): emit networkQualityChange event
+      })
+      .on("left-meeting", (dailyEvent) => {
+        console.debug("left-meeting", dailyEvent);
+        if (!dailyEvent) {
+          return;
+        }
+
+        let defaultPrevented = false;
+
+        const tokboxEvent: Event<"sessionDisconnected", OT.Session> & {
+          reason: string;
+        } = {
+          type: "sessionDisconnected",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          cancelable: true,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("sessionDisconnected", tokboxEvent);
+      })
+      .on("participant-left", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        const v = document.getElementById(
+          `video-${dailyEvent.participant.user_id}`
+        );
+        if (v) {
+          v.remove();
+        }
       });
   }
   subscribe(
-    stream: DailyStream | Stream,
+    stream: Stream,
     targetElement?: string | HTMLElement,
     properties?: SubscriberProperties,
     callback?: (error?: OTError) => void
@@ -201,10 +350,7 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       throw new Error("No daily call object");
     }
-
-    if (!("dailyEvent" in stream)) {
-      throw new Error("Wrong type of stream.");
-    }
+    console.log("SUBSCRIBE");
 
     if (!targetElement) {
       callback?.({
@@ -226,41 +372,52 @@ export class Session extends OTEventEmitter<{
     }
 
     const subscriber = new Subscriber(t);
-    if (stream.dailyEvent.participant?.local) {
-      return subscriber;
-    }
 
-    if (stream.hasVideo) {
-      const elm = document.getElementById(`video-${streamId}`);
-
-      const videoEl =
-        elm instanceof HTMLVideoElement ? elm : document.createElement("video");
-
-      videoEl.id = `video-${streamId}`;
-      t.appendChild(videoEl);
-      if (properties) {
-        videoEl.style.width = properties.width?.toString() ?? "";
-        videoEl.style.height = properties.height?.toString() ?? "";
+    window.call.on("track-started", (dailyEvent) => {
+      if (!dailyEvent) {
+        return;
       }
-      videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      videoEl.play().catch((e) => {
-        console.error(e);
-      });
-    }
 
-    if (stream.hasAudio) {
-      const elm = document.getElementById(`audio-${streamId}`);
+      if (dailyEvent.participant?.videoTrack) {
+        const documentVideoElm = document.getElementById(`video-${streamId}`);
 
-      const audioEl =
-        elm instanceof HTMLAudioElement ? elm : document.createElement("audio");
+        const videoEl =
+          documentVideoElm instanceof HTMLVideoElement
+            ? documentVideoElm
+            : document.createElement("video");
 
-      audioEl.id = `audio-${streamId}`;
-      t.appendChild(audioEl);
-      audioEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      audioEl.play().catch((e) => {
-        console.error(e);
-      });
-    }
+        videoEl.id = `video-${streamId}`;
+        t.appendChild(videoEl);
+        if (properties) {
+          videoEl.style.width = properties.width?.toString() ?? "";
+          videoEl.style.height = properties.height?.toString() ?? "";
+        }
+        videoEl.srcObject = new MediaStream([
+          dailyEvent.participant.videoTrack,
+        ]);
+        // videoEl.play().catch((e) => {
+        //   console.error(e);
+        // });
+      }
+
+      if (dailyEvent.participant?.audioTrack) {
+        const documentAudioElm = document.getElementById(`audio-${streamId}`);
+
+        const audioEl =
+          documentAudioElm instanceof HTMLAudioElement
+            ? documentAudioElm
+            : document.createElement("audio");
+
+        audioEl.id = `audio-${streamId}`;
+        t.appendChild(audioEl);
+        audioEl.srcObject = new MediaStream([
+          dailyEvent.participant.audioTrack,
+        ]);
+        // audioEl.play().catch((e) => {
+        //   console.error(e);
+        // });
+      }
+    });
 
     return subscriber;
   }
