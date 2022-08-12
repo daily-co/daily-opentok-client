@@ -1,5 +1,5 @@
-import { OTError, Event, Stream } from "@opentok/client";
-import Daily, { DailyEventObjectParticipant } from "@daily-co/daily-js";
+import { OTError } from "@opentok/client";
+import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 
