@@ -2,7 +2,7 @@ import { OTError } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
-import { getParticipantTracks } from "./utils";
+import { getParticipantTracks, mediaId } from "./utils";
 
 export function checkSystemRequirements() {
   return Daily.supportedBrowser();
@@ -101,6 +101,11 @@ export function initPublisher(
 
     const { session_id } = dailyEvent.participant;
 
+    const { video } = getParticipantTracks(dailyEvent.participant);
+    if (!video) {
+      return;
+    }
+
     let t = document.getElementById(dailyElementId) as HTMLDivElement | null;
 
     if (t === null) {
@@ -109,7 +114,7 @@ export function initPublisher(
     }
 
     const documentVideoElm = document.getElementById(
-      `video-local-${session_id}`
+      mediaId`${video}-local-${session_id}`
     );
 
     const videoEl =
@@ -123,12 +128,8 @@ export function initPublisher(
     }
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
-
-    const { video } = getParticipantTracks(dailyEvent.participant);
-    if (video) {
-      videoEl.srcObject = new MediaStream([video]);
-    }
-    videoEl.id = `video-local-${session_id}`;
+    videoEl.srcObject = new MediaStream([video]);
+    videoEl.id = mediaId`${video}-local-${session_id}`;
     videoEl.play().catch((e) => {
       console.error("ERROR LOCAL CAMERA PLAY");
       console.error(e);

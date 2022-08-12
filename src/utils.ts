@@ -4,8 +4,22 @@ export function notImplemented(): never {
   throw new Error("Method not implemented.");
 }
 
-export function createDivId(sessionId: string): string {
-  return `${sessionId}-video`;
+export function mediaId(
+  strings: TemplateStringsArray,
+  media: MediaStreamTrack | MediaStream,
+  sessionId: string
+): string {
+  console.log(strings, sessionId);
+
+  const kind =
+    media instanceof MediaStream
+      ? media
+          .getTracks()
+          .map((t) => t.kind)
+          .join("-")
+      : media.kind;
+
+  return `${kind}${strings[1]}${sessionId}`;
 }
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {

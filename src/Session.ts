@@ -9,7 +9,7 @@ import {
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
-import { getParticipantTracks, notImplemented } from "./utils";
+import { getParticipantTracks, mediaId, notImplemented } from "./utils";
 
 export class Session extends OTEventEmitter<{
   archiveStarted: Event<"archiveStarted", Session> & {
@@ -259,7 +259,7 @@ export class Session extends OTEventEmitter<{
         if (!dailyEvent) return;
 
         const v = document.getElementById(
-          `video-${dailyEvent.participant.user_id}`
+          `audio-video-${dailyEvent.participant.session_id}`
         );
         if (v) {
           v.remove();
@@ -334,9 +334,12 @@ export class Session extends OTEventEmitter<{
       const tracks: MediaStreamTrack[] = [];
       if (video) tracks.push(video);
       if (audio) tracks.push(audio);
+      const stream = new MediaStream(tracks);
 
       const streamId = dailyEvent.participant.session_id;
-      const documentVideoElm = document.getElementById(`video-${streamId}`);
+      const documentVideoElm = document.getElementById(
+        mediaId`${stream}-${streamId}`
+      );
 
       if (documentVideoElm) {
         return;
@@ -344,14 +347,14 @@ export class Session extends OTEventEmitter<{
 
       const videoEl = document.createElement("video");
 
-      videoEl.id = `video-${streamId}`;
       t.appendChild(videoEl);
       if (properties) {
         videoEl.style.width = properties.width?.toString() ?? "";
         videoEl.style.height = properties.height?.toString() ?? "";
       }
       if (tracks.length > 0) {
-        videoEl.srcObject = new MediaStream(tracks);
+        videoEl.srcObject = stream;
+        videoEl.id = mediaId`${stream}-${streamId}`;
       }
       videoEl.play().catch((e) => {
         console.error("ERROR IN SESSION VIDEO", e);
