@@ -87,54 +87,52 @@ export function initPublisher(
       },
     });
 
-  window.call
-    .updateParticipant("local", {
-      setSubscribedTracks: {
-        audio: true,
-        video: true,
-        screenVideo: false,
-        screenAudio: false,
-      },
-    })
-    .on("participant-updated", (dailyEvent) => {
-      console.debug("[participant-updated]");
-      if (!dailyEvent?.participant.local) {
-        return;
-      }
+  window.call.startCamera().catch((err) => {
+    console.error("startCamera error: ", err);
+  });
 
-      const { videoTrack, audioTrack } = dailyEvent.participant;
+  window.call.on("participant-updated", (dailyEvent) => {
+    console.debug("[participant-updated]");
+    if (!dailyEvent?.participant.local) {
+      return;
+    }
 
-      if (!videoTrack || !audioTrack) {
-        console.log("No video track with local");
-        return;
-      }
+    const { videoTrack, audioTrack } = dailyEvent.participant;
 
-      let t = document.getElementById(dailyElementId) as HTMLDivElement | null;
+    if (!videoTrack || !audioTrack) {
+      console.log("No video track with local");
+      return;
+    }
 
-      if (t === null) {
-        t = document.createElement("div");
-        document.body.appendChild(t);
-      }
+    let t = document.getElementById(dailyElementId) as HTMLDivElement | null;
 
-      const videoElements = t.getElementsByTagName("video");
+    if (t === null) {
+      t = document.createElement("div");
+      document.body.appendChild(t);
+    }
 
-      const videoEl =
-        videoElements.length > 0
-          ? videoElements[0]
-          : document.createElement<"video">("video");
+    const videoElements = t.getElementsByTagName("video");
 
-      // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-      if (publisher.insertMode === "append") {
-        t.appendChild(videoEl);
-      }
-      videoEl.style.width = publisher.width ?? "";
-      videoEl.style.height = publisher.height ?? "";
-      videoEl.srcObject = new MediaStream([videoTrack, audioTrack]);
-      videoEl.play().catch((e) => {
-        console.error("ERROR LOCAL CAMERA PLAY");
-        console.error(e);
-      });
+    const videoEl =
+      videoElements.length > 0
+        ? videoElements[0]
+        : document.createElement<"video">("video");
+
+    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    if (publisher.insertMode === "append") {
+      t.appendChild(videoEl);
+    }
+    videoEl.style.width = publisher.width ?? "";
+    videoEl.style.height = publisher.height ?? "";
+    videoEl.srcObject = new MediaStream([videoTrack, audioTrack]);
+    videoEl.play().catch((e) => {
+      console.error("ERROR LOCAL CAMERA PLAY");
+      console.error(e);
     });
+  });
+
+  window.call.setLocalVideo(true);
+  window.call.setLocalAudio(true);
 
   return publisher;
 }

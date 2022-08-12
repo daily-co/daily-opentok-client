@@ -29,8 +29,8 @@ function handleError(error: unknown) {
 // sessionId becomes daily's room url
 const session = OT.initSession(apiKey, sessionId);
 
-// // Subscribe to a newly created stream.
-// // This does not cause a connection to be established.
+// // // Subscribe to a newly created stream.
+// // // This does not cause a connection to be established.
 session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event);
   // This is daily remote user stuff
@@ -63,7 +63,7 @@ const publisher = OT.initPublisher(
   handleError
 );
 
-// Connect to the session (or Daily room in our case)
+// // Connect to the session (or Daily room in our case)
 session.connect(token, function callback(error) {
   console.debug("[session.connect]");
 
