@@ -140,11 +140,8 @@ export class Session extends OTEventEmitter<{
 
       let defaultPrevented = false;
 
-      type DailyStream = Stream & {
-        dailyEvent: DailyEventObjectParticipant;
-      };
       type StreamCreatedEvent = Event<"streamCreated", Session> & {
-        stream: DailyStream;
+        stream: Stream;
       };
 
       // Format as an opentok event
@@ -176,8 +173,6 @@ export class Session extends OTEventEmitter<{
             // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
             data: "",
           },
-          // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
-          dailyEvent,
         },
       };
 
@@ -187,15 +182,9 @@ export class Session extends OTEventEmitter<{
     return publisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
-    window.call =
-      window.call != undefined
-        ? window.call
-        : Daily.createCallObject({
-            subscribeToTracksAutomatically: false,
-            dailyConfig: {
-              experimentalChromeVideoMuteLightOff: true,
-            },
-          });
+    if (!window.call) {
+      throw new Error("No call object");
+    }
 
     window.call
       .on("started-camera", (participant) => {
