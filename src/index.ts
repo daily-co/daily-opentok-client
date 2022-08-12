@@ -2,10 +2,7 @@ import { OTError } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
-
-export function notImplemented(): never {
-  throw new Error("Method not implemented.");
-}
+import { getParticipantTracks } from "./utils";
 
 export function checkSystemRequirements() {
   return Daily.supportedBrowser();
@@ -98,27 +95,11 @@ export function initPublisher(
 
     const { participant } = dailyEvent;
 
-    console.debug("[participant-updated] index", dailyEvent);
     if (!participant.local) {
-      // Don't think we need this???
-
-      // window.call?.updateParticipant(dailyEvent.participant.session_id, {
-      //   setSubscribedTracks: {
-      //     audio: true, // trying it
-      //     video: true, // trying it
-      //     screenVideo: false,
-      //     screenAudio: false,
-      //   },
-      // });
       return;
     }
 
-    const { videoTrack, audioTrack, session_id } = dailyEvent.participant;
-
-    if (!videoTrack || !audioTrack) {
-      console.log("No video track with local");
-      return;
-    }
+    const { session_id } = dailyEvent.participant;
 
     let t = document.getElementById(dailyElementId) as HTMLDivElement | null;
 
@@ -142,7 +123,11 @@ export function initPublisher(
     }
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
-    videoEl.srcObject = new MediaStream([videoTrack]);
+
+    const { video } = getParticipantTracks(dailyEvent.participant);
+    if (video) {
+      videoEl.srcObject = new MediaStream([video]);
+    }
     videoEl.id = `video-local-${session_id}`;
     videoEl.play().catch((e) => {
       console.error("ERROR LOCAL CAMERA PLAY");

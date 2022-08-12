@@ -11,7 +11,7 @@ import {
   VideoFilter,
 } from "@opentok/client";
 import { OTEventEmitter } from "./OTEventEmitter";
-import { notImplemented } from "./";
+import { notImplemented } from "./utils";
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;

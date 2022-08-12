@@ -9,7 +9,7 @@ import {
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
-import { notImplemented } from ".";
+import { getParticipantTracks, notImplemented } from "./utils";
 
 export class Session extends OTEventEmitter<{
   archiveStarted: Event<"archiveStarted", Session> & {
@@ -329,48 +329,33 @@ export class Session extends OTEventEmitter<{
         console.debug("track-started no participant");
         return;
       }
-      if (dailyEvent.participant.videoTrack) {
-        const streamId = dailyEvent.participant.session_id;
-        const documentVideoElm = document.getElementById(`video-${streamId}`);
 
-        if (documentVideoElm) {
-          return;
-        }
+      const { audio, video } = getParticipantTracks(dailyEvent.participant);
+      const tracks: MediaStreamTrack[] = [];
+      if (video) tracks.push(video);
+      if (audio) tracks.push(audio);
 
-        const videoEl = document.createElement("video");
+      const streamId = dailyEvent.participant.session_id;
+      const documentVideoElm = document.getElementById(`video-${streamId}`);
 
-        videoEl.id = `video-${streamId}`;
-        t.appendChild(videoEl);
-        if (properties) {
-          videoEl.style.width = properties.width?.toString() ?? "";
-          videoEl.style.height = properties.height?.toString() ?? "";
-        }
-        videoEl.srcObject = new MediaStream([
-          dailyEvent.participant.videoTrack,
-        ]);
-        videoEl.play().catch((e) => {
-          console.error("ERROR IN SESSION VIDEO", e);
-        });
+      if (documentVideoElm) {
+        return;
       }
 
-      if (dailyEvent.participant.audioTrack) {
-        const documentAudioElm = document.getElementById(`audio-${streamId}`);
+      const videoEl = document.createElement("video");
 
-        if (documentAudioElm) {
-          return;
-        }
-
-        const audioEl = document.createElement("audio");
-
-        audioEl.id = `audio-${streamId}`;
-        t.appendChild(audioEl);
-        audioEl.srcObject = new MediaStream([
-          dailyEvent.participant.audioTrack,
-        ]);
-        audioEl.play().catch((e) => {
-          console.error("ERROR IN SESSION AUDIO", e);
-        });
+      videoEl.id = `video-${streamId}`;
+      t.appendChild(videoEl);
+      if (properties) {
+        videoEl.style.width = properties.width?.toString() ?? "";
+        videoEl.style.height = properties.height?.toString() ?? "";
       }
+      if (tracks.length > 0) {
+        videoEl.srcObject = new MediaStream(tracks);
+      }
+      videoEl.play().catch((e) => {
+        console.error("ERROR IN SESSION VIDEO", e);
+      });
     });
 
     window.call.updateParticipant(streamId, {
