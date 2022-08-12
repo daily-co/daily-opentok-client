@@ -31,22 +31,22 @@ const session = OT.initSession(apiKey, sessionId);
 
 // // Subscribe to a newly created stream.
 // // This does not cause a connection to be established.
-// session.on("streamCreated", function streamCreated(event) {
-//   console.log("[streamCreated] index.ts: ", event);
-//   // This is daily remote user stuff
-//   // if (window.chrome) {
-//   session.subscribe(
-//     event.stream,
-//     "subscriber",
-//     {
-//       insertMode: "append",
-//       width: "100%",
-//       height: "100%",
-//     },
-//     handleError
-//   );
-//   // }
-// });
+session.on("streamCreated", function streamCreated(event) {
+  console.log("[streamCreated] index.ts: ", event);
+  // This is daily remote user stuff
+  // if (window.chrome) {
+  session.subscribe(
+    event.stream,
+    "subscriber",
+    {
+      insertMode: "append",
+      width: "100%",
+      height: "100%",
+    },
+    handleError
+  );
+  // }
+});
 
 session.on("sessionDisconnected", function sessionDisconnected(event) {
   console.debug("[sessionDisconnected]", event);

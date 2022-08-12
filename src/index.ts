@@ -81,11 +81,13 @@ export function initPublisher(
   window.call =
     window.call ??
     Daily.createCallObject({
-      subscribeToTracksAutomatically: true,
+      subscribeToTracksAutomatically: false,
       dailyConfig: {
         experimentalChromeVideoMuteLightOff: true,
       },
     });
+
+  // window.call.localVideo()
 
   window.call
     .startCamera()

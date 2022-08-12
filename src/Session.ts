@@ -177,7 +177,7 @@ export class Session extends OTEventEmitter<{
       window.call != undefined
         ? window.call
         : Daily.createCallObject({
-            subscribeToTracksAutomatically: true,
+            subscribeToTracksAutomatically: false,
             dailyConfig: {
               experimentalChromeVideoMuteLightOff: true,
             },
@@ -193,7 +193,7 @@ export class Session extends OTEventEmitter<{
 
     window.call
       .on("started-camera", (participant) => {
-        console.log(participant);
+        console.log("started-camera", participant);
       })
       .on("participant-joined", (dailyEvent) => {
         if (!dailyEvent) {
@@ -207,6 +207,19 @@ export class Session extends OTEventEmitter<{
           );
           return;
         }
+
+        const {
+          participant: { session_id },
+        } = dailyEvent;
+
+        // window.call?.updateParticipant(session_id, {
+        //   setSubscribedTracks: {
+        //     audio: true,
+        //     video: true,
+        //     screenVideo: false,
+        //     screenAudio: false,
+        //   },
+        // });
 
         const settings =
           dailyEvent.participant.tracks.video.track?.getSettings() ?? {};
@@ -260,10 +273,6 @@ export class Session extends OTEventEmitter<{
 
         this.ee.emit("streamCreated", streamEvent);
       })
-      // .on("track-started", () => {
-      //   // Make sure the track has started before publishing the session
-      //   // TODO(jamsea): need to figure out the error handling here.
-      // })
       .on("track-stopped", () => {
         // TODO(jamsea): emit streamDestroyed event
       })
@@ -373,51 +382,69 @@ export class Session extends OTEventEmitter<{
 
     const subscriber = new Subscriber(t);
 
-    window.call.on("track-started", (dailyEvent) => {
-      if (!dailyEvent) {
-        return;
-      }
+    window.call
+      .updateParticipant(streamId, {
+        setSubscribedTracks: {
+          audio: stream.hasAudio,
+          video: stream.hasVideo,
+          screenVideo: false,
+          screenAudio: false,
+        },
+      })
+      .on("track-started", (dailyEvent) => {
+        // Make sure the track has started before publishing the session
+        // TODO(jamsea): need to figure out the error handling here.
 
-      if (dailyEvent.participant?.videoTrack) {
-        const documentVideoElm = document.getElementById(`video-${streamId}`);
-
-        const videoEl =
-          documentVideoElm instanceof HTMLVideoElement
-            ? documentVideoElm
-            : document.createElement("video");
-
-        videoEl.id = `video-${streamId}`;
-        t.appendChild(videoEl);
-        if (properties) {
-          videoEl.style.width = properties.width?.toString() ?? "";
-          videoEl.style.height = properties.height?.toString() ?? "";
+        if (!dailyEvent) {
+          console.debug("track-started no daily event");
+          return;
         }
-        videoEl.srcObject = new MediaStream([
-          dailyEvent.participant.videoTrack,
-        ]);
-        // videoEl.play().catch((e) => {
-        //   console.error(e);
-        // });
-      }
 
-      if (dailyEvent.participant?.audioTrack) {
-        const documentAudioElm = document.getElementById(`audio-${streamId}`);
+        if (!dailyEvent.participant) {
+          console.debug("track-started no participant");
+          return;
+        }
+        if (dailyEvent.participant.videoTrack) {
+          const streamId = dailyEvent.participant.session_id;
+          const documentVideoElm = document.getElementById(`video-${streamId}`);
 
-        const audioEl =
-          documentAudioElm instanceof HTMLAudioElement
-            ? documentAudioElm
-            : document.createElement("audio");
+          const videoEl =
+            documentVideoElm instanceof HTMLVideoElement
+              ? documentVideoElm
+              : document.createElement("video");
 
-        audioEl.id = `audio-${streamId}`;
-        t.appendChild(audioEl);
-        audioEl.srcObject = new MediaStream([
-          dailyEvent.participant.audioTrack,
-        ]);
-        // audioEl.play().catch((e) => {
-        //   console.error(e);
-        // });
-      }
-    });
+          videoEl.id = `video-${streamId}`;
+          t.appendChild(videoEl);
+          if (properties) {
+            videoEl.style.width = properties.width?.toString() ?? "";
+            videoEl.style.height = properties.height?.toString() ?? "";
+          }
+          videoEl.srcObject = new MediaStream([
+            dailyEvent.participant.videoTrack,
+          ]);
+          videoEl.play().catch((e) => {
+            console.error(e);
+          });
+        }
+
+        if (dailyEvent.participant.audioTrack) {
+          const documentAudioElm = document.getElementById(`audio-${streamId}`);
+
+          const audioEl =
+            documentAudioElm instanceof HTMLAudioElement
+              ? documentAudioElm
+              : document.createElement("audio");
+
+          audioEl.id = `audio-${streamId}`;
+          t.appendChild(audioEl);
+          audioEl.srcObject = new MediaStream([
+            dailyEvent.participant.audioTrack,
+          ]);
+          audioEl.play().catch((e) => {
+            console.error(e);
+          });
+        }
+      });
 
     return subscriber;
   }
