@@ -1,4 +1,3 @@
-import Daily, { DailyEventObjectParticipant } from "@daily-co/daily-js";
 import {
   Connection,
   OTError,
@@ -297,11 +296,9 @@ export class Session extends OTEventEmitter<{
     console.log("SUBSCRIBE");
 
     if (!targetElement) {
-      callback?.({
-        message: "No target element",
-        name: "NoTargetElement",
-      });
-      throw new Error("No target element");
+      const err = new Error("No target element");
+      callback?.(err);
+      throw err;
     }
 
     const { streamId } = stream;
@@ -312,7 +309,9 @@ export class Session extends OTEventEmitter<{
         : document.getElementById(targetElement);
 
     if (!t) {
-      throw new Error("No target element");
+      const err = new Error("No target element");
+      callback?.(err);
+      throw err;
     }
 
     const subscriber = new Subscriber(t);
@@ -357,10 +356,11 @@ export class Session extends OTEventEmitter<{
           const streamId = dailyEvent.participant.session_id;
           const documentVideoElm = document.getElementById(`video-${streamId}`);
 
-          const videoEl =
-            documentVideoElm instanceof HTMLVideoElement
-              ? documentVideoElm
-              : document.createElement("video");
+          if (documentVideoElm) {
+            return;
+          }
+
+          const videoEl = document.createElement("video");
 
           videoEl.id = `video-${streamId}`;
           t.appendChild(videoEl);
@@ -372,19 +372,18 @@ export class Session extends OTEventEmitter<{
             dailyEvent.participant.videoTrack,
           ]);
           videoEl.play().catch((e) => {
-            console.error("ERROR IN SESSION VIDEO");
-
-            console.error(e);
+            console.error("ERROR IN SESSION VIDEO", e);
           });
         }
 
         if (dailyEvent.participant.audioTrack) {
           const documentAudioElm = document.getElementById(`audio-${streamId}`);
 
-          const audioEl =
-            documentAudioElm instanceof HTMLAudioElement
-              ? documentAudioElm
-              : document.createElement("audio");
+          if (documentAudioElm) {
+            return;
+          }
+
+          const audioEl = document.createElement("audio");
 
           audioEl.id = `audio-${streamId}`;
           t.appendChild(audioEl);
@@ -392,9 +391,7 @@ export class Session extends OTEventEmitter<{
             dailyEvent.participant.audioTrack,
           ]);
           audioEl.play().catch((e) => {
-            console.error("ERROR IN SESSION AUDIO");
-
-            console.error(e);
+            console.error("ERROR IN SESSION AUDIO", e);
           });
         }
       });
