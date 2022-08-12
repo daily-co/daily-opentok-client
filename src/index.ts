@@ -92,8 +92,24 @@ export function initPublisher(
   });
 
   window.call.on("participant-updated", (dailyEvent) => {
+    if (!dailyEvent) {
+      return;
+    }
+
+    const { participant } = dailyEvent;
+
     console.debug("[participant-updated] index", dailyEvent);
-    if (!dailyEvent?.participant.local) {
+    if (!participant.local) {
+      // Don't think we need this???
+
+      // window.call?.updateParticipant(dailyEvent.participant.session_id, {
+      //   setSubscribedTracks: {
+      //     audio: true, // trying it
+      //     video: true, // trying it
+      //     screenVideo: false,
+      //     screenAudio: false,
+      //   },
+      // });
       return;
     }
 
@@ -111,7 +127,9 @@ export function initPublisher(
       document.body.appendChild(t);
     }
 
-    const documentVideoElm = document.getElementById(`video-${session_id}`);
+    const documentVideoElm = document.getElementById(
+      `video-local-${session_id}`
+    );
 
     const videoEl =
       documentVideoElm instanceof HTMLVideoElement
@@ -124,8 +142,8 @@ export function initPublisher(
     }
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
-    videoEl.srcObject = new MediaStream([videoTrack, audioTrack]);
-    videoEl.id = `video-${session_id}`;
+    videoEl.srcObject = new MediaStream([videoTrack]);
+    videoEl.id = `video-local-${session_id}`;
     videoEl.play().catch((e) => {
       console.error("ERROR LOCAL CAMERA PLAY");
       console.error(e);

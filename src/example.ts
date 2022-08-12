@@ -1,7 +1,6 @@
 import "./example.css";
 
-// import { Event as OTEvent, Session } from "@opentok/client";
-// type StreamCreatedEvent = OTEvent<"streamCreated", Session>;
+import { Event as OTEvent, Session } from "@opentok/client";
 
 // import * as OT from "@opentok/client";
 // const {
@@ -34,7 +33,7 @@ const session = OT.initSession(apiKey, sessionId);
 session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event);
   // This is daily remote user stuff
-  // if (window.chrome) {
+  // if (!window.chrome) {
   session.subscribe(
     event.stream,
     "subscriber",
@@ -59,6 +58,7 @@ const publisher = OT.initPublisher(
     insertMode: "append",
     width: "100%",
     height: "100%",
+    name: "James's stream",
   },
   handleError
 );
@@ -71,8 +71,8 @@ session.connect(token, function callback(error) {
     handleError(error);
   } else {
     // If the connection is successful, publish the publisher (remote) to the session
-    // if (window.chrome) {
+    //if (!window.chrome) {
     session.publish(publisher, handleError);
-    // }
+    //}
   }
 });

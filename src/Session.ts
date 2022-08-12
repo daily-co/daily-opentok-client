@@ -316,85 +316,71 @@ export class Session extends OTEventEmitter<{
 
     const subscriber = new Subscriber(t);
 
-    window.call
-      .updateParticipant(streamId, {
-        setSubscribedTracks: {
-          audio: stream.hasAudio,
-          video: stream.hasVideo,
-          screenVideo: false,
-          screenAudio: false,
-        },
-      })
-      .on("participant-updated", (dailyEvent) => {
-        if (!dailyEvent) {
+    window.call.on("track-started", (dailyEvent) => {
+      // Make sure the track has started before publishing the session
+      // TODO(jamsea): need to figure out the error handling here.
+
+      if (!dailyEvent) {
+        console.debug("track-started no daily event");
+        return;
+      }
+
+      if (!dailyEvent.participant) {
+        console.debug("track-started no participant");
+        return;
+      }
+      if (dailyEvent.participant.videoTrack) {
+        const streamId = dailyEvent.participant.session_id;
+        const documentVideoElm = document.getElementById(`video-${streamId}`);
+
+        if (documentVideoElm) {
           return;
         }
 
-        window.call?.updateParticipant(dailyEvent.participant.session_id, {
-          setSubscribedTracks: {
-            audio: dailyEvent.participant.audio,
-            video: dailyEvent.participant.video,
-            screenVideo: false,
-            screenAudio: false,
-          },
+        const videoEl = document.createElement("video");
+
+        videoEl.id = `video-${streamId}`;
+        t.appendChild(videoEl);
+        if (properties) {
+          videoEl.style.width = properties.width?.toString() ?? "";
+          videoEl.style.height = properties.height?.toString() ?? "";
+        }
+        videoEl.srcObject = new MediaStream([
+          dailyEvent.participant.videoTrack,
+        ]);
+        videoEl.play().catch((e) => {
+          console.error("ERROR IN SESSION VIDEO", e);
         });
-      })
-      .on("track-started", (dailyEvent) => {
-        // Make sure the track has started before publishing the session
-        // TODO(jamsea): need to figure out the error handling here.
+      }
 
-        if (!dailyEvent) {
-          console.debug("track-started no daily event");
+      if (dailyEvent.participant.audioTrack) {
+        const documentAudioElm = document.getElementById(`audio-${streamId}`);
+
+        if (documentAudioElm) {
           return;
         }
 
-        if (!dailyEvent.participant) {
-          console.debug("track-started no participant");
-          return;
-        }
-        if (dailyEvent.participant.videoTrack) {
-          const streamId = dailyEvent.participant.session_id;
-          const documentVideoElm = document.getElementById(`video-${streamId}`);
+        const audioEl = document.createElement("audio");
 
-          if (documentVideoElm) {
-            return;
-          }
+        audioEl.id = `audio-${streamId}`;
+        t.appendChild(audioEl);
+        audioEl.srcObject = new MediaStream([
+          dailyEvent.participant.audioTrack,
+        ]);
+        audioEl.play().catch((e) => {
+          console.error("ERROR IN SESSION AUDIO", e);
+        });
+      }
+    });
 
-          const videoEl = document.createElement("video");
-
-          videoEl.id = `video-${streamId}`;
-          t.appendChild(videoEl);
-          if (properties) {
-            videoEl.style.width = properties.width?.toString() ?? "";
-            videoEl.style.height = properties.height?.toString() ?? "";
-          }
-          videoEl.srcObject = new MediaStream([
-            dailyEvent.participant.videoTrack,
-          ]);
-          videoEl.play().catch((e) => {
-            console.error("ERROR IN SESSION VIDEO", e);
-          });
-        }
-
-        if (dailyEvent.participant.audioTrack) {
-          const documentAudioElm = document.getElementById(`audio-${streamId}`);
-
-          if (documentAudioElm) {
-            return;
-          }
-
-          const audioEl = document.createElement("audio");
-
-          audioEl.id = `audio-${streamId}`;
-          t.appendChild(audioEl);
-          audioEl.srcObject = new MediaStream([
-            dailyEvent.participant.audioTrack,
-          ]);
-          audioEl.play().catch((e) => {
-            console.error("ERROR IN SESSION AUDIO", e);
-          });
-        }
-      });
+    window.call.updateParticipant(streamId, {
+      setSubscribedTracks: {
+        audio: true,
+        video: true,
+        screenVideo: false,
+        screenAudio: false,
+      },
+    });
 
     return subscriber;
   }
