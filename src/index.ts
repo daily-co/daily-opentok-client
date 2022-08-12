@@ -67,8 +67,8 @@ export function initPublisher(
   }
 
   const publisher = new Publisher({
-    width: properties?.width ?? "100%",
-    height: properties?.height ?? "100%",
+    width: properties?.width ?? "",
+    height: properties?.height ?? "",
     insertMode: properties?.insertMode,
   });
 
