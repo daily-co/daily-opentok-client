@@ -183,13 +183,9 @@ export class Session extends OTEventEmitter<{
             },
           });
 
-    // .join({ url: this.sessionId })
     // .then((foo) => {
     //   // callback();
     // })
-    // window.call.catch((e) => {
-    //   console.error(e);
-    // });
 
     window.call
       .on("started-camera", (participant) => {
@@ -348,6 +344,10 @@ export class Session extends OTEventEmitter<{
         if (v) {
           v.remove();
         }
+      })
+      .join({ url: this.sessionId })
+      .catch((e) => {
+        console.error(e);
       });
   }
   subscribe(
@@ -391,7 +391,24 @@ export class Session extends OTEventEmitter<{
           screenAudio: false,
         },
       })
+      .on("participant-updated", (dailyEvent) => {
+        console.log("participant-updated", dailyEvent);
+
+        if (!dailyEvent) {
+          return;
+        }
+
+        window.call?.updateParticipant(dailyEvent.participant.session_id, {
+          setSubscribedTracks: {
+            audio: dailyEvent.participant.audio,
+            video: dailyEvent.participant.video,
+            screenVideo: false,
+            screenAudio: false,
+          },
+        });
+      })
       .on("track-started", (dailyEvent) => {
+        console.log("TRACK STARTED");
         // Make sure the track has started before publishing the session
         // TODO(jamsea): need to figure out the error handling here.
 
