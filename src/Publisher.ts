@@ -4,6 +4,7 @@ import {
   PublisherRtcStatsReportArr,
   PublisherStatsArr,
   PublisherStyle,
+  PublisherProperties,
   Stream,
   VideoContentHint,
   VideoDimensionsChangedEvent,
@@ -11,8 +12,6 @@ import {
 } from "@opentok/client";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { notImplemented } from "./";
-
-type PublisherProperties = OT.PublisherProperties & { dailyElementId?: string };
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
@@ -47,23 +46,16 @@ export class Publisher extends OTEventEmitter<{
 
   muteForced: Event<"muteForced", Publisher>;
 }> {
-  readonly dailyElementId?: string;
   accessAllowed: boolean;
   width?: string;
   height?: string;
   insertMode?: "replace" | "after" | "before" | "append";
-  constructor({
-    width,
-    height,
-    insertMode,
-    dailyElementId,
-  }: PublisherProperties) {
+  constructor({ width, height, insertMode }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
 
-    this.dailyElementId = dailyElementId;
     this.accessAllowed = true;
   }
 
