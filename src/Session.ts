@@ -303,18 +303,18 @@ export class Session extends OTEventEmitter<{
 
     const { streamId } = stream;
 
-    const t =
+    const root =
       targetElement instanceof HTMLElement
         ? targetElement
         : document.getElementById(targetElement);
 
-    if (!t) {
+    if (!root) {
       const err = new Error("No target element");
       callback?.(err);
       throw err;
     }
 
-    const subscriber = new Subscriber(t);
+    const subscriber = new Subscriber(root);
 
     window.call.on("track-started", (dailyEvent) => {
       // Make sure the track has started before publishing the session
@@ -325,29 +325,27 @@ export class Session extends OTEventEmitter<{
         return;
       }
 
-      if (!dailyEvent.participant) {
-        console.debug("track-started no participant");
+      const { participant } = dailyEvent;
+      if (!participant) {
         return;
       }
 
-      const { audio, video } = getParticipantTracks(dailyEvent.participant);
+      const { audio, video } = getParticipantTracks(participant);
       const tracks: MediaStreamTrack[] = [];
       if (video) tracks.push(video);
       if (audio) tracks.push(audio);
       const stream = new MediaStream(tracks);
 
-      const streamId = dailyEvent.participant.session_id;
+      const { session_id } = participant;
       const documentVideoElm = document.getElementById(
-        mediaId`${stream}-${streamId}`
+        mediaId`${stream}-${session_id}`
       );
 
-      if (documentVideoElm) {
-        return;
-      }
+      const videoEl =
+        documentVideoElm instanceof HTMLVideoElement
+          ? documentVideoElm
+          : document.createElement("video");
 
-      const videoEl = document.createElement("video");
-
-      t.appendChild(videoEl);
       if (properties) {
         videoEl.style.width = properties.width?.toString() ?? "";
         videoEl.style.height = properties.height?.toString() ?? "";
@@ -356,6 +354,9 @@ export class Session extends OTEventEmitter<{
         videoEl.srcObject = stream;
         videoEl.id = mediaId`${stream}-${streamId}`;
       }
+
+      root.appendChild(videoEl);
+
       videoEl.play().catch((e) => {
         console.error("ERROR IN SESSION VIDEO", e);
       });

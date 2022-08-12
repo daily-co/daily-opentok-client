@@ -21,9 +21,7 @@ export function mediaId(
 }
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {
-  const vt = tracks.video;
-  const at = tracks.audio;
-  const st = tracks.screenVideo;
+  const { audio: at, screenVideo: st, video: vt } = tracks;
 
   const video = vt.state === "playable" ? vt.persistentTrack : null;
   const audio = at.state === "playable" ? at.persistentTrack : null;

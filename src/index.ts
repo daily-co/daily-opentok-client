@@ -2,7 +2,7 @@ import { OTError } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
-import { getParticipantTracks, mediaId } from "./utils";
+import { getParticipantTracks, mediaId, notImplemented } from "./utils";
 
 export function checkSystemRequirements() {
   return Daily.supportedBrowser();
@@ -94,23 +94,18 @@ export function initPublisher(
     }
 
     const { participant } = dailyEvent;
+    const { session_id, local } = participant;
+    const { video } = getParticipantTracks(participant);
 
-    if (!participant.local) {
+    if (!local || !video) {
       return;
     }
 
-    const { session_id } = dailyEvent.participant;
+    let root = document.getElementById(dailyElementId);
 
-    const { video } = getParticipantTracks(dailyEvent.participant);
-    if (!video) {
-      return;
-    }
-
-    let t = document.getElementById(dailyElementId) as HTMLDivElement | null;
-
-    if (t === null) {
-      t = document.createElement("div");
-      document.body.appendChild(t);
+    if (root === null) {
+      root = document.createElement("div");
+      document.body.appendChild(root);
     }
 
     const documentVideoElm = document.getElementById(
@@ -123,9 +118,23 @@ export function initPublisher(
         : document.createElement("video");
 
     // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-    if (publisher.insertMode === "append") {
-      t.appendChild(videoEl);
+    switch (publisher.insertMode) {
+      case "append":
+        root.appendChild(videoEl);
+        break;
+      case "replace":
+        notImplemented();
+        break;
+      case "before":
+        notImplemented();
+        break;
+      case "after":
+        notImplemented();
+        break;
+      default:
+        break;
     }
+
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
     videoEl.srcObject = new MediaStream([video]);
