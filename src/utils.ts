@@ -9,8 +9,6 @@ export function mediaId(
   media: MediaStreamTrack | MediaStream,
   sessionId: string
 ): string {
-  console.log(strings, sessionId);
-
   const kind =
     media instanceof MediaStream
       ? media
