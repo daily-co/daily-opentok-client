@@ -87,20 +87,25 @@ export function initPublisher(
       },
     });
 
-  // window.call.localVideo()
-
   window.call
-    .startCamera()
-    .then((cameraInfo) => {
-      console.log("----- cameraInfo", cameraInfo);
-      if (!window.call) {
+    .updateParticipant("local", {
+      setSubscribedTracks: {
+        audio: true,
+        video: true,
+        screenVideo: false,
+        screenAudio: false,
+      },
+    })
+    .on("participant-updated", (dailyEvent) => {
+      console.debug("[participant-updated]");
+      if (!dailyEvent?.participant.local) {
         return;
       }
-      const videoTrack = window.call.participants().local.videoTrack;
-      const audioTrack = window.call.participants().local.audioTrack;
+
+      const { videoTrack, audioTrack } = dailyEvent.participant;
 
       if (!videoTrack || !audioTrack) {
-        console.log("No video track with startCamera");
+        console.log("No video track with local");
         return;
       }
 
@@ -126,12 +131,9 @@ export function initPublisher(
       videoEl.style.height = publisher.height ?? "";
       videoEl.srcObject = new MediaStream([videoTrack, audioTrack]);
       videoEl.play().catch((e) => {
-        console.log("ERROR OVER HERE");
+        console.error("ERROR LOCAL CAMERA PLAY");
         console.error(e);
       });
-    })
-    .catch((err) => {
-      console.error(err);
     });
 
   return publisher;

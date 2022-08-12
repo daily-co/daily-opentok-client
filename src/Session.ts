@@ -197,12 +197,12 @@ export class Session extends OTEventEmitter<{
           return;
         }
 
-        if (dailyEvent.participant.local) {
-          console.debug(
-            "Local participant, do not fire opentok subscriber event."
-          );
-          return;
-        }
+        // if (dailyEvent.participant.local) {
+        //   console.debug(
+        //     "Local participant, do not fire opentok subscriber event."
+        //   );
+        //   return;
+        // }
 
         const {
           participant: { session_id },
@@ -392,7 +392,11 @@ export class Session extends OTEventEmitter<{
         },
       })
       .on("participant-updated", (dailyEvent) => {
-        console.log("participant-updated", dailyEvent);
+        console.log("--- [participant-updated]", dailyEvent);
+
+        if (dailyEvent?.participant.local) {
+          console.log("-------- [participant-updated] local", dailyEvent);
+        }
 
         if (!dailyEvent) {
           return;
@@ -440,6 +444,8 @@ export class Session extends OTEventEmitter<{
             dailyEvent.participant.videoTrack,
           ]);
           videoEl.play().catch((e) => {
+            console.error("ERROR IN SESSION VIDEO");
+
             console.error(e);
           });
         }
@@ -458,6 +464,8 @@ export class Session extends OTEventEmitter<{
             dailyEvent.participant.audioTrack,
           ]);
           audioEl.play().catch((e) => {
+            console.error("ERROR IN SESSION AUDIO");
+
             console.error(e);
           });
         }
