@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import Daily, { DailyEventObjectParticipant } from "@daily-co/daily-js";
 import {
   Connection,
@@ -8,15 +7,10 @@ import {
   SubscriberProperties,
   PublisherProperties,
 } from "@opentok/client";
-import { DailyEventObjectTrack } from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
 import { notImplemented } from ".";
-
-type DailyStream = Stream & {
-  dailyEvent: DailyEventObjectTrack;
-};
 
 export class Session extends OTEventEmitter<{
   archiveStarted: Event<"archiveStarted", Session> & {
@@ -86,6 +80,7 @@ export class Session extends OTEventEmitter<{
   sessionId: string;
   connection?: OT.Connection;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(apiKey: string, sessionId: string, opt: unknown) {
     super();
     this.sessionId = sessionId;
@@ -118,7 +113,7 @@ export class Session extends OTEventEmitter<{
     callback?: (error?: OTError) => void
   ): Publisher {
     if (typeof publisher === "string" || publisher instanceof HTMLElement) {
-      throw new Error("Not yet implemented");
+      notImplemented();
     }
 
     if (!window.call) {
@@ -130,45 +125,64 @@ export class Session extends OTEventEmitter<{
       return publisher;
     }
 
-    // this.sessionId
+    window.call.on("participant-joined", (dailyEvent) => {
+      if (!dailyEvent) {
+        console.debug("No Daily event");
+        return;
+      }
 
-    const participants = window.call.participants();
+      const settings =
+        dailyEvent.participant.tracks.video.track?.getSettings() ?? {};
 
-    console.debug("publish participants:", participants);
+      const { frameRate = 0, height = 0, width = 0 } = settings;
 
-    // const videoTrack = participants.local.videoTrack;
-    // if (!videoTrack) {
-    //   console.debug("No local video track");
-    //   return publisher;
-    // }
+      const creationTime = dailyEvent.participant.joined_at.getTime();
 
-    // let t =
-    //   publisher.dailyElementId !== undefined
-    //     ? (document.getElementById(publisher.dailyElementId) as HTMLDivElement)
-    //     : null;
+      let defaultPrevented = false;
 
-    // if (t === null) {
-    //   t = document.createElement("div");
-    //   document.body.appendChild(t);
-    // }
+      type DailyStream = Stream & {
+        dailyEvent: DailyEventObjectParticipant;
+      };
+      type StreamCreatedEvent = Event<"streamCreated", Session> & {
+        stream: DailyStream;
+      };
 
-    // const videoElements = t.getElementsByTagName("video");
+      // Format as an opentok event
+      const streamEvent: StreamCreatedEvent = {
+        type: "streamCreated",
+        isDefaultPrevented: () => defaultPrevented,
+        preventDefault: () => {
+          defaultPrevented = true;
+        },
+        target: this,
+        cancelable: true,
+        stream: {
+          streamId: dailyEvent.participant.session_id,
+          frameRate,
+          hasAudio: dailyEvent.participant.audio,
+          hasVideo: dailyEvent.participant.video,
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
+          videoDimensions: {
+            height,
+            width,
+          },
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime,
+          connection: {
+            connectionId: "connectionId", // TODO
+            creationTime,
+            // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+            // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+            data: "",
+          },
+          // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
+          dailyEvent,
+        },
+      };
 
-    // const videoEl =
-    //   videoElements.length > 0
-    //     ? videoElements[0]
-    //     : document.createElement<"video">("video");
-
-    // // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-    // if (publisher.insertMode === "append") {
-    //   t.appendChild(videoEl);
-    // }
-    // videoEl.style.width = publisher.width ?? "";
-    // videoEl.style.height = publisher.height ?? "";
-    // videoEl.srcObject = new MediaStream([videoTrack]);
-    // videoEl.play().catch((e) => {
-    //   console.error(e);
-    // });
+      this.ee.emit("streamCreated", streamEvent);
+    });
 
     return publisher;
   }
@@ -186,84 +200,6 @@ export class Session extends OTEventEmitter<{
     window.call
       .on("started-camera", (participant) => {
         console.log("started-camera", participant);
-      })
-      .on("participant-joined", (dailyEvent) => {
-        if (!dailyEvent) {
-          console.debug("No Daily event");
-          return;
-        }
-
-        // if (dailyEvent.participant.local) {
-        //   console.debug(
-        //     "Local participant, do not fire opentok subscriber event."
-        //   );
-        //   return;
-        // }
-
-        const {
-          participant: { session_id },
-        } = dailyEvent;
-
-        // window.call?.updateParticipant(session_id, {
-        //   setSubscribedTracks: {
-        //     audio: true,
-        //     video: true,
-        //     screenVideo: false,
-        //     screenAudio: false,
-        //   },
-        // });
-
-        const settings =
-          dailyEvent.participant.tracks.video.track?.getSettings() ?? {};
-
-        const { frameRate = 0, height = 0, width = 0 } = settings;
-
-        const creationTime = dailyEvent.participant.joined_at.getTime();
-
-        let defaultPrevented = false;
-
-        type DailyStream = Stream & {
-          dailyEvent: DailyEventObjectParticipant;
-        };
-        type StreamCreatedEvent = Event<"streamCreated", Session> & {
-          stream: DailyStream;
-        };
-
-        // Format as an opentok event
-        const streamEvent: StreamCreatedEvent = {
-          type: "streamCreated",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          target: this,
-          cancelable: true,
-          stream: {
-            streamId: dailyEvent.participant.session_id,
-            frameRate,
-            hasAudio: dailyEvent.participant.audio,
-            hasVideo: dailyEvent.participant.video,
-            // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-            name: "",
-            videoDimensions: {
-              height,
-              width,
-            },
-            videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-            creationTime,
-            connection: {
-              connectionId: "connectionId", // TODO
-              creationTime,
-              // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-              // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-              data: "",
-            },
-            // Append the Daily Event to the stream object so customers can "break out" of opentok if they want to
-            dailyEvent,
-          },
-        };
-
-        this.ee.emit("streamCreated", streamEvent);
       })
       .on("track-stopped", () => {
         // TODO(jamsea): emit streamDestroyed event
@@ -342,8 +278,22 @@ export class Session extends OTEventEmitter<{
         }
       })
       .join({ url: this.sessionId, token })
+      .then(() => {
+        // Call the completion callback after the call has been joined
+        callback();
+      })
       .catch((e) => {
-        console.error(e);
+        if (typeof e === "string") {
+          callback({
+            message: e.toUpperCase(),
+            name: "error",
+          });
+        } else if (e instanceof Error) {
+          callback({
+            message: e.message,
+            name: e.name,
+          });
+        }
       });
   }
   subscribe(
@@ -388,12 +338,6 @@ export class Session extends OTEventEmitter<{
         },
       })
       .on("participant-updated", (dailyEvent) => {
-        console.log("--- [participant-updated]", dailyEvent);
-
-        if (dailyEvent?.participant.local) {
-          console.log("-------- [participant-updated] local", dailyEvent);
-        }
-
         if (!dailyEvent) {
           return;
         }
@@ -408,7 +352,6 @@ export class Session extends OTEventEmitter<{
         });
       })
       .on("track-started", (dailyEvent) => {
-        console.log("TRACK STARTED");
         // Make sure the track has started before publishing the session
         // TODO(jamsea): need to figure out the error handling here.
 
@@ -473,44 +416,56 @@ export class Session extends OTEventEmitter<{
     notImplemented();
   }
   forceDisconnect(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     connection: OT.Connection,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError) => void
   ): void {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceMuteStream(stream: Stream): Promise<void> {
     return new Promise((_, reject) => {
       reject(notImplemented());
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceMuteAll(excludedStreams?: Stream[]): Promise<void> {
     return new Promise((_, reject) => {
       reject(notImplemented());
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPublisherForStream(stream: Stream): Publisher | undefined {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getSubscribersForStream(stream: Stream): [Subscriber] {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setEncryptionSecret(secret: string): Promise<void> {
     return new Promise((_, reject) => {
       reject(notImplemented());
     });
   }
   signal(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     signal: { type?: string; data?: string; to?: OT.Connection },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError) => void
   ): void {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unpublish(publisher: Publisher): void {
     notImplemented();
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unsubscribe(subscriber: Subscriber): void {
     notImplemented();
   }
