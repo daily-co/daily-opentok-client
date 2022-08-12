@@ -183,10 +183,6 @@ export class Session extends OTEventEmitter<{
             },
           });
 
-    // .then((foo) => {
-    //   // callback();
-    // })
-
     window.call
       .on("started-camera", (participant) => {
         console.log("started-camera", participant);
@@ -345,7 +341,7 @@ export class Session extends OTEventEmitter<{
           v.remove();
         }
       })
-      .join({ url: this.sessionId })
+      .join({ url: this.sessionId, token })
       .catch((e) => {
         console.error(e);
       });
