@@ -14,10 +14,28 @@ export function upgradeSystemRequirements() {
 }
 
 export function getDevices(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   callback: (error: OTError | undefined, devices?: OT.Device[]) => void
 ): void {
-  // TODO(daily): implement
+  navigator.mediaDevices
+    .enumerateDevices()
+    .then((devices) => {
+      const OTDevices: OT.Device[] = devices
+        .filter((device) => {
+          return device.kind === "videoinput" || device.kind === "audioinput";
+        })
+        .map((device) => {
+          return {
+            deviceId: device.deviceId,
+            kind: device.kind === "videoinput" ? "videoInput" : "audioInput",
+            label: device.label,
+          };
+        });
+
+      callback(undefined, OTDevices);
+    })
+    .catch((err: Error) => {
+      callback(err);
+    });
 }
 
 // FROM DOCS:

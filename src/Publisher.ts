@@ -1,3 +1,4 @@
+import DailyIframe from "@daily-co/daily-js";
 import {
   Event,
   OTError,
@@ -56,6 +57,8 @@ export class Publisher extends OTEventEmitter<{
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
 
+    // TODO(jamsea): Just hardcoding access allowed for now. Should be fired
+    // when access is allowed in the browser
     this.accessAllowed = true;
   }
 
@@ -97,26 +100,42 @@ export class Publisher extends OTEventEmitter<{
   publishAudio(value: boolean): void {
     notImplemented();
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  publishVideo(value: boolean): void {
-    notImplemented();
+  publishVideo(value: boolean): this {
+    console.log("publishVideo", value);
+    window.call?.setLocalVideo(value);
+    return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishCaptions(value: boolean): void {
     notImplemented();
   }
   cycleVideo(): Promise<{ deviceId: string }> {
-    return new Promise((_, reject) => {
-      reject(notImplemented());
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
+
+    return window.call.cycleCamera().then((device) => {
+      this.ee.emit("accessAllowed");
+      return { deviceId: String(device) };
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
-    return new Promise((_, reject) => {
-      reject(notImplemented());
-    });
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
+
+    return window.call
+      .setInputDevicesAsync({
+        audioDeviceId:
+          typeof audioSource === "string" ? audioSource : audioSource.id,
+      })
+      .then(() => undefined);
   }
   getAudioSource(): MediaStreamTrack {
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
     notImplemented();
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
