@@ -5,9 +5,13 @@ export function notImplemented(): never {
 }
 
 export function mediaId(
-  media: MediaStreamTrack | MediaStream,
+  media: MediaStreamTrack | MediaStream | string,
   sessionId: string
 ): string {
+  if (typeof media === "string") {
+    return `${media}-${sessionId}`;
+  }
+
   const kind =
     media instanceof MediaStream
       ? media

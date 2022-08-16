@@ -73,22 +73,18 @@ export function initPublisher(
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
-  // TODO(jamsea): initPublisher function signature needs
-  // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
-
-  if (!targetElement) {
-    callback?.({
-      message: "No target element provided",
-      name: "OTError",
-    });
-    throw new Error("No target element provided");
-  }
-
   const publisher = new Publisher({
     width: properties?.width ?? "",
     height: properties?.height ?? "",
     insertMode: properties?.insertMode,
   });
+
+  // TODO(jamsea): initPublisher function signature needs
+  // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
+  if (!targetElement) {
+    callback?.(new Error("No target element provided"));
+    return publisher;
+  }
 
   const dailyElementId =
     targetElement instanceof HTMLElement ? targetElement.id : targetElement;
@@ -130,10 +126,16 @@ export function initPublisher(
       mediaId(video, session_id)
     );
 
-    const videoEl =
-      documentVideoElm instanceof HTMLVideoElement
-        ? documentVideoElm
-        : document.createElement("video");
+    if (
+      !(documentVideoElm instanceof HTMLVideoElement) &&
+      documentVideoElm != undefined
+    ) {
+      return callback?.(new Error("Video element id is invalid."));
+    }
+
+    const videoEl = documentVideoElm
+      ? documentVideoElm
+      : document.createElement("video");
 
     // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
     switch (publisher.insertMode) {

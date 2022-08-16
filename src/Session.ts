@@ -260,7 +260,7 @@ export class Session extends OTEventEmitter<{
           participant: { session_id },
         } = dailyEvent;
 
-        const v = document.getElementById(`audio-video-${session_id}`);
+        const v = document.getElementById(mediaId("audio-video", session_id));
         if (v) {
           v.remove();
         }
