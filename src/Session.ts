@@ -335,10 +335,16 @@ export class Session extends OTEventEmitter<{
         mediaId(stream, session_id)
       );
 
-      const videoEl =
-        documentVideoElm instanceof HTMLVideoElement
-          ? documentVideoElm
-          : document.createElement("video");
+      if (
+        !(documentVideoElm instanceof HTMLVideoElement) &&
+        documentVideoElm != undefined
+      ) {
+        return callback?.(new Error("Video element id is invalid."));
+      }
+
+      const videoEl = documentVideoElm
+        ? documentVideoElm
+        : document.createElement("video");
 
       if (properties) {
         videoEl.style.width = properties.width?.toString() ?? "";
