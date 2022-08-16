@@ -127,7 +127,7 @@ export function initPublisher(
     }
 
     const documentVideoElm = document.getElementById(
-      mediaId`${video}-local-${session_id}`
+      mediaId(video, session_id)
     );
 
     const videoEl =
@@ -156,7 +156,7 @@ export function initPublisher(
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
     videoEl.srcObject = new MediaStream([video]);
-    videoEl.id = mediaId`${video}-local-${session_id}`;
+    videoEl.id = mediaId(video, session_id);
     videoEl.play().catch((e) => {
       console.error("ERROR LOCAL CAMERA PLAY");
       console.error(e);

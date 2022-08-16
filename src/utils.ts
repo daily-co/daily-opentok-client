@@ -5,7 +5,6 @@ export function notImplemented(): never {
 }
 
 export function mediaId(
-  strings: TemplateStringsArray,
   media: MediaStreamTrack | MediaStream,
   sessionId: string
 ): string {
@@ -17,7 +16,7 @@ export function mediaId(
           .join("-")
       : media.kind;
 
-  return `${kind}${strings[1]}${sessionId}`;
+  return `${kind}-${sessionId}`;
 }
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {

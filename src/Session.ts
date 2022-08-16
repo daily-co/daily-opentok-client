@@ -332,7 +332,7 @@ export class Session extends OTEventEmitter<{
 
       const { session_id } = participant;
       const documentVideoElm = document.getElementById(
-        mediaId`${stream}-${session_id}`
+        mediaId(stream, session_id)
       );
 
       const videoEl =
@@ -346,7 +346,7 @@ export class Session extends OTEventEmitter<{
       }
       if (tracks.length > 0) {
         videoEl.srcObject = stream;
-        videoEl.id = mediaId`${stream}-${streamId}`;
+        videoEl.id = mediaId(stream, session_id);
       }
 
       root.appendChild(videoEl);

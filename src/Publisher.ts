@@ -1,4 +1,3 @@
-import DailyIframe from "@daily-co/daily-js";
 import {
   Event,
   OTError,
