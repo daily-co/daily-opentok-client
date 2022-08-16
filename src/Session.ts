@@ -129,13 +129,12 @@ export class Session extends OTEventEmitter<{
         console.debug("No Daily event");
         return;
       }
+      const { participant } = dailyEvent;
+      const { session_id, audio, video, tracks, joined_at } = participant;
+      const creationTime = joined_at.getTime();
 
-      const settings =
-        dailyEvent.participant.tracks.video.track?.getSettings() ?? {};
-
+      const settings = tracks.video.track?.getSettings() ?? {};
       const { frameRate = 0, height = 0, width = 0 } = settings;
-
-      const creationTime = dailyEvent.participant.joined_at.getTime();
 
       let defaultPrevented = false;
 
@@ -153,10 +152,10 @@ export class Session extends OTEventEmitter<{
         target: this,
         cancelable: true,
         stream: {
-          streamId: dailyEvent.participant.session_id,
+          streamId: session_id,
           frameRate,
-          hasAudio: dailyEvent.participant.audio,
-          hasVideo: dailyEvent.participant.video,
+          hasAudio: audio,
+          hasVideo: video,
           // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
           name: "",
           videoDimensions: {
@@ -257,10 +256,11 @@ export class Session extends OTEventEmitter<{
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
+        const {
+          participant: { session_id },
+        } = dailyEvent;
 
-        const v = document.getElementById(
-          `audio-video-${dailyEvent.participant.session_id}`
-        );
+        const v = document.getElementById(`audio-video-${session_id}`);
         if (v) {
           v.remove();
         }
@@ -272,15 +272,9 @@ export class Session extends OTEventEmitter<{
       })
       .catch((e) => {
         if (typeof e === "string") {
-          callback({
-            message: e.toUpperCase(),
-            name: "error",
-          });
+          callback(new Error(e));
         } else if (e instanceof Error) {
-          callback({
-            message: e.message,
-            name: e.name,
-          });
+          callback(e);
         }
       });
   }
