@@ -14,9 +14,10 @@
       "require": "./dist/daily-tokbox.umd.js"
     }
   },
+  "types": "./dist/index.d.ts",
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build && tsc",
     "serve": "vite preview",
     "prepublishOnly": "npm run build",
     "test": "npm run lint",
