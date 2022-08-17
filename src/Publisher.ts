@@ -102,7 +102,7 @@ export class Publisher extends OTEventEmitter<{
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+      reject(notImplemented());
     });
   }
   getStyle(): PublisherProperties {
@@ -111,7 +111,7 @@ export class Publisher extends OTEventEmitter<{
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+      reject(notImplemented());
     });
   }
   getVideoFilter(): VideoFilter | null {
@@ -119,7 +119,7 @@ export class Publisher extends OTEventEmitter<{
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(new Error("Method not implemented."));
+      reject(notImplemented());
     });
   }
   publishAudio(value: boolean): void {
