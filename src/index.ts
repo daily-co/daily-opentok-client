@@ -29,7 +29,6 @@ export function getDevices(
             label: device.label,
           };
         });
-      console.log("--- internal devices", OTDevices);
 
       callback(undefined, OTDevices);
     })
@@ -103,6 +102,7 @@ export function initPublisher(
   });
 
   window.call.on("participant-updated", (dailyEvent) => {
+    console.log("participant-updated: ", dailyEvent);
     if (!dailyEvent) {
       return;
     }
@@ -137,6 +137,14 @@ export function initPublisher(
       ? documentVideoElm
       : document.createElement("video");
 
+    if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
+      const tracks = videoEl.srcObject.getTracks();
+      console.log("local tracks", tracks);
+      if (tracks[0].id === video.id) {
+        return;
+      }
+    }
+
     // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
     switch (publisher.insertMode) {
       case "append":
@@ -158,11 +166,12 @@ export function initPublisher(
     videoEl.style.width = publisher.width ?? "";
     videoEl.style.height = publisher.height ?? "";
     videoEl.srcObject = new MediaStream([video]);
+
     videoEl.id = mediaId(video, session_id);
-    // videoEl.play().catch((e) => {
-    //   console.error("ERROR LOCAL CAMERA PLAY");
-    //   console.error(e);
-    // });
+    videoEl.play().catch((e) => {
+      console.error("ERROR LOCAL CAMERA PLAY");
+      console.error(e);
+    });
   });
 
   window.call.setLocalVideo(true);

@@ -314,6 +314,8 @@ export class Session extends OTEventEmitter<{
       // Make sure the track has started before publishing the session
       // TODO(jamsea): need to figure out the error handling here.
 
+      console.log("track-started: ", dailyEvent);
+
       if (!dailyEvent) {
         console.debug("track-started no daily event");
         return;
