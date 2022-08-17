@@ -179,3 +179,11 @@ export function initPublisher(
 
   return publisher;
 }
+
+export default {
+  checkSystemRequirements,
+  upgradeSystemRequirements,
+  getDevices,
+  initSession,
+  initPublisher,
+};

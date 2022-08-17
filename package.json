@@ -24,7 +24,7 @@
     "test": "npm run lint",
     "lint": "npm run lint:ts && npm run lint:js",
     "lint:js": "eslint . --cache --cache-location node_modules/.eslintcache",
-    "lint:ts": "tsc --noEmit"
+    "lint:ts": "tsc"
   },
   "dependencies": {
     "@daily-co/daily-js": "0.29.0",
