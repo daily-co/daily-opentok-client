@@ -348,6 +348,14 @@ export class Session extends OTEventEmitter<{
         ? documentVideoElm
         : document.createElement("video");
 
+      if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
+        const tracks = videoEl.srcObject.getTracks();
+        console.log("remote tracks", tracks);
+        if (tracks[0].id === stream.id) {
+          return;
+        }
+      }
+
       if (properties) {
         videoEl.style.width = properties.width?.toString() ?? "";
         videoEl.style.height = properties.height?.toString() ?? "";

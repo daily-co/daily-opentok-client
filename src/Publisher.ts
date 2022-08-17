@@ -122,13 +122,17 @@ export class Publisher extends OTEventEmitter<{
       reject(new Error("Method not implemented."));
     });
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishAudio(value: boolean): void {
-    notImplemented();
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
+    window.call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
-    console.log("publishVideo", value);
-    window.call?.setLocalVideo(value);
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
+    window.call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -141,7 +145,6 @@ export class Publisher extends OTEventEmitter<{
     }
 
     return window.call.cycleCamera().then((device) => {
-      // this.ee.emit("accessAllowed");
       return { deviceId: String(device) };
     });
   }
