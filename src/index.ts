@@ -20,16 +20,16 @@ export function getDevices(
     .enumerateDevices()
     .then((devices) => {
       const OTDevices: OT.Device[] = devices
-        .filter((device) => {
-          return device.kind === "videoinput" || device.kind === "audioinput";
-        })
+        .filter((device) => /^(audio|video)input$/.test(device.kind))
         .map((device) => {
+          device.kind;
           return {
             deviceId: device.deviceId,
-            kind: device.kind === "videoinput" ? "videoInput" : "audioInput",
+            kind: device.kind.includes("audio") ? "audioInput" : "videoInput",
             label: device.label,
           };
         });
+      console.log("--- internal devices", OTDevices);
 
       callback(undefined, OTDevices);
     })
@@ -159,10 +159,10 @@ export function initPublisher(
     videoEl.style.height = publisher.height ?? "";
     videoEl.srcObject = new MediaStream([video]);
     videoEl.id = mediaId(video, session_id);
-    videoEl.play().catch((e) => {
-      console.error("ERROR LOCAL CAMERA PLAY");
-      console.error(e);
-    });
+    // videoEl.play().catch((e) => {
+    //   console.error("ERROR LOCAL CAMERA PLAY");
+    //   console.error(e);
+    // });
   });
 
   window.call.setLocalVideo(true);

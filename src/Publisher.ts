@@ -10,6 +10,7 @@ import {
   VideoDimensionsChangedEvent,
   VideoFilter,
 } from "@opentok/client";
+import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { notImplemented } from "./utils";
 
@@ -55,10 +56,36 @@ export class Publisher extends OTEventEmitter<{
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
-
-    // TODO(jamsea): Just hardcoding access allowed for now. Should be fired
-    // when access is allowed in the browser
     this.accessAllowed = true;
+
+    window.call =
+      window.call ??
+      Daily.createCallObject({
+        subscribeToTracksAutomatically: false,
+        dailyConfig: {
+          experimentalChromeVideoMuteLightOff: true,
+        },
+      });
+
+    window.call
+      .on("started-camera", () => {
+        console.log("SHIM accessAllowed");
+        this.accessAllowed = true;
+        this.ee.emit("accessAllowed");
+        console.log(
+          "accessAllowed Count",
+          this.ee.listenerCount("accessAllowed"),
+          this.ee.listeners("accessAllowed")
+        );
+      })
+      .on("camera-error", (error) => {
+        if (!error) return;
+
+        if (error.errorMsg.errorMsg === "not allowed") {
+          this.ee.emit("accessDenied");
+          this.accessAllowed = false;
+        }
+      });
   }
 
   destroy(): void {
@@ -114,7 +141,7 @@ export class Publisher extends OTEventEmitter<{
     }
 
     return window.call.cycleCamera().then((device) => {
-      this.ee.emit("accessAllowed");
+      // this.ee.emit("accessAllowed");
       return { deviceId: String(device) };
     });
   }
