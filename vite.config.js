@@ -23,11 +23,10 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [mkcert()],
     build: {
-      minify: false,
-      sourcemap: "inline",
+      minify: true,
       lib,
       rollupOptions: {
-        output: { sourcemap: "inline", format: "iife", name: "OT" },
+        output: { format: "iife", name: "OT" },
       },
     },
     server: { https: true },
