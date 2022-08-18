@@ -1,6 +1,7 @@
 {
   "name": "daily-tokbox",
   "version": "0.0.0-67be49",
+  "license": "ISC",
   "description": "Daily Tokbox shim",
   "type": "module",
   "files": [
