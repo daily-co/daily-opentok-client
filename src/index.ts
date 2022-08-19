@@ -79,10 +79,15 @@ export function initPublisher(
     insertMode: properties?.insertMode,
   });
 
-  // TODO(jamsea): initPublisher function signature needs
-  // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
+  const completionHandler =
+    typeof callback === "function"
+      ? callback
+      : () => {
+          // empty
+        };
+
   if (!targetElement) {
-    callback?.(new Error("No target element provided"));
+    completionHandler(new Error("No target element provided"));
     return publisher;
   }
 

@@ -72,6 +72,7 @@ session.connect(token, function callback(error) {
   } else {
     // If the connection is successful, publish the publisher (remote) to the session
     //if (!window.chrome) {
+
     session.publish(publisher, handleError);
     //}
   }

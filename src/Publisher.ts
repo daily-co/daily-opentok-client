@@ -13,6 +13,7 @@ import {
 import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { notImplemented } from "./utils";
+import { Session } from "./Session";
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
@@ -48,9 +49,13 @@ export class Publisher extends OTEventEmitter<{
   muteForced: Event<"muteForced", Publisher>;
 }> {
   accessAllowed: boolean;
-  width?: string;
+  element?: HTMLElement | undefined;
   height?: string;
+  id?: string;
   insertMode?: "replace" | "after" | "before" | "append";
+  session?: Session;
+  stream?: Stream;
+  width?: string;
   constructor({ width, height, insertMode }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
@@ -89,7 +94,23 @@ export class Publisher extends OTEventEmitter<{
   }
 
   destroy(): void {
-    notImplemented();
+    if (!window.call) {
+      throw new Error("Daily call object not initialized.");
+    }
+    window.call
+      .leave()
+      .then(() => {
+        this.ee.emit("streamDestroyed", {
+          isDefaultPrevented: () => false,
+          preventDefault: () => false,
+          reason: "disconnected",
+          cancelable: false,
+          stream: null,
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
   getImgData(): string | null {
     notImplemented();
@@ -132,7 +153,7 @@ export class Publisher extends OTEventEmitter<{
     if (!window.call) {
       throw new Error("Daily call object not initialized.");
     }
-    window.call.setLocalVideo(value);
+    window.call.setLocalVideo(value).on();
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

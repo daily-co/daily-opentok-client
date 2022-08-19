@@ -113,13 +113,34 @@ export class Session extends OTEventEmitter<{
     properties?: ((error?: OTError) => void) | PublisherProperties,
     callback?: (error?: OTError) => void
   ): Publisher {
+    console.log("--- session.publish", publisher, properties, callback);
+
+    let completionHandler: ((error?: OTError) => void) | undefined = undefined;
+
+    if (typeof publisher === "function") {
+      completionHandler = publisher;
+    }
+
+    if (typeof properties === "function") {
+      completionHandler = properties;
+      properties = undefined;
+    }
+
+    if (!completionHandler) {
+      completionHandler = () => {
+        // intentionally empty function
+      };
+    }
+
     if (typeof publisher === "string" || publisher instanceof HTMLElement) {
       notImplemented();
     }
 
+    console.log("------- completionHandler: ", completionHandler);
+
     if (!window.call) {
       console.error("No daily call object");
-      callback?.({
+      completionHandler({
         message: "No call",
         name: "NoCall",
       });
@@ -145,6 +166,28 @@ export class Session extends OTEventEmitter<{
         stream: Stream;
       };
 
+      const stream: Stream = {
+        streamId: session_id,
+        frameRate,
+        hasAudio: audio,
+        hasVideo: video,
+        // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+        name: "",
+        videoDimensions: {
+          height,
+          width,
+        },
+        videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+        creationTime,
+        connection: {
+          connectionId: user_id, // TODO
+          creationTime,
+          // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+          // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+          data: "",
+        },
+      };
+
       // Format as an opentok event
       const streamEvent: StreamCreatedEvent = {
         type: "streamCreated",
@@ -154,31 +197,26 @@ export class Session extends OTEventEmitter<{
         },
         target: this,
         cancelable: true,
-        stream: {
-          streamId: session_id,
-          frameRate,
-          hasAudio: audio,
-          hasVideo: video,
-          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-          name: "",
-          videoDimensions: {
-            height,
-            width,
-          },
-          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-          creationTime,
-          connection: {
-            connectionId: user_id, // TODO
-            creationTime,
-            // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-            // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-            data: "",
-          },
-        },
+        stream,
       };
 
+      console.log("-- add stream to publisher");
+      publisher.stream = stream;
+      publisher.ee.emit("streamCreated", streamEvent);
       this.ee.emit("streamCreated", streamEvent);
     });
+
+    // window.call
+    //   .join({
+    //     url: this.sessionId,
+    //   })
+    //   .then(() => {
+    //     console.log("call completion handler in session.publish");
+    //     completionHandler?.();
+    //   })
+    //   .catch((err) => {
+    //     console.error(err);
+    //   });
 
     return publisher;
   }
@@ -187,14 +225,19 @@ export class Session extends OTEventEmitter<{
       throw new Error("No call object");
     }
 
+    // this.on("sessionConnected", (otEvent) => {
+    //   console.log("session connected", otEvent);
+    // });
+
     window.call
       .on("participant-joined", (dailyEvent) => {
+        // Fires for REMOTE participants only
         if (!dailyEvent) {
           return;
         }
         const { participant } = dailyEvent;
 
-        const { session_id, audio, video, tracks, joined_at, user_id } =
+        const { session_id, audio, video, tracks, joined_at, user_id, local } =
           participant;
 
         const creationTime = joined_at.getTime();
@@ -255,21 +298,12 @@ export class Session extends OTEventEmitter<{
           reason: "networkDisconnected",
         };
 
-        const sessionConnectedEvent: Event<"sessionConnected", Session> = {
-          type: "sessionConnected",
-          target: this,
-          cancelable: true,
-          isDefaultPrevented: () => true,
-          preventDefault: () => true,
-        };
-
         switch (event) {
           case "interrupted":
             this.ee.emit("sessionReconnecting", tokboxEvent);
             this.reconnecting = true;
             break;
           case "connected":
-            this.ee.emit("sessionConnected", sessionConnectedEvent);
             if (this.reconnecting) {
               this.ee.emit("sessionReconnected", tokboxEvent);
               this.reconnecting = false;
@@ -323,9 +357,18 @@ export class Session extends OTEventEmitter<{
         }
       })
       .join({ url: this.sessionId, token })
-      .then(() => {
-        // Call the completion callback after the call has been joined
-
+      .then((dailyEvent) => {
+        if (!dailyEvent) {
+          return;
+        }
+        const sessionConnectedEvent: Event<"sessionConnected", Session> = {
+          type: "sessionConnected",
+          target: this,
+          cancelable: true,
+          isDefaultPrevented: () => true,
+          preventDefault: () => true,
+        };
+        this.ee.emit("sessionConnected", sessionConnectedEvent);
         callback();
       })
       .catch((e) => {
@@ -339,7 +382,7 @@ export class Session extends OTEventEmitter<{
   subscribe(
     stream: Stream,
     targetElement?: string | HTMLElement,
-    properties?: SubscriberProperties,
+    properties?: SubscriberProperties | ((error?: OTError) => void),
     callback?: (error?: OTError) => void
   ): Subscriber {
     if (!window.call) {
@@ -347,9 +390,28 @@ export class Session extends OTEventEmitter<{
     }
     console.log("SUBSCRIBE");
 
+    let completionHandler: ((error?: OTError) => void) | undefined = undefined;
+
+    if (typeof targetElement === "function") {
+      completionHandler = targetElement;
+      targetElement = undefined;
+      properties = undefined;
+    }
+
+    if (typeof properties === "function") {
+      completionHandler = properties;
+      properties = undefined;
+    }
+
+    if (!completionHandler) {
+      completionHandler = () => {
+        // intentionally empty
+      };
+    }
+
     if (!targetElement) {
       const err = new Error("No target element");
-      callback?.(err);
+      completionHandler(err);
       throw err;
     }
 
@@ -362,7 +424,7 @@ export class Session extends OTEventEmitter<{
 
     if (!root) {
       const err = new Error("No target element");
-      callback?.(err);
+      completionHandler(err);
       throw err;
     }
 
@@ -414,7 +476,7 @@ export class Session extends OTEventEmitter<{
         }
       }
 
-      if (properties) {
+      if (properties && typeof properties !== "function") {
         videoEl.style.width = properties.width?.toString() ?? "";
         videoEl.style.height = properties.height?.toString() ?? "";
       }
