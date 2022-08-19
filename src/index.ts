@@ -1,4 +1,4 @@
-import { OTError } from "@opentok/client";
+import { OTError, Stream } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
@@ -103,9 +103,33 @@ export function initPublisher(
       },
     });
 
-  window.call.startCamera().catch((err) => {
-    console.error("startCamera error: ", err);
-  });
+  console.log("window.call.meetingState()", window.call.meetingState());
+  switch (window.call.meetingState()) {
+    case "new":
+      window.call.startCamera().catch((err) => {
+        console.error("startCamera error: ", err);
+      });
+      break;
+    case "loading":
+      break;
+    case "loaded":
+      console.log("loaded");
+      break;
+    case "joining-meeting":
+      console.log("joining-meeting");
+      break;
+    case "joined-meeting":
+      console.log("joined-meeting");
+      break;
+    case "left-meeting":
+      console.log("left-meeting");
+      break;
+    case "error":
+      console.log("error");
+      break;
+    default:
+      break;
+  }
 
   window.call.on("participant-updated", (dailyEvent) => {
     console.log("participant-updated: ", dailyEvent);
@@ -114,12 +138,62 @@ export function initPublisher(
     }
 
     const { participant } = dailyEvent;
-    const { session_id, local } = participant;
+    const {
+      session_id,
+      audio: hasAudio,
+      video: hasVideo,
+      tracks,
+      joined_at,
+      user_id,
+      local,
+    } = participant;
+    const creationTime = joined_at.getTime();
+
+    const settings = tracks.video.track?.getSettings() ?? {};
+    const { frameRate = 0, height = 0, width = 0 } = settings;
     const { video } = getParticipantTracks(participant);
 
     if (!local || !video) {
       return;
     }
+
+    const stream: Stream = {
+      streamId: session_id,
+      frameRate,
+      hasAudio,
+      hasVideo,
+      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+      name: "",
+      videoDimensions: {
+        height,
+        width,
+      },
+      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+      creationTime,
+      connection: {
+        connectionId: user_id, // TODO
+        creationTime,
+        // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+        // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+        data: "",
+      },
+    };
+    publisher.stream = stream;
+
+    // type StreamCreatedEvent = OT.Event<"streamCreated", Session> & {
+    //   stream: Stream;
+    // };
+
+    // const streamEvent: StreamCreatedEvent = {
+    //   type: "streamCreated",
+    //   isDefaultPrevented: () => true,
+    //   preventDefault: () => true,
+    //   target: null,
+    //   cancelable: true,
+    //   stream,
+    // };
+
+    // publisher.ee.emit("streamCreated", streamEvent);
 
     let root = document.getElementById(dailyElementId);
 

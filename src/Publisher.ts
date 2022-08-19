@@ -153,7 +153,7 @@ export class Publisher extends OTEventEmitter<{
     if (!window.call) {
       throw new Error("Daily call object not initialized.");
     }
-    window.call.setLocalVideo(value).on();
+    window.call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

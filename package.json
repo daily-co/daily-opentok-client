@@ -20,6 +20,7 @@
     "start": "vite",
     "clean": "rm -rf dist/",
     "build": "vite build && tsc",
+    "build:watch": "vite build --watch",
     "serve": "vite preview",
     "prepublishOnly": "npm run clean && npm run build",
     "test": "npm run lint",

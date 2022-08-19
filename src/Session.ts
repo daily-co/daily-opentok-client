@@ -200,23 +200,11 @@ export class Session extends OTEventEmitter<{
         stream,
       };
 
-      console.log("-- add stream to publisher");
-      publisher.stream = stream;
-      publisher.ee.emit("streamCreated", streamEvent);
+      // console.log("-- add stream to publisher");
+      // publisher.stream = stream;
+      // publisher.ee.emit("streamCreated", streamEvent);
       this.ee.emit("streamCreated", streamEvent);
     });
-
-    // window.call
-    //   .join({
-    //     url: this.sessionId,
-    //   })
-    //   .then(() => {
-    //     console.log("call completion handler in session.publish");
-    //     completionHandler?.();
-    //   })
-    //   .catch((err) => {
-    //     console.error(err);
-    //   });
 
     return publisher;
   }
@@ -264,8 +252,21 @@ export class Session extends OTEventEmitter<{
       .on("started-camera", (participant) => {
         console.log("started-camera", participant);
       })
-      .on("track-stopped", () => {
+      .on("track-stopped", (dailyEvent) => {
         // TODO(jamsea): emit streamDestroyed event
+        if (!dailyEvent) return;
+        if (!dailyEvent.participant) return;
+
+        this.ee.emit("connectionDestroyed");
+
+        const {
+          participant: { session_id },
+        } = dailyEvent;
+
+        const v = document.getElementById(mediaId("audio-video", session_id));
+        if (v) {
+          v.remove();
+        }
       })
       .on("error", (dailyEvent) => {
         // TODO(jamsea): emit error event
@@ -450,6 +451,7 @@ export class Session extends OTEventEmitter<{
       const tracks: MediaStreamTrack[] = [];
       if (video) tracks.push(video);
       if (audio) tracks.push(audio);
+      tracks.sort((t) => t.id);
       const stream = new MediaStream(tracks);
 
       const { session_id } = participant;
@@ -469,9 +471,10 @@ export class Session extends OTEventEmitter<{
         : document.createElement("video");
 
       if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
-        const tracks = videoEl.srcObject.getTracks();
-        console.log("remote tracks", tracks);
-        if (tracks[0].id === stream.id) {
+        const domTracks = videoEl.srcObject.getTracks();
+
+        console.log("remote tracks", tracks, "dom tracks", domTracks);
+        if (domTracks.find((t) => t.id === tracks[0].id)) {
           return;
         }
       }
@@ -488,7 +491,12 @@ export class Session extends OTEventEmitter<{
       root.appendChild(videoEl);
 
       videoEl.play().catch((e) => {
-        console.error("ERROR IN SESSION VIDEO", e);
+        console.error("ERROR IN SESSION VIDEO ", e);
+        if (typeof e === "string") {
+          completionHandler?.(new Error(e));
+        } else if (e instanceof Error) {
+          completionHandler?.(e);
+        }
       });
     });
 
