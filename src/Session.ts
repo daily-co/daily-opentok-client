@@ -78,11 +78,13 @@ export class Session extends OTEventEmitter<{
   };
   sessionId: string;
   connection?: OT.Connection;
+  private reconnecting: boolean;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(apiKey: string, sessionId: string, opt: unknown) {
     super();
     this.sessionId = sessionId;
+    this.reconnecting = false;
 
     // TODO(jamsea): Figure out how to connect this to the daily call object
     // seems related to room tokens https://tokbox.com/developer/sdks/js/reference/Capabilities.html
@@ -130,7 +132,8 @@ export class Session extends OTEventEmitter<{
         return;
       }
       const { participant } = dailyEvent;
-      const { session_id, audio, video, tracks, joined_at } = participant;
+      const { session_id, audio, video, tracks, joined_at, user_id } =
+        participant;
       const creationTime = joined_at.getTime();
 
       const settings = tracks.video.track?.getSettings() ?? {};
@@ -165,7 +168,7 @@ export class Session extends OTEventEmitter<{
           videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
           creationTime,
           connection: {
-            connectionId: "connectionId", // TODO
+            connectionId: user_id, // TODO
             creationTime,
             // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
             // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
@@ -185,23 +188,58 @@ export class Session extends OTEventEmitter<{
     }
 
     window.call
+      .on("participant-joined", (dailyEvent) => {
+        if (!dailyEvent) {
+          return;
+        }
+        const { participant } = dailyEvent;
+
+        const { session_id, audio, video, tracks, joined_at, user_id } =
+          participant;
+
+        const creationTime = joined_at.getTime();
+
+        const connectionCreatedEvent: Event<"connectionCreated", Session> & {
+          connection: Connection;
+        } = {
+          type: "connectionCreated",
+          target: this,
+          cancelable: true,
+          connection: {
+            connectionId: user_id,
+            creationTime,
+            // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+            // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+            data: "",
+          },
+          isDefaultPrevented: () => true,
+          preventDefault: () => true,
+        };
+
+        this.ee.emit("connectionCreated", connectionCreatedEvent);
+      })
       .on("started-camera", (participant) => {
         console.log("started-camera", participant);
       })
       .on("track-stopped", () => {
         // TODO(jamsea): emit streamDestroyed event
       })
-      .on("error", () => {
+      .on("error", (dailyEvent) => {
         // TODO(jamsea): emit error event
+        console.error("error", dailyEvent);
       })
-      .on("nonfatal-error", () => {
+      .on("nonfatal-error", (dailyEvent) => {
         // TODO(jamsea): emit error event
+        console.error("nonfatal-error", dailyEvent);
       })
       .on("network-connection", (dailyEvent) => {
         console.debug("network-connection", dailyEvent);
         if (!dailyEvent) {
           return;
         }
+        const { event, type } = dailyEvent;
+
+        console.log(event, type);
 
         let defaultPrevented = false;
         const tokboxEvent: Event<"sessionDisconnected", Session> & {
@@ -217,19 +255,35 @@ export class Session extends OTEventEmitter<{
           reason: "networkDisconnected",
         };
 
-        switch (dailyEvent.event) {
+        const sessionConnectedEvent: Event<"sessionConnected", Session> = {
+          type: "sessionConnected",
+          target: this,
+          cancelable: true,
+          isDefaultPrevented: () => true,
+          preventDefault: () => true,
+        };
+
+        switch (event) {
           case "interrupted":
-            this.ee.emit("sessionDisconnected", tokboxEvent);
+            this.ee.emit("sessionReconnecting", tokboxEvent);
+            this.reconnecting = true;
             break;
           case "connected":
-            console.debug("connected");
+            this.ee.emit("sessionConnected", sessionConnectedEvent);
+            if (this.reconnecting) {
+              this.ee.emit("sessionReconnected", tokboxEvent);
+              this.reconnecting = false;
+            }
             break;
           default:
             break;
         }
       })
-      .on("network-quality-change", () => {
-        // TODO(jamsea): emit networkQualityChange event
+      .on("network-quality-change", (dailyEvent) => {
+        if (!dailyEvent) {
+          return;
+        }
+        // TODO(jamsea): emit opentok event
       })
       .on("left-meeting", (dailyEvent) => {
         console.debug("left-meeting", dailyEvent);
@@ -256,6 +310,9 @@ export class Session extends OTEventEmitter<{
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
+
+        this.ee.emit("connectionDestroyed");
+
         const {
           participant: { session_id },
         } = dailyEvent;
@@ -268,6 +325,7 @@ export class Session extends OTEventEmitter<{
       .join({ url: this.sessionId, token })
       .then(() => {
         // Call the completion callback after the call has been joined
+
         callback();
       })
       .catch((e) => {

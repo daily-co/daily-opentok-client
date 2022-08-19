@@ -72,6 +72,7 @@ export function initPublisher(
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
+  console.log("--- initPublisher", targetElement, properties, callback);
   const publisher = new Publisher({
     width: properties?.width ?? "",
     height: properties?.height ?? "",
