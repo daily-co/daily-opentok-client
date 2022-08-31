@@ -27,7 +27,7 @@ export default defineConfig(({ command }) => {
       sourcemap: "inline",
       lib,
       rollupOptions: {
-        output: { format: "iife", name: "OT" },
+        output: { format: "iife", name: "OT", exports: "named" },
       },
     },
     server: { https: true },
