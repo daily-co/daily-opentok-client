@@ -451,7 +451,7 @@ export class Session extends OTEventEmitter<{
       const tracks: MediaStreamTrack[] = [];
       if (video) tracks.push(video);
       if (audio) tracks.push(audio);
-      tracks.sort((t) => t.id);
+      tracks.sort((a, b) => a.id.localeCompare(b.id));
       const stream = new MediaStream(tracks);
 
       const { session_id } = participant;
