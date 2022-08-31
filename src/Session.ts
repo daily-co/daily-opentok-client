@@ -170,12 +170,14 @@ export class Session extends OTEventEmitter<{
         hasAudio: audio,
         hasVideo: video,
         // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-        name: "",
+        name: "name" in publisher ? publisher.name : "",
         videoDimensions: {
           height,
           width,
         },
-        videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+        // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+        // Actually looks like screenshare will never happen on join, just updated
+        videoType: "camera",
         creationTime,
         connection: {
           connectionId: user_id, // TODO

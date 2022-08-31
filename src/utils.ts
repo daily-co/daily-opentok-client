@@ -24,11 +24,21 @@ export function mediaId(
 }
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {
-  const { audio: at, screenVideo: st, video: vt } = tracks;
+  const {
+    audio: at,
+    screenVideo: svt,
+    video: vt,
+    screenAudio: sat,
+    rmpAudio: rat = { state: "off" },
+    rmpVideo: rvt = { state: "off" },
+  } = tracks;
 
   const video = vt.state === "playable" ? vt.persistentTrack : null;
   const audio = at.state === "playable" ? at.persistentTrack : null;
-  const screen = st.state === "playable" ? st.persistentTrack : null;
+  const screenVideo = svt.state === "playable" ? svt.persistentTrack : null;
+  const screenAudio = sat.state === "playable" ? sat.persistentTrack : null;
+  const rmpVideo = rvt.state === "playable" ? rvt.persistentTrack : null;
+  const rmpAudio = rat.state === "playable" ? rat.persistentTrack : null;
 
-  return { video, audio, screen };
+  return { video, audio, screenVideo, screenAudio, rmpVideo, rmpAudio };
 };

@@ -56,12 +56,26 @@ export class Publisher extends OTEventEmitter<{
   session?: Session;
   stream?: Stream;
   width?: string;
-  constructor({ width, height, insertMode }: PublisherProperties) {
+  name: string;
+
+  constructor({
+    width,
+    height,
+    insertMode,
+    audioSource,
+    name,
+    publishAudio,
+    videoSource,
+  }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
+    // this.audioSource = audioSource;
+    this.name = name ?? "";
+    // this.publishAudio = publishAudio;
+    // this.videoSource = videoSource;
 
     window.call =
       window.call ??
@@ -71,6 +85,16 @@ export class Publisher extends OTEventEmitter<{
           experimentalChromeVideoMuteLightOff: true,
         },
       });
+
+    if (
+      videoSource &&
+      typeof videoSource === "string" &&
+      videoSource == "screensharing"
+    ) {
+      console.log(videoSource);
+
+      window.call.startScreenShare();
+    }
 
     window.call
       .on("started-camera", () => {
