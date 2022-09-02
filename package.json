@@ -1,18 +1,18 @@
 {
-  "name": "daily-tokbox",
-  "version": "0.0.0-67be49",
+  "name": "@daily-co/opentok",
+  "version": "0.0.0",
   "license": "ISC",
   "description": "Daily Tokbox shim",
   "type": "module",
   "files": [
     "dist"
   ],
-  "main": "./dist/daily-tokbox.umd.js",
-  "module": "./dist/daily-tokbox.es.js",
+  "main": "./dist/opentok.umd.js",
+  "module": "./dist/opentok.es.js",
   "exports": {
     ".": {
-      "import": "./dist/daily-tokbox.es.js",
-      "require": "./dist/daily-tokbox.umd.js"
+      "import": "./dist/opentok.es.js",
+      "require": "./dist/opentok.umd.js"
     }
   },
   "types": "./dist/index.d.ts",
@@ -53,9 +53,6 @@
     "node": "16.x"
   },
   "repository": {
-    "url": "https://github.com/daily-solutions/daily-tokbox"
-  },
-  "glitch": {
-    "projectType": "generated_static"
+    "url": "https://github.com/daily-co/opentok"
   }
 }
