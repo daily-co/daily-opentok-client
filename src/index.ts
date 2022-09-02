@@ -72,7 +72,6 @@ export function initPublisher(
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
-  console.log("--- initPublisher", targetElement, properties, callback);
   const publisher = new Publisher({
     width: properties?.width ?? "",
     height: properties?.height ?? "",
@@ -103,7 +102,6 @@ export function initPublisher(
       },
     });
 
-  console.log("window.call.meetingState()", window.call.meetingState());
   switch (window.call.meetingState()) {
     case "new":
       window.call.startCamera().catch((err) => {
@@ -111,28 +109,28 @@ export function initPublisher(
       });
       break;
     case "loading":
+      console.debug("loading");
       break;
     case "loaded":
-      console.log("loaded");
+      console.debug("loaded");
       break;
     case "joining-meeting":
-      console.log("joining-meeting");
+      console.debug("joining-meeting");
       break;
     case "joined-meeting":
-      console.log("joined-meeting");
+      console.debug("joined-meeting");
       break;
     case "left-meeting":
-      console.log("left-meeting");
+      console.debug("left-meeting");
       break;
     case "error":
-      console.log("error");
+      console.debug("error");
       break;
     default:
       break;
   }
 
   window.call.on("participant-updated", (dailyEvent) => {
-    console.log("participant-updated: ", dailyEvent);
     if (!dailyEvent) {
       return;
     }
@@ -219,7 +217,6 @@ export function initPublisher(
 
     if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
       const tracks = videoEl.srcObject.getTracks();
-      console.log("local tracks", tracks);
       if (tracks[0].id === video.id) {
         return;
       }

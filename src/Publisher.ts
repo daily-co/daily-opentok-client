@@ -74,10 +74,9 @@ export class Publisher extends OTEventEmitter<{
 
     window.call
       .on("started-camera", () => {
-        console.log("SHIM accessAllowed");
         this.accessAllowed = true;
         this.ee.emit("accessAllowed");
-        console.log(
+        console.debug(
           "accessAllowed Count",
           this.ee.listenerCount("accessAllowed"),
           this.ee.listeners("accessAllowed")

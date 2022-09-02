@@ -5,7 +5,9 @@ import {
   Stream,
   SubscriberProperties,
   PublisherProperties,
+  ExceptionEvent,
 } from "@opentok/client";
+import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
@@ -113,9 +115,7 @@ export class Session extends OTEventEmitter<{
     properties?: ((error?: OTError) => void) | PublisherProperties,
     callback?: (error?: OTError) => void
   ): Publisher {
-    console.log("--- session.publish", publisher, properties, callback);
-
-    let completionHandler: ((error?: OTError) => void) | undefined = undefined;
+    let completionHandler: ((error?: OTError) => void) | undefined = callback;
 
     if (typeof publisher === "function") {
       completionHandler = publisher;
@@ -135,8 +135,6 @@ export class Session extends OTEventEmitter<{
     if (typeof publisher === "string" || publisher instanceof HTMLElement) {
       notImplemented();
     }
-
-    console.log("------- completionHandler: ", completionHandler);
 
     if (!window.call) {
       console.error("No daily call object");
@@ -200,22 +198,21 @@ export class Session extends OTEventEmitter<{
         stream,
       };
 
-      // console.log("-- add stream to publisher");
-      // publisher.stream = stream;
-      // publisher.ee.emit("streamCreated", streamEvent);
+      publisher.stream = stream;
       this.ee.emit("streamCreated", streamEvent);
     });
 
     return publisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
-    if (!window.call) {
-      throw new Error("No call object");
-    }
-
-    // this.on("sessionConnected", (otEvent) => {
-    //   console.log("session connected", otEvent);
-    // });
+    window.call =
+      window.call ??
+      Daily.createCallObject({
+        subscribeToTracksAutomatically: false,
+        dailyConfig: {
+          experimentalChromeVideoMuteLightOff: true,
+        },
+      });
 
     window.call
       .on("participant-joined", (dailyEvent) => {
@@ -225,8 +222,7 @@ export class Session extends OTEventEmitter<{
         }
         const { participant } = dailyEvent;
 
-        const { session_id, audio, video, tracks, joined_at, user_id, local } =
-          participant;
+        const { joined_at, user_id } = participant;
 
         const creationTime = joined_at.getTime();
 
@@ -250,7 +246,7 @@ export class Session extends OTEventEmitter<{
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
       .on("started-camera", (participant) => {
-        console.log("started-camera", participant);
+        console.debug("started-camera", participant);
       })
       .on("track-stopped", (dailyEvent) => {
         // TODO(jamsea): emit streamDestroyed event
@@ -269,21 +265,45 @@ export class Session extends OTEventEmitter<{
         }
       })
       .on("error", (dailyEvent) => {
-        // TODO(jamsea): emit error event
         console.error("error", dailyEvent);
+
+        const exceptionEvent: ExceptionEvent = {
+          // TODO: Map out the error codes (https://tokbox.com/developer/sdks/js/reference/ExceptionEvent.html)
+          code: 2000,
+          message: dailyEvent?.error?.localizedMsg ?? "",
+          title: dailyEvent?.error?.type ?? "",
+          preventDefault: () => true,
+          isDefaultPrevented: () => true,
+          type: "exception",
+          cancelable: false,
+          target: this,
+        };
+
+        this.ee.emit("exception", exceptionEvent);
       })
       .on("nonfatal-error", (dailyEvent) => {
-        // TODO(jamsea): emit error event
-        console.error("nonfatal-error", dailyEvent);
+        console.error("error", dailyEvent);
+
+        const exceptionEvent: ExceptionEvent = {
+          // TODO: Map out the error codes (https://tokbox.com/developer/sdks/js/reference/ExceptionEvent.html)
+          code: 2000,
+          message: dailyEvent?.errorMsg ?? "",
+          title: dailyEvent?.type ?? "",
+          preventDefault: () => true,
+          isDefaultPrevented: () => true,
+          type: "exception",
+          cancelable: false,
+          target: this,
+        };
+
+        this.ee.emit("exception", exceptionEvent);
       })
       .on("network-connection", (dailyEvent) => {
         console.debug("network-connection", dailyEvent);
         if (!dailyEvent) {
           return;
         }
-        const { event, type } = dailyEvent;
-
-        console.log(event, type);
+        const { event } = dailyEvent;
 
         let defaultPrevented = false;
         const tokboxEvent: Event<"sessionDisconnected", Session> & {
@@ -389,7 +409,6 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       throw new Error("No daily call object");
     }
-    console.log("SUBSCRIBE");
 
     let completionHandler: ((error?: OTError) => void) | undefined = undefined;
 
@@ -435,8 +454,6 @@ export class Session extends OTEventEmitter<{
       // Make sure the track has started before publishing the session
       // TODO(jamsea): need to figure out the error handling here.
 
-      console.log("track-started: ", dailyEvent);
-
       if (!dailyEvent) {
         console.debug("track-started no daily event");
         return;
@@ -473,7 +490,6 @@ export class Session extends OTEventEmitter<{
       if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
         const domTracks = videoEl.srcObject.getTracks();
 
-        console.log("remote tracks", tracks, "dom tracks", domTracks);
         if (domTracks.find((t) => t.id === tracks[0].id)) {
           return;
         }
