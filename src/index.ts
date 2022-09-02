@@ -1,200 +1,52 @@
-import {
-  OTError,
-  Event,
-  Subscriber,
-  Stream,
-  SubscriberProperties,
-} from "@opentok/client";
-import Daily, { DailyEventObjectTrack } from "@daily-co/daily-js";
-import { EventEmitter } from "events";
+import { OTError, Stream } from "@opentok/client";
+import Daily from "@daily-co/daily-js";
+import { Publisher } from "./Publisher";
+import { Session } from "./Session";
+import { getParticipantTracks, mediaId, notImplemented } from "./utils";
 
-const ee = new EventEmitter();
-
-type DailyStream = Stream & {
-  dailyEvent: DailyEventObjectTrack;
-};
-export type StreamCreatedEvent = Event<"streamCreated", Session> & {
-  stream: DailyStream;
-};
-
-type PublisherProps = OT.PublisherProperties & { dailyElementId?: string };
-
-class Publisher {
-  dailyElementId?: string;
-  accessAllowed: boolean;
-  width?: string;
-  height?: string;
-  insertMode?: "replace" | "after" | "before" | "append";
-  constructor({ width, height, insertMode, dailyElementId }: PublisherProps) {
-    this.width = width ? width.toString() : undefined;
-    this.height = height ? height.toString() : undefined;
-    this.insertMode = insertMode;
-
-    this.dailyElementId = dailyElementId;
-    this.accessAllowed = true;
-  }
-  publish(targetElement: HTMLElement): Publisher {
-    console.log("publisher.publish");
-    return {} as Publisher;
-  }
-  once(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void {
-    console.log("once");
-  }
+export function checkSystemRequirements() {
+  return Daily.supportedBrowser();
 }
 
-class Session {
-  sessionId: string;
-  constructor(apiKey: string, sessionId: string, opt: any) {
-    console.log("session constructor", apiKey, sessionId, opt);
-    this.sessionId = sessionId;
-  }
-  on(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void {
-    ee.on(eventName, callback);
-  }
-
-  once(
-    eventName: string,
-    callback: (event: Event<string, any>) => void,
-    context?: object
-  ): void {
-    ee.once(eventName, callback);
-  }
-  publish(
-    publisher: Publisher,
-    callback?: (error?: OTError) => void
-  ): Publisher {
-    console.log("publish");
-    if (!window.call) {
-      console.error("No daily call object");
-      return publisher;
-    }
-
-    window.call
-      .join({
-        url: this.sessionId,
-      })
-      .then((participants) => {
-        console.debug("publish participants:", participants);
-        if (!participants) return;
-
-        const videoTrack = participants.local.videoTrack;
-        if (!videoTrack) {
-          console.debug("No local video track");
-          return publisher;
-        }
-
-        let t =
-          publisher.dailyElementId !== undefined
-            ? document.getElementById(publisher.dailyElementId)
-            : null;
-
-        if (t === null) {
-          console.log(t);
-          t = document.createElement<"div">("div");
-          document.body.appendChild(t);
-        }
-
-        let videoEl = t.getElementsByTagName("video")[0];
-
-        if (!t.getElementsByTagName("video")[0]) {
-          videoEl = document.createElement("video");
-          t.appendChild(videoEl);
-        }
-
-        // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-        if (publisher.insertMode === "append") {
-          t.appendChild(videoEl);
-        }
-        videoEl.style.width = publisher.width ?? "";
-        videoEl.style.height = publisher.height ?? "";
-        videoEl.srcObject = new MediaStream([videoTrack]);
-        videoEl.play();
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-
-    return publisher;
-  }
-  connect(token: string, callback: (error?: OT.OTError) => void): void {
-    if (!window.call) {
-      console.error("No call");
-      callback({
-        message: "No call (todo find message)",
-        name: "NoCall (todo find name)",
-      });
-      return;
-    }
-
-    callback();
-  }
-  subscribe(
-    stream: DailyStream,
-    targetElement?: string, // | HTMLElement,
-    properties?: SubscriberProperties,
-    callback?: (error?: OTError) => void
-  ): Subscriber {
-    console.log("subscribe.dailyEvent", stream.dailyEvent);
-    if (!window.call) {
-      console.error("No daily call object");
-      return {} as Subscriber;
-    }
-
-    if (!stream.dailyEvent.participant) {
-      console.error("No participant");
-      return {} as Subscriber;
-    }
-
-    if (stream.dailyEvent.participant.local) {
-      return {} as Subscriber;
-    }
-
-    const {
-      dailyEvent: {
-        participant: { user_id },
-      },
-    } = stream;
-
-    const t = document.getElementById(targetElement) as HTMLElement;
-    if (stream.hasVideo) {
-      const videoEl =
-        (document.getElementById(`video-${user_id}`) as HTMLVideoElement) ??
-        document.createElement("video");
-      videoEl.id = `video-${user_id}`;
-      t.appendChild(videoEl);
-      if (properties) {
-        videoEl.style.width = properties.width?.toString() || "";
-        videoEl.style.height = properties.height?.toString() || "";
-      }
-      videoEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      videoEl.play();
-    }
-
-    if (stream.hasAudio) {
-      const audioEl =
-        (document.getElementById(`audio-${user_id}`) as HTMLAudioElement) ??
-        document.createElement("audio");
-      audioEl.id = `audio-${user_id}`;
-      t.appendChild(audioEl);
-      audioEl.srcObject = new MediaStream([stream.dailyEvent.track]);
-      audioEl.play();
-    }
-
-    return {} as Subscriber;
-  }
+export function upgradeSystemRequirements() {
+  // Left empty
+  console.debug("upgradeSystemRequirements called");
 }
 
+export function getDevices(
+  callback: (error: OTError | undefined, devices?: OT.Device[]) => void
+): void {
+  navigator.mediaDevices
+    .enumerateDevices()
+    .then((devices) => {
+      const OTDevices: OT.Device[] = devices
+        .filter((device) => /^(audio|video)input$/.test(device.kind))
+        .map((device) => {
+          device.kind;
+          return {
+            deviceId: device.deviceId,
+            kind: device.kind.includes("audio") ? "audioInput" : "videoInput",
+            label: device.label,
+          };
+        });
+
+      callback(undefined, OTDevices);
+    })
+    .catch((err: Error) => {
+      callback(err);
+    });
+}
+
+// FROM DOCS:
+// Note that calling OT.initSession() does not initiate
+// communications with the cloud. It simply initializes
+// the Session object that you can use to connect (and
+// to perform other operations once connected).
 export function initSession(
-  partnerId: string, // probably don't need the daily server API key here
-  roomUrl: string, // originally sessionId
+  // Doesn't look like Daily needs this at all, but it's required by the opentok API
+  partnerId: string,
+  // sessionId in tokbox, renamed this to roomUrl to match the Daily API
+  roomUrl: string,
   options?: {
     connectionEventsSuppressed?: boolean;
     iceConfig?: {
@@ -210,150 +62,205 @@ export function initSession(
     encryptionSecret?: string;
   }
 ): Session {
-  window.call = Daily.createCallObject({
-    subscribeToTracksAutomatically: true,
-    dailyConfig: {
-      experimentalChromeVideoMuteLightOff: true,
-    },
-  });
-
-  window.call
-    .on("track-started", (dailyEvent) => {
-      // Maybe participant joined?
-      console.debug("window.call.on track-started", dailyEvent);
-      if (!dailyEvent) {
-        console.debug("No Daily event");
-        return;
-      }
-
-      if (dailyEvent.participant?.local) {
-        console.debug("Local participant");
-        return;
-      }
-
-      // Format as opentok event
-      const streamEvent: StreamCreatedEvent = {
-        type: "streamCreated",
-        isDefaultPrevented: () => true,
-        preventDefault: () => {},
-        target: {} as Session, //TODO fix this
-        cancelable: false,
-        stream: {
-          // Maybe this is like participant id?
-          streamId: dailyEvent.participant?.user_id || "",
-          frameRate: 30,
-          hasAudio: dailyEvent.track.kind === "audio",
-          hasVideo: dailyEvent.track.kind === "video",
-          name: "name",
-          videoDimensions: {
-            height: 720,
-            width: 1280,
-          },
-          videoType: "camera",
-          creationTime: new Date().getTime(),
-          connection: {
-            connectionId: "connectionId",
-            creationTime: new Date().getTime(),
-            data: "",
-          },
-          dailyEvent,
-        },
-      };
-
-      ee.emit("streamCreated", streamEvent);
-    })
-    .on("track-stopped", (dailyEvent) => {})
-    .on("error", (error) => {})
-    .on("nonfatal-error", (error) => {})
-    .on("network-connection", (dailyEvent) => {
-      console.debug("network-connection", dailyEvent);
-      if (!dailyEvent) {
-        return;
-      }
-
-      switch (dailyEvent.event) {
-        case "interrupted":
-          const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
-            reason: string;
-          } = {
-            type: "sessionDisconnected",
-            isDefaultPrevented: () => true,
-            preventDefault: () => {},
-            cancelable: false,
-            target: {} as OT.Session, //TODO fix this
-            reason: "networkDisconnected",
-          };
-          if (!tokboxEvent.isDefaultPrevented()) {
-            // By default Tokbox removes all subscriber elements from the DOM
-            // if the user calls `preventDefault` this behavior is prevented.
-          }
-          ee.emit("sessionDisconnected", tokboxEvent);
-          break;
-        case "connected":
-          console.debug("connected");
-          break;
-        default:
-          break;
-      }
-    })
-    .on("network-quality-change", (dailyEvent) => {})
-    .on("left-meeting", (dailyEvent) => {
-      console.debug("left-meeting", dailyEvent);
-      if (!dailyEvent) {
-        return;
-      }
-      const tokboxEvent: OT.Event<"sessionDisconnected", OT.Session> & {
-        reason: string;
-      } = {
-        type: "sessionDisconnected",
-        isDefaultPrevented: () => false,
-        preventDefault: () => {},
-        cancelable: false,
-        target: {} as OT.Session, //TODO fix this
-        reason: "clientDisconnected",
-      };
-
-      if (!tokboxEvent.isDefaultPrevented()) {
-        // By default Tokbox removes all subscriber elements from the DOM
-        // if the user calls `preventDefault` this behavior is prevented.
-      }
-
-      ee.emit("sessionDisconnected", tokboxEvent);
-    })
-    .on("participant-left", (dailyEvent) => {
-      if (!dailyEvent) return;
-
-      const v = document.getElementById(
-        `video-${dailyEvent.participant.user_id}`
-      );
-      if (v) {
-        v.remove();
-      }
-    });
-
   const session = new Session(partnerId, roomUrl, options);
+
   return session;
 }
 
 export function initPublisher(
-  targetElement?: string | undefined, // | HTMLElement,
+  targetElement?: string | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,
-  callback?: ((error?: OT.OTError | undefined) => void) | undefined
+  callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
-  // TODO(jamsea): initPublisher function signature needs
-  // all of it's edge cases checked (e.g. no targetElement, no properties, etc)
   const publisher = new Publisher({
-    width: properties?.width || "100%",
-    height: properties?.height || "100%",
+    width: properties?.width ?? "",
+    height: properties?.height ?? "",
     insertMode: properties?.insertMode,
-    dailyElementId: targetElement,
   });
 
-  const err = null;
+  const completionHandler =
+    typeof callback === "function"
+      ? callback
+      : () => {
+          // empty
+        };
 
-  if (err && callback) {
-    callback(err);
+  if (!targetElement) {
+    completionHandler(new Error("No target element provided"));
+    return publisher;
   }
+
+  const dailyElementId =
+    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
+
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: false,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
+
+  switch (window.call.meetingState()) {
+    case "new":
+      window.call.startCamera().catch((err) => {
+        console.error("startCamera error: ", err);
+      });
+      break;
+    case "loading":
+      console.debug("loading");
+      break;
+    case "loaded":
+      console.debug("loaded");
+      break;
+    case "joining-meeting":
+      console.debug("joining-meeting");
+      break;
+    case "joined-meeting":
+      console.debug("joined-meeting");
+      break;
+    case "left-meeting":
+      console.debug("left-meeting");
+      break;
+    case "error":
+      console.debug("error");
+      break;
+    default:
+      break;
+  }
+
+  window.call.on("participant-updated", (dailyEvent) => {
+    if (!dailyEvent) {
+      return;
+    }
+
+    const { participant } = dailyEvent;
+    const {
+      session_id,
+      audio: hasAudio,
+      video: hasVideo,
+      tracks,
+      joined_at,
+      user_id,
+      local,
+    } = participant;
+    const creationTime = joined_at.getTime();
+
+    const settings = tracks.video.track?.getSettings() ?? {};
+    const { frameRate = 0, height = 0, width = 0 } = settings;
+    const { video } = getParticipantTracks(participant);
+
+    if (!local || !video) {
+      return;
+    }
+
+    const stream: Stream = {
+      streamId: session_id,
+      frameRate,
+      hasAudio,
+      hasVideo,
+      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+      name: "",
+      videoDimensions: {
+        height,
+        width,
+      },
+      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+      creationTime,
+      connection: {
+        connectionId: user_id, // TODO
+        creationTime,
+        // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+        // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+        data: "",
+      },
+    };
+    publisher.stream = stream;
+
+    // type StreamCreatedEvent = OT.Event<"streamCreated", Session> & {
+    //   stream: Stream;
+    // };
+
+    // const streamEvent: StreamCreatedEvent = {
+    //   type: "streamCreated",
+    //   isDefaultPrevented: () => true,
+    //   preventDefault: () => true,
+    //   target: null,
+    //   cancelable: true,
+    //   stream,
+    // };
+
+    // publisher.ee.emit("streamCreated", streamEvent);
+
+    let root = document.getElementById(dailyElementId);
+
+    if (root === null) {
+      root = document.createElement("div");
+      document.body.appendChild(root);
+    }
+
+    const documentVideoElm = document.getElementById(
+      mediaId(video, session_id)
+    );
+
+    if (
+      !(documentVideoElm instanceof HTMLVideoElement) &&
+      documentVideoElm != undefined
+    ) {
+      return callback?.(new Error("Video element id is invalid."));
+    }
+
+    const videoEl = documentVideoElm
+      ? documentVideoElm
+      : document.createElement("video");
+
+    if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
+      const tracks = videoEl.srcObject.getTracks();
+      if (tracks[0].id === video.id) {
+        return;
+      }
+    }
+
+    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    switch (publisher.insertMode) {
+      case "append":
+        root.appendChild(videoEl);
+        break;
+      case "replace":
+        notImplemented();
+        break;
+      case "before":
+        notImplemented();
+        break;
+      case "after":
+        notImplemented();
+        break;
+      default:
+        break;
+    }
+
+    videoEl.style.width = publisher.width ?? "";
+    videoEl.style.height = publisher.height ?? "";
+    videoEl.srcObject = new MediaStream([video]);
+
+    videoEl.id = mediaId(video, session_id);
+    videoEl.play().catch((e) => {
+      console.error("ERROR LOCAL CAMERA PLAY");
+      console.error(e);
+    });
+  });
+
+  window.call.setLocalVideo(true);
+  window.call.setLocalAudio(true);
 
   return publisher;
 }
+
+export default {
+  checkSystemRequirements,
+  upgradeSystemRequirements,
+  getDevices,
+  initSession,
+  initPublisher,
+};

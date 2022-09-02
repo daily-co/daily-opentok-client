@@ -1,11 +1,11 @@
-# daily-tokbox
+# @daily-co/opentok-client
 
 ## Module
 
 Run:
 
 ```bash
-npm install @daily-co/daily-tokbox
+npm install @daily-co/opentok-client
 ```
 
 Replace:
@@ -17,7 +17,7 @@ import * as OT from "@opentok/client";
 with:
 
 ```typescript
-import * as OT from "@daily-co/daily-tokbox";
+import * as OT from "@daily-co/opentok-client";
 ```
 
 Or if you're using a script tag:
@@ -31,7 +31,7 @@ Replace:
 with:
 
 ```html
-<script src="https://unpkg.com/@daily-co/daily-tokbox"></script>
+<script src="https://unpkg.com/@daily-co/opentok-client"></script>
 ```
 
 When you call OT.initSession, replace your OpenTok session id with your daily room URL.

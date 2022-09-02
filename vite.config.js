@@ -4,16 +4,14 @@ import { defineConfig } from "vite";
 import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode, ssrBuild }) => {
+export default defineConfig(({ command }) => {
   const isBuild = command === "build";
-
-  console.log("isBuild", isBuild);
 
   const entry = isBuild
     ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"
     : dirname(fileURLToPath(import.meta.url)) + "/src/example.ts";
 
-  const fileName = isBuild ? "daily-tokbox" : "index";
+  const fileName = isBuild ? "opentok" : "index";
 
   const lib = {
     entry,
@@ -25,9 +23,10 @@ export default defineConfig(({ command, mode, ssrBuild }) => {
   return {
     plugins: [mkcert()],
     build: {
+      minify: true,
       lib,
       rollupOptions: {
-        output: { format: "iife", name: "OT" },
+        output: { format: "iife", name: "OT", exports: "named" },
       },
     },
     server: { https: true },
