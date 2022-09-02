@@ -1,5 +1,5 @@
 {
-  "name": "@daily-co/opentok",
+  "name": "@daily-co/opentok-client",
   "version": "0.0.0",
   "license": "ISC",
   "description": "Daily Tokbox shim",
