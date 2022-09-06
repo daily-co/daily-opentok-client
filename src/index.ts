@@ -1,11 +1,43 @@
-import { OTError, Stream } from "@opentok/client";
+import {
+  AudioOutputDevice,
+  GetUserMediaProperties,
+  OTError,
+  ScreenSharingCapabilityResponse,
+  Stream,
+} from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 import { getParticipantTracks, mediaId, notImplemented } from "./utils";
 
-export function checkSystemRequirements() {
-  return Daily.supportedBrowser();
+export function checkScreenSharingCapability(
+  callback: (response: ScreenSharingCapabilityResponse) => void
+): void {
+  return Daily.supportedBrowser().supportsScreenShare
+    ? callback({
+        supported: true,
+        extensionRegistered: false,
+        supportedSources: {
+          screen: true,
+          window: true,
+        },
+      })
+    : callback({
+        supported: false,
+        extensionRegistered: false,
+        supportedSources: {
+          screen: false,
+          window: false,
+        },
+      });
+}
+
+export function checkSystemRequirements(): number {
+  return Daily.supportedBrowser().supported ? 1 : 0;
+}
+
+export function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
+  notImplemented();
 }
 
 export function upgradeSystemRequirements() {
@@ -16,9 +48,18 @@ export function upgradeSystemRequirements() {
 export function getDevices(
   callback: (error: OTError | undefined, devices?: OT.Device[]) => void
 ): void {
-  navigator.mediaDevices
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: false,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
+
+  window.call
     .enumerateDevices()
-    .then((devices) => {
+    .then(({ devices }) => {
       const OTDevices: OT.Device[] = devices
         .filter((device) => /^(audio|video)input$/.test(device.kind))
         .map((device) => {
@@ -35,6 +76,80 @@ export function getDevices(
     .catch((err: Error) => {
       callback(err);
     });
+}
+
+export function getSupportedCodecs(): Promise<{
+  videoEncoders: ("H264" | "VP8")[];
+  videoDecoders: ("H264" | "VP8")[];
+}> {
+  return Daily.supportedBrowser().supported
+    ? Promise.resolve({
+        videoDecoders: ["H264", "VP8"],
+        videoEncoders: ["H264", "VP8"],
+      })
+    : Promise.resolve({ videoDecoders: [], videoEncoders: [] });
+}
+
+export function getUserMedia(
+  properties?: GetUserMediaProperties
+): Promise<MediaStream> {
+  if (!properties) {
+    return navigator.mediaDevices.getUserMedia();
+  }
+  const {
+    audioSource,
+    videoSource,
+    autoGainControl,
+    echoCancellation,
+    facingMode,
+    frameRate,
+    noiseSuppression,
+    resolution = "",
+  } = properties;
+
+  let video: boolean | MediaTrackConstraints | undefined = undefined;
+
+  if (typeof videoSource === "boolean") {
+    video = videoSource;
+  } else if (videoSource instanceof MediaStreamTrack) {
+    const [width, height] = resolution.split("x");
+
+    video = {
+      width: width ? Number(width) : undefined,
+      height: height ? Number(height) : undefined,
+      frameRate: frameRate
+        ? {
+            ideal: frameRate,
+          }
+        : undefined,
+      facingMode,
+    };
+  } else if (typeof videoSource === "string") {
+    video = { deviceId: videoSource };
+  }
+
+  let audio: boolean | MediaTrackConstraints | undefined = undefined;
+
+  if (typeof audioSource === "boolean") {
+    audio = audioSource;
+  } else if (audioSource instanceof MediaStreamTrack) {
+    audio = {
+      noiseSuppression,
+      echoCancellation,
+      autoGainControl,
+    };
+  } else if (typeof audioSource === "string") {
+    audio = { deviceId: audioSource };
+  }
+
+  return navigator.mediaDevices.getUserMedia({
+    audio,
+    video,
+  });
+}
+
+export function hasMediaProcessorSupport(): boolean {
+  return Daily.supportedBrowser().supportsVideoProcessing;
 }
 
 // FROM DOCS:
@@ -178,21 +293,6 @@ export function initPublisher(
     };
     publisher.stream = stream;
 
-    // type StreamCreatedEvent = OT.Event<"streamCreated", Session> & {
-    //   stream: Stream;
-    // };
-
-    // const streamEvent: StreamCreatedEvent = {
-    //   type: "streamCreated",
-    //   isDefaultPrevented: () => true,
-    //   preventDefault: () => true,
-    //   target: null,
-    //   cancelable: true,
-    //   stream,
-    // };
-
-    // publisher.ee.emit("streamCreated", streamEvent);
-
     let root = document.getElementById(dailyElementId);
 
     if (root === null) {
@@ -255,6 +355,16 @@ export function initPublisher(
   window.call.setLocalAudio(true);
 
   return publisher;
+}
+
+let OTlogLevel = 0;
+export function setLogLevel(logLevel: number): void {
+  OTlogLevel = logLevel;
+}
+export function log(message: string): void {
+  if (OTlogLevel >= 4) {
+    console.debug(message);
+  }
 }
 
 export default {

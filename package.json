@@ -1,7 +1,7 @@
 {
   "name": "daily-opentok-client",
-  "version": "0.0.0",
-  "license": "ISC",
+  "version": "0.0.1",
+  "license": "BSD-2",
   "description": "Daily Tokbox shim",
   "type": "module",
   "files": [
