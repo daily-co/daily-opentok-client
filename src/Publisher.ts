@@ -48,6 +48,7 @@ export class Publisher extends OTEventEmitter<{
 
   muteForced: Event<"muteForced", Publisher>;
 }> {
+  private dailySources: Daily.DailyDeviceInfos;
   accessAllowed: boolean;
   element?: HTMLElement | undefined;
   height?: string;
@@ -74,6 +75,7 @@ export class Publisher extends OTEventEmitter<{
 
     window.call
       .on("started-camera", () => {
+        
         this.accessAllowed = true;
         this.ee.emit("accessAllowed");
         console.debug(
@@ -213,7 +215,7 @@ export class Publisher extends OTEventEmitter<{
   setVideoContentHint(hint: VideoContentHint): void {
     notImplemented();
   }
-  getVideoSource(): {
+  async getVideoSource(): Promise<{
     deviceId: string | null;
     type: "camera" | "screen" | "custom" | null;
     track: MediaStreamTrack | null;
