@@ -7,14 +7,14 @@ html {
 #videos {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 90%;
   margin-left: auto;
   margin-right: auto;
 }
 
 #subscriber {
   z-index: 10;
-  display:flex;
+  display: flex;
   flex-wrap: wrap;
 }
 

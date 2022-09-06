@@ -7,6 +7,9 @@ export function notImplemented(): never {
 export function getVideoTagID(sessionID: string) {
   return `video-${sessionID}`;
 }
+export function dailyUndefinedError(): never {
+  throw new Error("Daily call object not initialized.");
+}
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {
   const { audio: at, screenVideo: st, video: vt } = tracks;

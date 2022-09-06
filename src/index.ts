@@ -220,6 +220,7 @@ export function initPublisher(
   switch (window.call.meetingState()) {
     case "new":
       window.call.startCamera().catch((err) => {
+        completionHandler(new Error("Failed to start camera"));
         console.error("startCamera error: ", err);
       });
       break;

@@ -5,11 +5,11 @@ export class OTEventEmitter<EventMap> {
   ee: EventEmitter;
   constructor() {
     this.ee = new EventEmitter();
-    this.ee.on("newListener", (eventName: string) => {
-      this.ee.emit(`${eventName}:added`);
+    this.on("newListener", (eventName) => {
+      this.ee.emit(`${eventName.type}:added`);
     });
-    this.ee.on("removeListener", (eventName: string) => {
-      this.ee.emit(`${eventName}:removed`);
+    this.on("removeListener", (eventName) => {
+      this.ee.emit(`${eventName.type}:removed`);
     });
   }
   on<EventName extends keyof EventMap>(

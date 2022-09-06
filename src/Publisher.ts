@@ -12,7 +12,7 @@ import {
 } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
-import { notImplemented } from "./utils";
+import { dailyUndefinedError, notImplemented } from "./utils";
 import { Session } from "./Session";
 
 export class Publisher extends OTEventEmitter<{
@@ -94,7 +94,7 @@ export class Publisher extends OTEventEmitter<{
 
   destroy(): void {
     if (!window.call) {
-      throw new Error("Daily call object not initialized.");
+      dailyUndefinedError();
     }
     window.call
       .leave()
@@ -144,13 +144,13 @@ export class Publisher extends OTEventEmitter<{
   }
   publishAudio(value: boolean): void {
     if (!window.call) {
-      throw new Error("Daily call object not initialized.");
+      dailyUndefinedError();
     }
     window.call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
     if (!window.call) {
-      throw new Error("Daily call object not initialized.");
+      dailyUndefinedError();
     }
     window.call.setLocalVideo(value);
     return this;
@@ -161,37 +161,50 @@ export class Publisher extends OTEventEmitter<{
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     if (!window.call) {
-      throw new Error("Daily call object not initialized.");
+      dailyUndefinedError();
     }
 
     return window.call.cycleCamera().then((device) => {
       return { deviceId: String(device) };
     });
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
     if (!window.call) {
-      throw new Error("Daily call object not initialized.");
+      dailyUndefinedError();
+    }
+
+    const audioDeviceId =
+      typeof audioSource === "string" ? audioSource : audioSource.id;
+
+    return window.call
+      .setInputDevicesAsync({
+        audioDeviceId,
+      })
+      .then(() => {
+        return undefined;
+      });
+  }
+  getAudioSource(): MediaStreamTrack | null {
+    if (!window.call) {
+      dailyUndefinedError();
+    }
+    const { local: { tracks: { audio: { persistentTrack } = {} } = {} } = {} } =
+      window.call.participants();
+
+    return persistentTrack ?? null;
+  }
+  setVideoSource(videoSourceId: string): Promise<undefined> {
+    if (!window.call) {
+      dailyUndefinedError();
     }
 
     return window.call
       .setInputDevicesAsync({
-        audioDeviceId:
-          typeof audioSource === "string" ? audioSource : audioSource.id,
+        videoDeviceId: videoSourceId,
       })
-      .then(() => undefined);
-  }
-  getAudioSource(): MediaStreamTrack {
-    if (!window.call) {
-      throw new Error("Daily call object not initialized.");
-    }
-    notImplemented();
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  setVideoSource(videoSourceId: string): Promise<undefined> {
-    return new Promise((_, reject) => {
-      reject(notImplemented());
-    });
+      .then(() => {
+        return undefined;
+      });
   }
   getVideoContentHint(): VideoContentHint {
     notImplemented();
@@ -202,10 +215,19 @@ export class Publisher extends OTEventEmitter<{
   }
   getVideoSource(): {
     deviceId: string | null;
-    type: string | null;
+    type: "camera" | "screen" | "custom" | null;
     track: MediaStreamTrack | null;
   } {
-    notImplemented();
+    if (!window.call) {
+      dailyUndefinedError();
+    }
+    const { local: { tracks: { video: { persistentTrack } = {} } = {} } = {} } =
+      window.call.participants();
+    return {
+      deviceId: persistentTrack?.id ?? null,
+      type: "camera",
+      track: persistentTrack ?? null,
+    };
   }
   setStyle<Style extends keyof PublisherStyle>(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

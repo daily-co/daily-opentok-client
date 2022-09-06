@@ -75,3 +75,58 @@ session.connect(token, function callback(error) {
     //}
   }
 });
+
+// Microphone and camera selection
+
+async function onVideoSelect() {
+  const videoSource = videoSelect.value;
+  if (videoSource === "") {
+    return;
+  }
+  await publisher.setVideoSource(videoSource);
+}
+
+async function onAudioSelect(e: Event) {
+  console.log("onAudioSelect", e);
+  const audioSource = audioSelect.value;
+  if (audioSource === "") {
+    return;
+  }
+  await publisher.setAudioSource(audioSource);
+}
+
+const audioSelect = document.getElementById(
+  "audio-select"
+) as HTMLSelectElement;
+const videoSelect = document.getElementById(
+  "video-select"
+) as HTMLSelectElement;
+
+audioSelect.onchange = onAudioSelect;
+videoSelect.onchange = onVideoSelect;
+
+OT.getDevices((err, devices) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+  console.log("[getDevices]", devices);
+
+  const videoSource = publisher.getVideoSource();
+  const audioSource = publisher.getAudioSource();
+
+  console.log("[videoSource]", videoSource);
+  console.log("[audioSource]", audioSource);
+
+  devices?.forEach((device) => {
+    const option = document.createElement("option");
+    option.value = device.deviceId;
+    option.text = device.label;
+
+    if (device.kind === "audioInput") {
+      audioSelect.appendChild(option);
+    } else {
+      videoSelect.appendChild(option);
+    }
+  });
+});
