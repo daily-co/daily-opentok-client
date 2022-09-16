@@ -108,6 +108,7 @@ export function getUserMedia(
   } = properties;
 
   let video: boolean | MediaTrackConstraints | undefined = undefined;
+  console.log("MediaStreamTrack", window.MediaStreamTrack);
 
   if (typeof videoSource === "boolean") {
     video = videoSource;

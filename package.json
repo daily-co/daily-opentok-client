@@ -23,7 +23,7 @@
     "build:watch": "vite build --watch",
     "serve": "vite preview",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "npm run lint && npm run test:js",
+    "test": "jest",
     "test:js": "jest",
     "lint": "npm run lint:ts && npm run lint:js",
     "lint:js": "eslint . --cache --cache-location node_modules/.eslintcache",
@@ -33,7 +33,8 @@
     "@daily-co/daily-js": "0.29.0",
     "@opentok/client": "^2.23.0",
     "@theopenweb/get-user-media-mock": "^1.0.0",
-    "events": "^3.3.0"
+    "events": "^3.3.0",
+    "fake-mediastreamtrack": "^1.1.6"
   },
   "devDependencies": {
     "@types/events": "^3.0.0",
@@ -46,6 +47,7 @@
     "jest-environment-jsdom": "^29.0.3",
     "prettier": "2.7.1",
     "ts-jest": "^29.0.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.7.4",
     "vite": "^2.4.4",
     "vite-plugin-mkcert": "^1.9.0"

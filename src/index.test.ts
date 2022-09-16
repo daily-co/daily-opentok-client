@@ -1,5 +1,5 @@
-import { describe, expect, test, beforeAll } from "@jest/globals";
-import jestConfig from "../jest.config.cjs";
+import { describe, expect, test, jest, beforeAll } from "@jest/globals";
+import { FakeMediaStreamTrack } from "fake-mediastreamtrack";
 import * as OT from "./index";
 
 const mockGetUserMedia = jest.fn(async () => {
@@ -20,15 +20,28 @@ const mockGetUserMedia = jest.fn(async () => {
             onmute: null,
             onunmute: null,
             readyState: "live",
-            applyConstraints: jest.fn(),
-            clone: jest.fn(),
-            getCapabilities: jest.fn(),
-            getConstraints: jest.fn(),
-            getSettings: jest.fn(),
+            applyConstraints: (
+              constraints?: MediaTrackConstraints | undefined
+            ) => {
+              console.debug(constraints);
+              return Promise.resolve();
+            },
+            clone: () => {
+              return {} as MediaStreamTrack;
+            },
+            getCapabilities: () => {
+              return {} as MediaTrackCapabilities;
+            },
+            getConstraints: () => {
+              return {} as MediaTrackConstraints;
+            },
+            getSettings: () => {
+              return {} as MediaTrackSettings;
+            },
             stop: jest.fn(),
             addEventListener: jest.fn(),
             removeEventListener: jest.fn(),
-            dispatchEvent: jest.fn(),
+            dispatchEvent: jest.fn(() => true),
           },
         ];
       },
@@ -45,28 +58,43 @@ const mockGetUserMedia = jest.fn(async () => {
             onmute: null,
             onunmute: null,
             readyState: "live",
-            applyConstraints: jest.fn(),
-            clone: jest.fn(),
-            getCapabilities: jest.fn(),
-            getConstraints: jest.fn(),
-            getSettings: jest.fn(),
+            applyConstraints: (
+              constraints?: MediaTrackConstraints | undefined
+            ) => {
+              console.debug(constraints);
+              return Promise.resolve();
+            },
+            clone: () => {
+              return {} as MediaStreamTrack;
+            },
+            getCapabilities: () => {
+              return {} as MediaTrackCapabilities;
+            },
+            getConstraints: () => {
+              return {} as MediaTrackConstraints;
+            },
+            getSettings: () => {
+              return {} as MediaTrackSettings;
+            },
             stop: jest.fn(),
             addEventListener: jest.fn(),
             removeEventListener: jest.fn(),
-            dispatchEvent: jest.fn(),
+            dispatchEvent: jest.fn(() => true),
           },
         ];
       },
+      addEventListener: jest.fn(),
+      addTrack: jest.fn(),
+      clone: () => {
+        return {} as MediaStream;
+      },
+      dispatchEvent: jest.fn(() => true),
+      getTrackById: () => null,
+      getTracks: () => [],
       onaddtrack: null,
       onremovetrack: null,
-      addTrack: jest.fn(),
-      clone: jest.fn(),
-      getTrackById: jest.fn(),
-      getTracks: jest.fn(),
-      removeTrack: jest.fn(),
-      addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
+      removeTrack: jest.fn(),
     });
   });
 });
@@ -77,11 +105,33 @@ Object.defineProperty(global.navigator, "mediaDevices", {
   },
 });
 
+// const MockMediaStreamTrack = () => {} as unknown as MediaStreamTrack;
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+Object.defineProperty(window, "MediaStreamTrack", FakeMediaStreamTrack);
+
+// global.MediaStreamTrack = FakeMediaStreamTrack;
+
 describe("static methods", () => {
-  test("OT.getUserMedia", async () => {
-    // expect(OT.getUserMedia).toBeDefined();
+  test("OT.getUserMedia()", async () => {
     const result = await OT.getUserMedia();
-    console.log("JEST result:", result);
     expect(result).toBeDefined();
+    expect(result.id).toEqual("DKeEJiV39EtB8hsbyCN57nuc4krQAragOQd0");
+  });
+  test("OT.getUserMedia with booleans", async () => {
+    const result = await OT.getUserMedia({
+      videoSource: true,
+      audioSource: true,
+    });
+    expect(result).toBeDefined();
+    expect(result.id).toEqual("DKeEJiV39EtB8hsbyCN57nuc4krQAragOQd0");
+  });
+  test("OT.getUserMedia with strings", async () => {
+    const result = await OT.getUserMedia({
+      videoSource: "34a6ae6e-6121-45ef-9cb6-518acda68538",
+      audioSource: "b748f469-1d4a-44be-bbc4-c663c43eae0b",
+    });
+    expect(result).toBeDefined();
+    expect(result.id).toEqual("DKeEJiV39EtB8hsbyCN57nuc4krQAragOQd0");
   });
 });
