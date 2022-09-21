@@ -101,8 +101,6 @@ const mockGetUserMedia = jest.fn(async () => {
 
 describe("static methods", () => {
   beforeAll(() => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // window.MediaStreamTrack = FakeMediaStreamTrack;
     Object.defineProperty(window, "MediaStreamTrack", {
       value: FakeMediaStreamTrack,
     });
@@ -112,10 +110,6 @@ describe("static methods", () => {
         enumerateDevices: jest.fn(),
       },
     });
-    // const mediaDevicesMock = {};
-    // Object.defineProperty(global.navigator, "mediaDevices", {
-    //   value: mediaDevicesMock,
-    // });
   });
   test("OT.getUserMedia()", async () => {
     const result = await OT.getUserMedia();
