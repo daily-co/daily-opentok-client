@@ -1,4 +1,4 @@
-import { describe, expect, test, jest, beforeAll } from "@jest/globals";
+import { describe, expect, test, jest } from "@jest/globals";
 import { FakeMediaStreamTrack } from "fake-mediastreamtrack";
 import * as OT from "./index";
 
@@ -99,20 +99,24 @@ const mockGetUserMedia = jest.fn(async () => {
   });
 });
 
-Object.defineProperty(global.navigator, "mediaDevices", {
-  value: {
-    getUserMedia: mockGetUserMedia,
-  },
-});
-
-// const MockMediaStreamTrack = () => {} as unknown as MediaStreamTrack;
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-Object.defineProperty(window, "MediaStreamTrack", FakeMediaStreamTrack);
-
-// global.MediaStreamTrack = FakeMediaStreamTrack;
-
 describe("static methods", () => {
+  beforeAll(() => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // window.MediaStreamTrack = FakeMediaStreamTrack;
+    Object.defineProperty(window, "MediaStreamTrack", {
+      value: FakeMediaStreamTrack,
+    });
+    Object.defineProperty(global.navigator, "mediaDevices", {
+      value: {
+        getUserMedia: mockGetUserMedia,
+        enumerateDevices: jest.fn(),
+      },
+    });
+    // const mediaDevicesMock = {};
+    // Object.defineProperty(global.navigator, "mediaDevices", {
+    //   value: mediaDevicesMock,
+    // });
+  });
   test("OT.getUserMedia()", async () => {
     const result = await OT.getUserMedia();
     expect(result).toBeDefined();

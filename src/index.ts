@@ -108,11 +108,10 @@ export function getUserMedia(
   } = properties;
 
   let video: boolean | MediaTrackConstraints | undefined = undefined;
-  console.log("MediaStreamTrack", window.MediaStreamTrack);
 
   if (typeof videoSource === "boolean") {
     video = videoSource;
-  } else if (videoSource instanceof MediaStreamTrack) {
+  } else if (videoSource instanceof window.MediaStreamTrack) {
     const [width, height] = resolution.split("x");
 
     video = {
