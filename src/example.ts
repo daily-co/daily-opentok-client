@@ -11,7 +11,6 @@ import "./example.css";
 // OT.setLogLevel(5);
 
 import * as OT from "./";
-window.OT = OT;
 
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 // apiKey can be blank, Daily's API key is not needed for the shim to work
