@@ -256,7 +256,7 @@ export function initPublisher(
       audio: hasAudio,
       video: hasVideo,
       tracks,
-      joined_at,
+      joined_at = new Date(),
       user_id,
       local,
     } = participant;
