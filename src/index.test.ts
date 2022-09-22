@@ -1,4 +1,4 @@
-import { describe, expect, test, jest } from "@jest/globals";
+import { beforeAll, describe, expect, test, jest } from "@jest/globals";
 import { FakeMediaStreamTrack } from "fake-mediastreamtrack";
 import * as OT from "./index";
 

@@ -151,8 +151,14 @@ export class Session extends OTEventEmitter<{
         return;
       }
       const { participant } = dailyEvent;
-      const { session_id, audio, video, tracks, joined_at, user_id } =
-        participant;
+      const {
+        session_id,
+        audio,
+        video,
+        tracks,
+        joined_at = new Date(),
+        user_id,
+      } = participant;
       const creationTime = joined_at.getTime();
 
       const settings = tracks.video.track?.getSettings() ?? {};
@@ -222,7 +228,7 @@ export class Session extends OTEventEmitter<{
         }
         const { participant } = dailyEvent;
 
-        const { joined_at, user_id } = participant;
+        const { joined_at = new Date(), user_id } = participant;
 
         const creationTime = joined_at.getTime();
 
