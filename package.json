@@ -23,7 +23,7 @@
     "build:watch": "vite build --watch",
     "serve": "vite preview",
     "prepublishOnly": "npm run clean && npm run build",
-    "test": "jest",
+    "test": "npm run lint && npm run test:js",
     "test:js": "jest",
     "lint": "npm run lint:ts && npm run lint:js",
     "lint:js": "eslint . --cache --cache-location node_modules/.eslintcache && prettier --check .",

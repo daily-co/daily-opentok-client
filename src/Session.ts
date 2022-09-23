@@ -636,7 +636,12 @@ export class Session extends OTEventEmitter<{
   }
 
   disconnect(): void {
-    notImplemented();
+    if (!window.call) {
+      return;
+    }
+    window.call.leave().catch((err) => {
+      console.error(err);
+    });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -684,12 +689,30 @@ export class Session extends OTEventEmitter<{
   ): void {
     notImplemented();
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unpublish(publisher: Publisher): void {
-    notImplemented();
+    publisher.session = undefined;
+    if (!window.call) {
+      return;
+    }
+
+    window.call.updateParticipant("local", {
+      setVideo: false,
+      setAudio: false,
+    });
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unsubscribe(subscriber: Subscriber): void {
-    notImplemented();
+    if (!window.call) {
+      return;
+    }
+    console.log(subscriber.id);
+
+    window.call.updateParticipant("local", {
+      setSubscribedTracks: {
+        audio: false,
+        video: false,
+        screenVideo: false,
+        screenAudio: false,
+      },
+    });
   }
 }
