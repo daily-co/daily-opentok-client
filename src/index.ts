@@ -8,7 +8,7 @@ import {
 import Daily from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
-import { getParticipantTracks, mediaId, notImplemented } from "./utils";
+import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
 
 export function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void
@@ -301,7 +301,7 @@ export function initPublisher(
     }
 
     const documentVideoElm = document.getElementById(
-      mediaId(video, session_id)
+      getVideoTagID(session_id)
     );
 
     if (
@@ -344,7 +344,7 @@ export function initPublisher(
     videoEl.style.height = publisher.height ?? "";
     videoEl.srcObject = new MediaStream([video]);
 
-    videoEl.id = mediaId(video, session_id);
+    videoEl.id = getVideoTagID(session_id);
     videoEl.play().catch((e) => {
       console.error("ERROR LOCAL CAMERA PLAY");
       console.error(e);

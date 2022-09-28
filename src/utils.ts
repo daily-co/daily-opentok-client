@@ -4,23 +4,8 @@ export function notImplemented(): never {
   throw new Error("Method not implemented.");
 }
 
-export function mediaId(
-  media: MediaStreamTrack | MediaStream | string,
-  sessionId: string
-): string {
-  if (typeof media === "string") {
-    return `${media}-${sessionId}`;
-  }
-
-  const kind =
-    media instanceof MediaStream
-      ? media
-          .getTracks()
-          .map((t) => t.kind)
-          .join("-")
-      : media.kind;
-
-  return `${kind}-${sessionId}`;
+export function getVideoTagID(sessionID: string) {
+  return `video-${sessionID}`;
 }
 
 export const getParticipantTracks = ({ tracks }: DailyParticipant) => {
