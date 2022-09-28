@@ -492,7 +492,7 @@ export class Session extends OTEventEmitter<{
       let videoEl: HTMLVideoElement;
 
       if (!existingVideoElement) {
-        // If video DOM element does not already exit, create a new one
+        // If video DOM element does not already exist, create a new one
         videoEl = document.createElement("video");
         videoEl.id = getVideoTagID(session_id)
 
