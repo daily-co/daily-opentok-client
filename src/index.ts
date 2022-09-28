@@ -60,6 +60,7 @@ export function getDevices(
   window.call
     .enumerateDevices()
     .then(({ devices }) => {
+      console.log("[getDevices]", devices);
       const OTDevices: OT.Device[] = devices
         .filter((device) => /^(audio|video)input$/.test(device.kind))
         .map((device) => {
@@ -74,6 +75,7 @@ export function getDevices(
       callback(undefined, OTDevices);
     })
     .catch((err: Error) => {
+      console.error("enumerateDevices error", err);
       callback(err);
     });
 }

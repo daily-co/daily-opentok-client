@@ -704,15 +704,19 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       return;
     }
-    console.log(subscriber.id);
+    console.log(subscriber.stream?.streamId);
 
-    window.call.updateParticipant("local", {
-      setSubscribedTracks: {
-        audio: false,
-        video: false,
-        screenVideo: false,
-        screenAudio: false,
-      },
-    });
+    const { stream: { streamId } = {} } = subscriber;
+
+    if (streamId) {
+      window.call.updateParticipant(streamId, {
+        setSubscribedTracks: {
+          audio: false,
+          video: false,
+          screenVideo: false,
+          screenAudio: false,
+        },
+      });
+    }
   }
 }
