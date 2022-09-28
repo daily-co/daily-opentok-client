@@ -11,7 +11,7 @@ import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
-import { getParticipantTracks, mediaId, notImplemented } from "./utils";
+import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
 
 export class Session extends OTEventEmitter<{
   archiveStarted: Event<"archiveStarted", Session> & {
@@ -265,9 +265,12 @@ export class Session extends OTEventEmitter<{
           participant: { session_id },
         } = dailyEvent;
 
-        const v = document.getElementById(mediaId("audio-video", session_id));
-        if (v) {
-          v.remove();
+        // If it was video that stopped, hide the video element
+        if (dailyEvent.track.kind === "video") {
+          const v = document.getElementById(getVideoTagID(session_id));
+          if (v) {
+            v.style.visibility = "hidden";
+          }
         }
       })
       .on("error", (dailyEvent) => {
@@ -378,7 +381,7 @@ export class Session extends OTEventEmitter<{
           participant: { session_id },
         } = dailyEvent;
 
-        const v = document.getElementById(mediaId("audio-video", session_id));
+        const v = document.getElementById(getVideoTagID(session_id));
         if (v) {
           v.remove();
         }
@@ -470,56 +473,75 @@ export class Session extends OTEventEmitter<{
         return;
       }
 
+      const isLocal = participant.local;
+
+      // Get audio and video tracks from the participant
       const { audio, video } = getParticipantTracks(participant);
-      const tracks: MediaStreamTrack[] = [];
-      if (video) tracks.push(video);
-      if (audio) tracks.push(audio);
-      tracks.sort((a, b) => a.id.localeCompare(b.id));
-      const stream = new MediaStream(tracks);
+      if (!audio && !video) {
+        return;
+      }
 
       const { session_id } = participant;
-      const documentVideoElm = document.getElementById(
-        mediaId(stream, session_id)
+
+      // Retrieve the existing video DOM element for this participant
+      const existingVideoElement = document.getElementById(
+        getVideoTagID(session_id)
       );
 
-      if (
-        !(documentVideoElm instanceof HTMLVideoElement) &&
-        documentVideoElm != undefined
-      ) {
-        return callback?.(new Error("Video element id is invalid."));
-      }
+      // This will be the element we work with to retrieve/set tracks
+      let videoEl: HTMLVideoElement;
 
-      const videoEl = documentVideoElm
-        ? documentVideoElm
-        : document.createElement("video");
+      if (!existingVideoElement) {
+        // If video DOM element does not already exist, create a new one
+        videoEl = document.createElement("video");
+        videoEl.id = getVideoTagID(session_id)
 
-      if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
-        const domTracks = videoEl.srcObject.getTracks();
-
-        if (domTracks.find((t) => t.id === tracks[0].id)) {
-          return;
+        if (properties && typeof properties !== "function") {
+          videoEl.style.width = properties.width?.toString() ?? "";
+          videoEl.style.height = properties.height?.toString() ?? "";
         }
+        root.appendChild(videoEl);
+      } else if (existingVideoElement instanceof HTMLVideoElement) {
+        videoEl = existingVideoElement;
+      } else {
+        // If video element is on an unexpected type, error out
+        return callback?.(new Error("Video element is invalid."));
       }
 
-      if (properties && typeof properties !== "function") {
-        videoEl.style.width = properties.width?.toString() ?? "";
-        videoEl.style.height = properties.height?.toString() ?? "";
-      }
-      if (tracks.length > 0) {
-        videoEl.srcObject = stream;
-        videoEl.id = mediaId(stream, session_id);
-      }
-
-      root.appendChild(videoEl);
-
-      videoEl.play().catch((e) => {
-        console.error("ERROR IN SESSION VIDEO ", e);
-        if (typeof e === "string") {
-          completionHandler?.(new Error(e));
-        } else if (e instanceof Error) {
-          completionHandler?.(e);
+      const srcObject = videoEl.srcObject;
+      // If source object is not already set, or is
+      // some unsupported type, create a new MediaStream 
+      // and set it.
+      if (!srcObject || !(srcObject instanceof MediaStream)) {
+        const tracks: MediaStreamTrack[] = [];
+        if (video) tracks.push(video);
+        if (!isLocal && audio) tracks.push(audio);
+  
+        const newStream = new MediaStream(tracks);
+        videoEl.srcObject = newStream;
+        videoEl.autoplay = true;
+        videoEl.onerror = (e) => {
+          console.error("ERROR IN SESSION VIDEO ", e);
+          if (typeof e === "string") {
+            completionHandler?.(new Error(e));
+          } else if (e instanceof Error) {
+            completionHandler?.(e);
+          }
         }
-      });
+        return;
+      }
+
+      // If source object is an instance of MediaStream,
+      // replace old tracks with new ones as needed
+      if (srcObject instanceof MediaStream) {
+        if (video) {
+          this.updateVideoTrack(srcObject, video);
+          videoEl.style.visibility = "visible";
+        }
+        if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
+      } else {
+        return callback?.(new Error("Video element's source object is invalid."));
+      }
     });
 
     window.call.updateParticipant(streamId, {
@@ -533,6 +555,46 @@ export class Session extends OTEventEmitter<{
 
     return subscriber;
   }
+
+  // updateAudioTrack() makes sure an existing stream is updated with
+  // the given audio track.
+  private updateAudioTrack(existingStream: MediaStream, newTrack: MediaStreamTrack) {
+    const existingTracks = existingStream.getAudioTracks();
+    this.updateMediaTrack(existingStream, existingTracks, newTrack);
+  }
+
+  // updateVideoTrack() makes sure an existing stream is updated with
+  // the given video track.
+  private updateVideoTrack(existingStream: MediaStream, newTrack: MediaStreamTrack) {
+    const existingTracks = existingStream.getVideoTracks();
+    this.updateMediaTrack(existingStream, existingTracks, newTrack);
+  }
+
+  // updateMediaTracks() compares existing media track IDs with new ones,
+  // and replaces them if needed.
+  private updateMediaTrack(existingStream: MediaStream, oldTracks: MediaStreamTrack[], newTrack: MediaStreamTrack) {
+    const trackCount = oldTracks.length;
+    // If there are no old tracks,
+    // add the new track.
+    if (trackCount === 0) {
+      existingStream.addTrack(newTrack);
+      return;
+    }
+
+    if (trackCount > 1) {
+      console.warn(
+        `expected 1 track, but got ${trackCount}. Only using the first one.`
+      );
+    }
+    const oldTrack = oldTracks[0];
+    // If the IDs of the old and new track don't match,
+    // replace the old track with the new one.
+    if (oldTrack.id !== newTrack.id) {
+      existingStream.removeTrack(oldTrack);
+      existingStream.addTrack(newTrack);
+    }
+  }
+
   disconnect(): void {
     notImplemented();
   }

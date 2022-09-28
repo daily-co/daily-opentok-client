@@ -39,8 +39,6 @@ session.on("streamCreated", function streamCreated(event) {
     "subscriber",
     {
       insertMode: "append",
-      width: "100%",
-      height: "100%",
     },
     handleError
   );
