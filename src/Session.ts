@@ -251,9 +251,6 @@ export class Session extends OTEventEmitter<{
 
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
-      .on("started-camera", (participant) => {
-        console.debug("started-camera", participant);
-      })
       .on("track-stopped", (dailyEvent) => {
         // TODO(jamsea): emit streamDestroyed event
         if (!dailyEvent) return;
@@ -357,7 +354,7 @@ export class Session extends OTEventEmitter<{
 
         let defaultPrevented = false;
 
-        const tokboxEvent: Event<"sessionDisconnected", OT.Session> & {
+        const tokboxEvent: Event<"sessionDisconnected", Session> & {
           reason: string;
         } = {
           type: "sessionDisconnected",
