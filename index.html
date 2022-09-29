@@ -9,10 +9,21 @@
   </head>
   <body>
     <div id="input-selects">
-      <label for="video-select">Video:</label>
-      <select name="video-select" id="video-select"></select>
-      <label for="audio-select">Audio:</label>
-      <select name="audio-select" id="audio-select"></select>
+      <form onsubmit="return false;">
+        <h2>Publish Devices Sample</h2>
+        <label for="audio-source-select">Audio Source:</label
+        ><select id="audio-source-select"></select
+        ><br />
+        <div id="audio-meter">
+          <label for="audio-meter">Audio Level:</label
+          ><meter min="0" max="1"></meter>
+        </div>
+        <label for="video-source-select">Video Source:</label
+        ><select id="video-source-select"></select>
+        <button id="cycle-video-btn">Cycle Video</button><br />
+        <button id="publish-btn">Publish</button>
+        <button id="connect-btn">Connect</button>
+      </form>
     </div>
     <div id="videos">
       <div id="subscriber"></div>
