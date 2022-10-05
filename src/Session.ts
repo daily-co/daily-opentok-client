@@ -90,7 +90,12 @@ export class Session extends OTEventEmitter<{
   connection?: OT.Connection;
   connections: SessionCollection = {
     length: () => {
-      return window.call?.participantCounts().present ?? 0;
+      const { present, hidden } = window.call?.participantCounts() ?? {
+        present: 0,
+        hidden: 0,
+      };
+
+      return present + hidden;
     },
   };
   private reconnecting: boolean;
