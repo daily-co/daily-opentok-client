@@ -90,8 +90,7 @@ export class Session extends OTEventEmitter<{
   connection?: OT.Connection;
   connections: SessionCollection = {
     length: () => {
-      console.log("internal connections", this.connectionCount);
-      return this.connectionCount;
+      return window.call?.participantCounts().present ?? 0;
     },
   };
   private reconnecting: boolean;
@@ -119,15 +118,6 @@ export class Session extends OTEventEmitter<{
       creationTime: new Date().getTime(),
       data: "",
     };
-
-    // https://video-api.support.vonage.com/hc/en-us/articles/360029731611-How-do-I-get-the-number-of-connections-in-the-session-
-    this.on("connectionCreated", () => {
-      this.connectionCount += 1;
-    });
-
-    this.on("connectionDestroyed", () => {
-      this.connectionCount -= 1;
-    });
   }
 
   publish(
