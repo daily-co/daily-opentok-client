@@ -33,6 +33,30 @@ const cycleVideoBtn = document.querySelector(
 
 let publisher: OT.Publisher | null = null;
 
+// sessionId becomes daily's room url
+const session = OT.initSession(apiKey, sessionId);
+
+// Subscribe to a newly created stream.
+// This does not cause a connection to be established.
+session.on("streamCreated", function streamCreated(event) {
+  console.log("[streamCreated] index.ts: ", event);
+  // This is daily remote user stuff
+  // if (!window.chrome) {
+  session.subscribe(
+    event.stream,
+    "subscriber",
+    {
+      insertMode: "append",
+    },
+    handleError
+  );
+  // }
+});
+
+session.on("sessionDisconnected", function sessionDisconnected(event) {
+  console.debug("[sessionDisconnected]", event);
+});
+
 function handleError(error: unknown) {
   if (error) {
     console.error("handleError: ", error);
@@ -172,30 +196,6 @@ function setupAudioLevelMeter() {
 }
 
 function connect() {
-  // sessionId becomes daily's room url
-  const session = OT.initSession(apiKey, sessionId);
-
-  // Subscribe to a newly created stream.
-  // This does not cause a connection to be established.
-  session.on("streamCreated", function streamCreated(event) {
-    console.log("[streamCreated] index.ts: ", event);
-    // This is daily remote user stuff
-    // if (!window.chrome) {
-    session.subscribe(
-      event.stream,
-      "subscriber",
-      {
-        insertMode: "append",
-      },
-      handleError
-    );
-    // }
-  });
-
-  session.on("sessionDisconnected", function sessionDisconnected(event) {
-    console.debug("[sessionDisconnected]", event);
-  });
-
   // Connect to the session (or Daily room in our case)
   session.connect(token, function callback(error) {
     console.debug("[session.connect]");
