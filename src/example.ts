@@ -63,7 +63,7 @@ const publisher = OT.initPublisher(
 
 // Connect to the session (or Daily room in our case)
 session.connect(token, function callback(error) {
-  console.debug("[session.connect]");
+  console.debug("[session.connect]", session);
 
   if (error) {
     handleError(error);

@@ -1,17 +1,11 @@
 {
   "install": {
-    "include": [
-      "^package\\.json$"
-    ],
+    "include": ["^package\\.json$"],
     "exclude": []
   },
   "restart": {
-    "include": [
-      "^backend/"
-    ],
-    "exclude": [
-      "src/" 
-    ]
+    "include": ["^backend/"],
+    "exclude": ["src/"]
   },
   "noSavedEvents": true
 }

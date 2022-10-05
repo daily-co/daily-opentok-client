@@ -301,9 +301,7 @@ export function initPublisher(
       document.body.appendChild(root);
     }
 
-    const documentVideoElm = document.getElementById(
-      getVideoTagID(session_id)
-    );
+    const documentVideoElm = document.getElementById(getVideoTagID(session_id));
 
     if (
       !(documentVideoElm instanceof HTMLVideoElement) &&
