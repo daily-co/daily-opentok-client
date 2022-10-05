@@ -2,22 +2,22 @@ import "./example.css";
 
 import { Event as OTEvent, Session } from "@opentok/client";
 
-import * as OT from "@opentok/client";
-const {
-  VITE_TOKBOX_API_KEY: apiKey = "",
-  VITE_TOKBOX_SESSION_ID: sessionId = "",
-  VITE_TOKBOX_TOKEN: token = "",
-} = import.meta.env;
+// import * as OT from "@opentok/client";
+// const {
+//   VITE_TOKBOX_API_KEY: apiKey = "",
+//   VITE_TOKBOX_SESSION_ID: sessionId = "",
+//   VITE_TOKBOX_TOKEN: token = "",
+// } = import.meta.env;
 // OT.setLogLevel(5);
 
-// import * as OT from "./";
+import * as OT from "./";
 
-// const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
-// // apiKey can be blank, Daily's API key is not needed for the shim to work
-// const apiKey = "";
-// const sessionId = "https://hush.daily.co/meet";
-// const token =
-//   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
+const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
+// apiKey can be blank, Daily's API key is not needed for the shim to work
+const apiKey = "";
+const sessionId = "https://hush.daily.co/meet";
+const token =
+  typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
 function handleError(error: unknown) {
   if (error) {
@@ -64,8 +64,6 @@ const publisher = OT.initPublisher(
 // Connect to the session (or Daily room in our case)
 session.connect(token, function callback(error) {
   console.debug("[session.connect]", session);
-
-  console.log("session.connections.length(): ", session.connections.length());
 
   if (error) {
     handleError(error);

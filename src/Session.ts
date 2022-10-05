@@ -86,6 +86,7 @@ export class Session extends OTEventEmitter<{
   connection?: OT.Connection;
   connections: SessionCollection = {
     length: () => {
+      console.log("internal connections", this.connectionCount);
       return this.connectionCount;
     },
   };
@@ -110,6 +111,7 @@ export class Session extends OTEventEmitter<{
 
     this.on("connectionCreated", () => {
       this.connectionCount += 1;
+      console.debug("constructor connectionCreated", this.connectionCount);
     });
 
     this.on("connectionDestroyed", () => {
