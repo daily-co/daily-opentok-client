@@ -13,6 +13,10 @@ import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
 import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
 
+interface SessionCollection {
+  length: () => number;
+}
+
 export class Session extends OTEventEmitter<{
   archiveStarted: Event<"archiveStarted", Session> & {
     id: string;
@@ -80,7 +84,13 @@ export class Session extends OTEventEmitter<{
   };
   sessionId: string;
   connection?: OT.Connection;
+  connections: SessionCollection = {
+    length: () => {
+      return this.connectionCount;
+    },
+  };
   private reconnecting: boolean;
+  private connectionCount = 0;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   constructor(apiKey: string, sessionId: string, opt: unknown) {
@@ -97,6 +107,14 @@ export class Session extends OTEventEmitter<{
       publish: 1,
       subscribe: 1,
     };
+
+    this.on("connectionCreated", () => {
+      this.connectionCount += 1;
+    });
+
+    this.on("connectionDestroyed", () => {
+      this.connectionCount -= 1;
+    });
   }
 
   publish(
@@ -232,22 +250,26 @@ export class Session extends OTEventEmitter<{
 
         const creationTime = joined_at.getTime();
 
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+          // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+          data: "",
+        };
+
         const connectionCreatedEvent: Event<"connectionCreated", Session> & {
           connection: Connection;
         } = {
           type: "connectionCreated",
           target: this,
           cancelable: true,
-          connection: {
-            connectionId: user_id,
-            creationTime,
-            // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-            // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-            data: "",
-          },
+          connection,
           isDefaultPrevented: () => true,
           preventDefault: () => true,
         };
+
+        this.connection = connection;
 
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
@@ -491,7 +513,7 @@ export class Session extends OTEventEmitter<{
       if (!existingVideoElement) {
         // If video DOM element does not already exist, create a new one
         videoEl = document.createElement("video");
-        videoEl.id = getVideoTagID(session_id)
+        videoEl.id = getVideoTagID(session_id);
 
         if (properties && typeof properties !== "function") {
           videoEl.style.width = properties.width?.toString() ?? "";
@@ -507,13 +529,13 @@ export class Session extends OTEventEmitter<{
 
       const srcObject = videoEl.srcObject;
       // If source object is not already set, or is
-      // some unsupported type, create a new MediaStream 
+      // some unsupported type, create a new MediaStream
       // and set it.
       if (!srcObject || !(srcObject instanceof MediaStream)) {
         const tracks: MediaStreamTrack[] = [];
         if (video) tracks.push(video);
         if (!isLocal && audio) tracks.push(audio);
-  
+
         const newStream = new MediaStream(tracks);
         videoEl.srcObject = newStream;
         videoEl.autoplay = true;
@@ -524,7 +546,7 @@ export class Session extends OTEventEmitter<{
           } else if (e instanceof Error) {
             completionHandler?.(e);
           }
-        }
+        };
         return;
       }
 
@@ -537,7 +559,9 @@ export class Session extends OTEventEmitter<{
         }
         if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
       } else {
-        return callback?.(new Error("Video element's source object is invalid."));
+        return callback?.(
+          new Error("Video element's source object is invalid.")
+        );
       }
     });
 
@@ -555,21 +579,31 @@ export class Session extends OTEventEmitter<{
 
   // updateAudioTrack() makes sure an existing stream is updated with
   // the given audio track.
-  private updateAudioTrack(existingStream: MediaStream, newTrack: MediaStreamTrack) {
+  private updateAudioTrack(
+    existingStream: MediaStream,
+    newTrack: MediaStreamTrack
+  ) {
     const existingTracks = existingStream.getAudioTracks();
     this.updateMediaTrack(existingStream, existingTracks, newTrack);
   }
 
   // updateVideoTrack() makes sure an existing stream is updated with
   // the given video track.
-  private updateVideoTrack(existingStream: MediaStream, newTrack: MediaStreamTrack) {
+  private updateVideoTrack(
+    existingStream: MediaStream,
+    newTrack: MediaStreamTrack
+  ) {
     const existingTracks = existingStream.getVideoTracks();
     this.updateMediaTrack(existingStream, existingTracks, newTrack);
   }
 
   // updateMediaTracks() compares existing media track IDs with new ones,
   // and replaces them if needed.
-  private updateMediaTrack(existingStream: MediaStream, oldTracks: MediaStreamTrack[], newTrack: MediaStreamTrack) {
+  private updateMediaTrack(
+    existingStream: MediaStream,
+    oldTracks: MediaStreamTrack[],
+    newTrack: MediaStreamTrack
+  ) {
     const trackCount = oldTracks.length;
     // If there are no old tracks,
     // add the new track.
