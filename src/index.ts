@@ -367,13 +367,12 @@ export function log(message: string): void {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function registerScreenSharingExtension(
   kind: string,
   id: string,
   version: number
 ) {
-  console.debug("registerScreenSharingExtension", kind, id, version);
+  console.debug("registerScreenSharingExtension: ", kind, id, version);
   return;
 }
 
