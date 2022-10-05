@@ -360,10 +360,20 @@ let OTlogLevel = 0;
 export function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
 }
+
 export function log(message: string): void {
   if (OTlogLevel >= 4) {
     console.debug(message);
   }
+}
+
+export function registerScreenSharingExtension(
+  kind: string,
+  id: string,
+  version: number
+) {
+  console.debug("registerScreenSharingExtension: ", kind, id, version);
+  return;
 }
 
 export default {

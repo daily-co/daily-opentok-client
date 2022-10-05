@@ -83,6 +83,10 @@ export class Session extends OTEventEmitter<{
     subscribe: number;
   };
   sessionId: string;
+  /**
+   * @deprecated use sessionId. This is to improve compatibility with opentok accelerator-core-js
+   */
+  id: string;
   connection?: OT.Connection;
   connections: SessionCollection = {
     length: () => {
@@ -97,6 +101,7 @@ export class Session extends OTEventEmitter<{
   constructor(apiKey: string, sessionId: string, opt: unknown) {
     super();
     this.sessionId = sessionId;
+    this.id = this.sessionId;
     this.reconnecting = false;
 
     // TODO(jamsea): Figure out how to connect this to the daily call object
@@ -107,6 +112,12 @@ export class Session extends OTEventEmitter<{
       forceMute: 1,
       publish: 1,
       subscribe: 1,
+    };
+
+    this.connection = {
+      connectionId: "local",
+      creationTime: new Date().getTime(),
+      data: "",
     };
 
     // https://video-api.support.vonage.com/hc/en-us/articles/360029731611-How-do-I-get-the-number-of-connections-in-the-session-
@@ -190,6 +201,12 @@ export class Session extends OTEventEmitter<{
         stream: Stream;
       };
 
+      const connection = {
+        connectionId: user_id,
+        creationTime,
+        data: "",
+      };
+
       const stream: Stream = {
         streamId: session_id,
         frameRate,
@@ -203,13 +220,7 @@ export class Session extends OTEventEmitter<{
         },
         videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
         creationTime,
-        connection: {
-          connectionId: user_id, // TODO
-          creationTime,
-          // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-          // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-          data: "",
-        },
+        connection,
       };
 
       // Format as an opentok event
@@ -225,6 +236,7 @@ export class Session extends OTEventEmitter<{
       };
 
       publisher.stream = stream;
+      this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
 
