@@ -109,9 +109,9 @@ export class Session extends OTEventEmitter<{
       subscribe: 1,
     };
 
+    // https://video-api.support.vonage.com/hc/en-us/articles/360029731611-How-do-I-get-the-number-of-connections-in-the-session-
     this.on("connectionCreated", () => {
       this.connectionCount += 1;
-      console.debug("constructor connectionCreated", this.connectionCount);
     });
 
     this.on("connectionDestroyed", () => {

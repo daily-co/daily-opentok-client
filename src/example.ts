@@ -1,6 +1,6 @@
 import "./example.css";
 
-import { Event as OTEvent, Session } from "@opentok/client";
+// import { Event as OTEvent, Session } from "@opentok/client";
 
 // import * as OT from "@opentok/client";
 // const {
