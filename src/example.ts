@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 import "./example.css";
 
-import { Event as OTEvent, Session } from "@opentok/client";
-
 import * as OT from "@opentok/client";
 const {
   VITE_TOKBOX_API_KEY: apiKey = "",
   VITE_TOKBOX_SESSION_ID: sessionId = "",
   VITE_TOKBOX_TOKEN: token = "",
 } = import.meta.env;
-// OT.setLogLevel(5);
+OT.setLogLevel(4);
 
 // import * as OT from "./";
 
@@ -19,6 +17,49 @@ const {
 // const sessionId = "https://hush.daily.co/demo";
 // const token =
 //   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
+
+function initializeSession() {
+  const session = OT.initSession(apiKey, sessionId);
+
+  // Subscribe to a newly created stream
+  session.on("streamCreated", function streamCreated(event) {
+    session.subscribe(
+      event.stream,
+      "subscriber",
+      {
+        insertMode: "append",
+        width: "100%",
+        height: "100%",
+      },
+      handleError
+    );
+  });
+
+  session.on("sessionDisconnected", function sessionDisconnected(event) {
+    console.log("You were disconnected from the session.", event.reason);
+  });
+
+  // initialize the publisher
+  const publisher = OT.initPublisher(
+    "publisher",
+    {
+      insertMode: "append",
+      width: "100%",
+      height: "100%",
+    },
+    handleError
+  );
+
+  // Connect to the session
+  session.connect(token, function callback(error) {
+    if (error) {
+      handleError(error);
+    } else {
+      // If the connection is successful, publish the publisher to the session
+      session.publish(publisher, handleError);
+    }
+  });
+}
 
 const audioSelector = document.querySelector(
   "#audio-source-select"
@@ -33,13 +74,19 @@ const cycleVideoBtn = document.querySelector(
 
 let publisher: OT.Publisher | null = null;
 
+function handleError(error: unknown) {
+  if (error) {
+    console.error("handleError: ", error);
+  }
+}
+
 // sessionId becomes daily's room url
 const session = OT.initSession(apiKey, sessionId);
 
 // Subscribe to a newly created stream.
 // This does not cause a connection to be established.
 session.on("streamCreated", function streamCreated(event) {
-  console.log("[streamCreated] index.ts: ", event);
+  console.log("[streamCreated] index.ts: ", event.stream);
   // This is daily remote user stuff
   // if (!window.chrome) {
   session.subscribe(
@@ -47,6 +94,8 @@ session.on("streamCreated", function streamCreated(event) {
     "subscriber",
     {
       insertMode: "append",
+      width: "100%",
+      height: "100%",
     },
     handleError
   );
@@ -56,12 +105,6 @@ session.on("streamCreated", function streamCreated(event) {
 session.on("sessionDisconnected", function sessionDisconnected(event) {
   console.debug("[sessionDisconnected]", event);
 });
-
-function handleError(error: unknown) {
-  if (error) {
-    console.error("handleError: ", error);
-  }
-}
 
 // Get the list of devices and populate the drop down lists
 function populateDeviceSources(
@@ -87,7 +130,7 @@ function populateDeviceSources(
     publishBtn.disabled = false;
   });
 }
-publishBtn.disabled = true;
+publishBtn.disabled = false;
 // We request access to Microphones and Cameras so we can get the labels
 OT.getUserMedia()
   .then((stream) => {
@@ -112,6 +155,9 @@ publishBtn.addEventListener("click", () => {
   publisher = OT.initPublisher(
     "publisher",
     {
+      insertMode: "append",
+      width: "100%",
+      height: "100%",
       audioSource: audioSelector.value,
       videoSource: videoSelector.value,
     },
@@ -124,7 +170,31 @@ publishBtn.addEventListener("click", () => {
       }
     }
   );
+
+  console.log("click connect");
+  // Connect to the session (or Daily room in our case)
+  session.connect(token, function callback(error) {
+    console.debug("[session.connect]");
+
+    if (!publisher) {
+      console.error("No publisher");
+      return;
+    }
+
+    if (error) {
+      handleError(error);
+    } else {
+      console.log("session.connect publisher: ", publisher);
+      // If the connection is successful, publish the publisher (remote) to the session
+      //if (!window.chrome) {
+
+      session.publish(publisher, handleError);
+      //}
+    }
+  });
 });
+
+// publishBtn.addEventListener("click", initializeSession);
 
 // Allow you to switch to different cameras and microphones using
 // setAudioSource and cycleVideo
@@ -196,24 +266,23 @@ function setupAudioLevelMeter() {
 }
 
 function connect() {
-  // Connect to the session (or Daily room in our case)
-  session.connect(token, function callback(error) {
-    console.debug("[session.connect]");
-
-    if (!publisher) {
-      console.error("No publisher");
-      return;
-    }
-
-    if (error) {
-      handleError(error);
-    } else {
-      // If the connection is successful, publish the publisher (remote) to the session
-      //if (!window.chrome) {
-
-      session.publish(publisher, handleError);
-      //}
-    }
-  });
+  // console.log("click connect");
+  // // Connect to the session (or Daily room in our case)
+  // session.connect(token, function callback(error) {
+  //   console.debug("[session.connect]");
+  //   if (!publisher) {
+  //     console.error("No publisher");
+  //     return;
+  //   }
+  //   if (error) {
+  //     handleError(error);
+  //   } else {
+  //     console.log("session.connect publisher: ", publisher);
+  //     // If the connection is successful, publish the publisher (remote) to the session
+  //     //if (!window.chrome) {
+  //     session.publish(publisher, handleError);
+  //     //}
+  //   }
+  // });
 }
 document.getElementById("connect-btn")?.addEventListener("click", connect);
