@@ -96,7 +96,10 @@ export function getUserMedia(
   properties?: GetUserMediaProperties
 ): Promise<MediaStream> {
   if (!properties) {
-    return navigator.mediaDevices.getUserMedia();
+    return navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
   }
   const {
     audioSource,
