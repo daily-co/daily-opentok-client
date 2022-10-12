@@ -704,7 +704,6 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       return;
     }
-    console.log(subscriber.stream?.streamId);
 
     const { stream: { streamId } = {} } = subscriber;
 

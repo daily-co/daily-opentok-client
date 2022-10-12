@@ -10,6 +10,7 @@ import "./example.css";
 // OT.setLogLevel(4);
 
 import * as OT from "./";
+import { Publisher } from "./Publisher";
 
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 // apiKey can be blank, Daily's API key is not needed for the shim to work
@@ -29,7 +30,7 @@ const cycleVideoBtn = document.querySelector(
   "#cycle-video-btn"
 ) as HTMLButtonElement;
 
-let publisher: OT.Publisher | null = null;
+let publisher: Publisher | null = null;
 
 function handleError(error: unknown) {
   if (error) {
@@ -129,26 +130,26 @@ publishBtn.addEventListener("click", () => {
   );
 });
 
-// publishBtn.addEventListener("click", initializeSession);
-
 // Allow you to switch to different cameras and microphones using
 // setAudioSource and cycleVideo
 function setupDeviceSwitching() {
   audioSelector.disabled = false;
 
   // When the audio selector changes we update the audio source
-  audioSelector.addEventListener("change", () => {
+  audioSelector.addEventListener("change", (evt) => {
+    console.log("change", evt);
     if (!publisher) {
       console.log("No publisher");
       return;
     }
     audioSelector.disabled = true;
+    console.log(evt.target);
     publisher
-      .setAudioSource(event.target.value)
+      .setAudioSource(audioSelector.value)
       .then(() => {
         audioSelector.disabled = false;
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("setAudioSource error", err);
         audioSelector.disabled = false;
       });
@@ -167,7 +168,7 @@ function setupDeviceSwitching() {
         videoSelector.value = deviceId;
         cycleVideoBtn.disabled = false;
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("cycleVideo error", err);
         cycleVideoBtn.disabled = false;
       });
