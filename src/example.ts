@@ -18,49 +18,6 @@ OT.setLogLevel(4);
 // const token =
 //   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
-function initializeSession() {
-  const session = OT.initSession(apiKey, sessionId);
-
-  // Subscribe to a newly created stream
-  session.on("streamCreated", function streamCreated(event) {
-    session.subscribe(
-      event.stream,
-      "subscriber",
-      {
-        insertMode: "append",
-        width: "100%",
-        height: "100%",
-      },
-      handleError
-    );
-  });
-
-  session.on("sessionDisconnected", function sessionDisconnected(event) {
-    console.log("You were disconnected from the session.", event.reason);
-  });
-
-  // initialize the publisher
-  const publisher = OT.initPublisher(
-    "publisher",
-    {
-      insertMode: "append",
-      width: "100%",
-      height: "100%",
-    },
-    handleError
-  );
-
-  // Connect to the session
-  session.connect(token, function callback(error) {
-    if (error) {
-      handleError(error);
-    } else {
-      // If the connection is successful, publish the publisher to the session
-      session.publish(publisher, handleError);
-    }
-  });
-}
-
 const audioSelector = document.querySelector(
   "#audio-source-select"
 ) as HTMLSelectElement;
@@ -170,28 +127,6 @@ publishBtn.addEventListener("click", () => {
       }
     }
   );
-
-  console.log("click connect");
-  // Connect to the session (or Daily room in our case)
-  session.connect(token, function callback(error) {
-    console.debug("[session.connect]");
-
-    if (!publisher) {
-      console.error("No publisher");
-      return;
-    }
-
-    if (error) {
-      handleError(error);
-    } else {
-      console.log("session.connect publisher: ", publisher);
-      // If the connection is successful, publish the publisher (remote) to the session
-      //if (!window.chrome) {
-
-      session.publish(publisher, handleError);
-      //}
-    }
-  });
 });
 
 // publishBtn.addEventListener("click", initializeSession);
@@ -266,23 +201,26 @@ function setupAudioLevelMeter() {
 }
 
 function connect() {
-  // console.log("click connect");
-  // // Connect to the session (or Daily room in our case)
-  // session.connect(token, function callback(error) {
-  //   console.debug("[session.connect]");
-  //   if (!publisher) {
-  //     console.error("No publisher");
-  //     return;
-  //   }
-  //   if (error) {
-  //     handleError(error);
-  //   } else {
-  //     console.log("session.connect publisher: ", publisher);
-  //     // If the connection is successful, publish the publisher (remote) to the session
-  //     //if (!window.chrome) {
-  //     session.publish(publisher, handleError);
-  //     //}
-  //   }
-  // });
+  console.log("click connect");
+  // Connect to the session (or Daily room in our case)
+  session.connect(token, function callback(error) {
+    console.debug("[session.connect]");
+
+    if (!publisher) {
+      console.error("No publisher");
+      return;
+    }
+
+    if (error) {
+      handleError(error);
+    } else {
+      console.log("session.connect publisher: ", publisher);
+      // If the connection is successful, publish the publisher (remote) to the session
+      //if (!window.chrome) {
+
+      session.publish(publisher, handleError);
+      //}
+    }
+  });
 }
 document.getElementById("connect-btn")?.addEventListener("click", connect);
