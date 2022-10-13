@@ -276,12 +276,22 @@ export function initPublisher(
     window.call.setLocalAudio(true);
   }
 
+  if (completionHandler !== undefined) {
+    runDelayedCallback(completionHandler);
+  }
   return publisher;
 }
 
 let OTlogLevel = 0;
 export function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
+}
+
+// I'm sorry.
+async function runDelayedCallback(callback: (error?: OTError) => void) {
+  setTimeout(() => {
+    callback();
+  }, 1000);
 }
 
 export function log(message: string): void {
