@@ -706,33 +706,15 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       return;
     }
-    window.call
-      .leave()
-      .then(() => {
-        let defaultPrevented = true;
-        const sessionDisconnectedEvent: Event<
-          "sessionDisconnected",
-          Session
-        > & {
-          reason: string;
-        } = {
-          type: "sessionDisconnected",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          cancelable: false,
-          target: this,
-          reason: "clientDisconnected",
-        };
 
-        this.ee.emit("sessionDisconnected", sessionDisconnectedEvent);
-        // this.ee.emit("connectionDestroyed");
-        // this.ee.emit("streamDestroyed");
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    // sessionDisconnected, connectionDestroyed, streamDestroyed are
+    // all handled in listeners setup in connect(). In OpenTok's
+    // implementation, this function does not throw any errors,
+    // so to keep that behavior the same we're logging Daily
+    // errors to the console.
+    window.call.leave().catch((err) => {
+      console.error(err);
+    });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
