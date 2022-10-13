@@ -137,11 +137,10 @@ function setupDeviceSwitching() {
     console.log(evt.target);
     publisher
       .setAudioSource(audioSelector.value)
-      .then(() => {
-        audioSelector.disabled = false;
-      })
       .catch((err: unknown) => {
         console.error("setAudioSource error", err);
+      })
+      .finally(() => {
         audioSelector.disabled = false;
       });
   });
