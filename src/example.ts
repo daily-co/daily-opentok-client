@@ -75,16 +75,14 @@ function populateDeviceSources(
       return;
     }
 
-    let index = 0;
-    selector.innerHTML = devices.reduce((innerHTML, device) => {
-      if (device.kind === kind) {
-        index += 1;
-        return `${innerHTML}<option value="${device.deviceId}">${
-          device.label || `${device.kind}${index}`
-        }</option>`;
-      }
-      return innerHTML;
-    }, "");
+    for (const device of devices) {
+      if (device.kind !== kind) continue;
+      const optionEle = document.createElement("option");
+      optionEle.value = device.deviceId;
+      optionEle.innerText =
+        device.label || `${device.kind}${selector.children.length}`;
+      selector.appendChild(optionEle);
+    }
   });
 }
 // We request access to Microphones and Cameras so we can get the labels
