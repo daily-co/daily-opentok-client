@@ -287,8 +287,6 @@ export class Session extends OTEventEmitter<{
         if (!dailyEvent) return;
         if (!dailyEvent.participant) return;
 
-        this.ee.emit("connectionDestroyed");
-
         const {
           participant: { session_id },
         } = dailyEvent;
@@ -403,11 +401,80 @@ export class Session extends OTEventEmitter<{
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
 
-        this.ee.emit("connectionDestroyed");
-
+        const { participant } = dailyEvent;
         const {
-          participant: { session_id },
-        } = dailyEvent;
+          session_id,
+          audio: hasAudio,
+          video: hasVideo,
+          tracks,
+          joined_at = new Date(),
+          user_id,
+        } = participant;
+        const creationTime = joined_at.getTime();
+
+        const settings = tracks.video.track?.getSettings() ?? {};
+        const { frameRate = 0, height = 0, width = 0 } = settings;
+
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          data: "",
+        };
+
+        let defaultPrevented = true;
+        const connectionDestroyedEvent: Event<
+          "connectionDestroyed",
+          Session
+        > & {
+          connection: Connection;
+          reason: string;
+        } = {
+          type: "connectionDestroyed",
+          connection,
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          cancelable: false,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("connectionDestroyed", connectionDestroyedEvent);
+
+        const stream: Stream = {
+          streamId: session_id,
+          frameRate,
+          hasAudio,
+          hasVideo,
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
+          videoDimensions: {
+            height,
+            width,
+          },
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime: joined_at.getTime(),
+          connection,
+        };
+
+        let streamDefaultPrevented = true;
+        const streamDestroyedEvent: Event<"streamDestroyed", Session> & {
+          stream: Stream;
+          reason: string;
+        } = {
+          type: "streamDestroyed",
+          reason: "clientDisconnected",
+          target: this,
+          cancelable: true,
+          stream,
+          isDefaultPrevented: () => streamDefaultPrevented,
+          preventDefault: () => {
+            streamDefaultPrevented = true;
+          },
+        };
+
+        this.ee.emit("streamDestroyed", streamDestroyedEvent);
 
         const v = document.getElementById(getVideoTagID(session_id));
         if (v) {
@@ -639,9 +706,33 @@ export class Session extends OTEventEmitter<{
     if (!window.call) {
       return;
     }
-    window.call.leave().catch((err) => {
-      console.error(err);
-    });
+    window.call
+      .leave()
+      .then(() => {
+        let defaultPrevented = true;
+        const sessionDisconnectedEvent: Event<
+          "sessionDisconnected",
+          Session
+        > & {
+          reason: string;
+        } = {
+          type: "sessionDisconnected",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          cancelable: false,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("sessionDisconnected", sessionDisconnectedEvent);
+        // this.ee.emit("connectionDestroyed");
+        // this.ee.emit("streamDestroyed");
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
