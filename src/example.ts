@@ -85,10 +85,8 @@ function populateDeviceSources(
       }
       return innerHTML;
     }, "");
-    publishBtn.disabled = false;
   });
 }
-publishBtn.disabled = false;
 // We request access to Microphones and Cameras so we can get the labels
 OT.getUserMedia()
   .then((stream) => {
@@ -104,11 +102,6 @@ OT.getUserMedia()
 
 // Start publishing when you click the publish button
 publishBtn.addEventListener("click", () => {
-  // Disable the audio and video pickers and hide the publish button
-  audioSelector.disabled = true;
-  videoSelector.disabled = true;
-  publishBtn.style.display = "none";
-
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
     "publisher",
