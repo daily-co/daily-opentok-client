@@ -287,7 +287,6 @@ export class Session extends OTEventEmitter<{
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
       .on("track-stopped", (dailyEvent) => {
-        // TODO(jamsea): emit streamDestroyed event
         if (!dailyEvent) return;
         if (!dailyEvent.participant) return;
 
@@ -401,6 +400,13 @@ export class Session extends OTEventEmitter<{
         };
 
         this.ee.emit("sessionDisconnected", tokboxEvent);
+
+        Array.from(document.getElementsByTagName("video"))
+          .filter((v) => v.id.includes("daily-video-"))
+          .forEach((v) => {
+            v.srcObject = null;
+            v.remove();
+          });
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;

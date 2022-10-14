@@ -215,3 +215,11 @@ function connect() {
   });
 }
 document.getElementById("connect-btn")?.addEventListener("click", connect);
+
+function disconnect() {
+  console.log("click disconnect");
+  session.disconnect();
+}
+document
+  .getElementById("disconnect-btn")
+  ?.addEventListener("click", disconnect);

@@ -5,7 +5,7 @@ export function notImplemented(): never {
 }
 
 export function getVideoTagID(sessionID: string) {
-  return `video-${sessionID}`;
+  return `daily-video-${sessionID}`;
 }
 export function dailyUndefinedError(): never {
   throw new Error("Daily call object not initialized.");
