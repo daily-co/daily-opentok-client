@@ -152,6 +152,10 @@ export class Session extends OTEventEmitter<{
       properties = undefined;
     }
 
+    if (callback) {
+      completionHandler = callback;
+    }
+
     if (!completionHandler) {
       completionHandler = () => {
         // intentionally empty function
@@ -234,7 +238,7 @@ export class Session extends OTEventEmitter<{
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
-
+    completionHandler();
     return publisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {

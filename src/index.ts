@@ -5,7 +5,7 @@ import {
   ScreenSharingCapabilityResponse,
   Stream,
 } from "@opentok/client";
-import Daily from "@daily-co/daily-js";
+import Daily, { DailyParticipant } from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
 import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
@@ -256,113 +256,42 @@ export function initPublisher(
     }
 
     const { participant } = dailyEvent;
-    const {
-      session_id,
-      audio: hasAudio,
-      video: hasVideo,
-      tracks,
-      joined_at = new Date(),
-      user_id,
-      local,
-    } = participant;
-    const creationTime = joined_at.getTime();
-
-    const settings = tracks.video.track?.getSettings() ?? {};
-    const { frameRate = 0, height = 0, width = 0 } = settings;
-    const { video } = getParticipantTracks(participant);
-
-    if (!local || !video) {
-      return;
+    try {
+      updateLocalVideoDOM(participant, dailyElementId, publisher);
+    } catch (e) {
+      callback?.(e as OTError);
     }
-
-    const stream: Stream = {
-      streamId: session_id,
-      frameRate,
-      hasAudio,
-      hasVideo,
-      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-      name: "",
-      videoDimensions: {
-        height,
-        width,
-      },
-      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-      creationTime,
-      connection: {
-        connectionId: user_id, // TODO
-        creationTime,
-        // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-        // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-        data: "",
-      },
-    };
-    publisher.stream = stream;
-
-    let root = document.getElementById(dailyElementId);
-
-    if (root === null) {
-      root = document.createElement("div");
-      document.body.appendChild(root);
-    }
-
-    const documentVideoElm = document.getElementById(getVideoTagID(session_id));
-
-    if (
-      !(documentVideoElm instanceof HTMLVideoElement) &&
-      documentVideoElm != undefined
-    ) {
-      return callback?.(new Error("Video element id is invalid."));
-    }
-
-    const videoEl = documentVideoElm
-      ? documentVideoElm
-      : document.createElement("video");
-
-    if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
-      const tracks = videoEl.srcObject.getTracks();
-      if (tracks[0].id === video.id) {
-        return;
-      }
-    }
-
-    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-    switch (publisher.insertMode) {
-      case "append":
-        root.appendChild(videoEl);
-        break;
-      case "replace":
-        notImplemented();
-        break;
-      case "before":
-        notImplemented();
-        break;
-      case "after":
-        notImplemented();
-        break;
-      default:
-        break;
-    }
-
-    videoEl.style.width = publisher.width ?? "";
-    videoEl.style.height = publisher.height ?? "";
-    videoEl.srcObject = new MediaStream([video]);
-
-    videoEl.id = getVideoTagID(session_id);
-    videoEl.play().catch((e) => {
-      console.error("ERROR LOCAL CAMERA PLAY");
-      console.error(e);
-    });
   });
 
-  window.call.setLocalVideo(true);
-  window.call.setLocalAudio(true);
+  const localParticipant = window.call.participants().local;
+  const videoOn = localParticipant?.video;
+  const audioOn = localParticipant?.audio;
+  if (videoOn || audioOn) {
+    updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
+  }
+  if (!videoOn) {
+    window.call.setLocalVideo(true);
+  }
+  if (!audioOn) {
+    window.call.setLocalAudio(true);
+  }
 
+  if (completionHandler !== undefined) {
+    runDelayedCallback(completionHandler);
+  }
   return publisher;
 }
 
 let OTlogLevel = 0;
 export function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
+}
+
+// I'm sorry.
+async function runDelayedCallback(callback: (error?: OTError) => void) {
+  setTimeout(() => {
+    callback();
+  }, 1000);
 }
 
 export function log(message: string): void {
@@ -387,3 +316,105 @@ export default {
   initSession,
   initPublisher,
 };
+
+function updateLocalVideoDOM(
+  participant: DailyParticipant,
+  dailyElementId: string,
+  publisher: Publisher
+) {
+  const {
+    session_id,
+    audio: hasAudio,
+    video: hasVideo,
+    tracks,
+    joined_at = new Date(),
+    user_id,
+    local,
+  } = participant;
+  const creationTime = joined_at.getTime();
+
+  const settings = tracks.video.track?.getSettings() ?? {};
+  const { frameRate = 0, height = 0, width = 0 } = settings;
+  const { video } = getParticipantTracks(participant);
+
+  if (!local || !video) {
+    return;
+  }
+
+  const stream: Stream = {
+    streamId: session_id,
+    frameRate,
+    hasAudio,
+    hasVideo,
+    // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+    name: "",
+    videoDimensions: {
+      height,
+      width,
+    },
+    videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+    creationTime,
+    connection: {
+      connectionId: user_id, // TODO
+      creationTime,
+      // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+      // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+      data: "",
+    },
+  };
+  publisher.stream = stream;
+
+  let root = document.getElementById(dailyElementId);
+
+  if (root === null) {
+    root = document.createElement("div");
+    document.body.appendChild(root);
+  }
+
+  const documentVideoElm = document.getElementById(getVideoTagID(session_id));
+
+  if (
+    !(documentVideoElm instanceof HTMLVideoElement) &&
+    documentVideoElm != undefined
+  ) {
+    throw new Error("Video element id is invalid.");
+  }
+
+  const videoEl = documentVideoElm
+    ? documentVideoElm
+    : document.createElement("video");
+
+  if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
+    const tracks = videoEl.srcObject.getTracks();
+    if (tracks[0].id === video.id) {
+      return;
+    }
+  }
+
+  // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+  switch (publisher.insertMode) {
+    case "append":
+      root.appendChild(videoEl);
+      break;
+    case "replace":
+      notImplemented();
+      break;
+    case "before":
+      notImplemented();
+      break;
+    case "after":
+      notImplemented();
+      break;
+    default:
+      break;
+  }
+
+  videoEl.style.width = publisher.width ?? "";
+  videoEl.style.height = publisher.height ?? "";
+  videoEl.srcObject = new MediaStream([video]);
+
+  videoEl.id = getVideoTagID(session_id);
+  videoEl.play().catch((e) => {
+    console.error(e);
+  });
+}
