@@ -431,7 +431,7 @@ export class Session extends OTEventEmitter<{
           data: "",
         };
 
-        let connectionDefaultPrevented = true;
+        let connectionDefaultPrevented = false;
         const connectionDestroyedEvent: Event<
           "connectionDestroyed",
           Session
@@ -441,9 +441,9 @@ export class Session extends OTEventEmitter<{
         } = {
           type: "connectionDestroyed",
           connection,
-          isDefaultPrevented: () => defaultPrevented,
+          isDefaultPrevented: () => connectionDefaultPrevented,
           preventDefault: () => {
-            defaultPrevented = true;
+            connectionDefaultPrevented = true;
           },
           cancelable: false,
           target: this,
