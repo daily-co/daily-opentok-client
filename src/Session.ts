@@ -152,6 +152,10 @@ export class Session extends OTEventEmitter<{
       properties = undefined;
     }
 
+    if (callback) {
+      completionHandler = callback;
+    }
+
     if (!completionHandler) {
       completionHandler = () => {
         // intentionally empty function
@@ -234,7 +238,7 @@ export class Session extends OTEventEmitter<{
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
-
+    completionHandler();
     return publisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
@@ -283,11 +287,8 @@ export class Session extends OTEventEmitter<{
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
       .on("track-stopped", (dailyEvent) => {
-        // TODO(jamsea): emit streamDestroyed event
         if (!dailyEvent) return;
         if (!dailyEvent.participant) return;
-
-        this.ee.emit("connectionDestroyed");
 
         const {
           participant: { session_id },
@@ -399,15 +400,93 @@ export class Session extends OTEventEmitter<{
         };
 
         this.ee.emit("sessionDisconnected", tokboxEvent);
+
+        const videos = document.getElementsByTagName("video");
+
+        for (const video of videos) {
+          if (video.id.includes("daily-video-")) {
+            video.srcObject = null;
+            video.remove();
+          }
+        }
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
 
-        this.ee.emit("connectionDestroyed");
-
+        const { participant } = dailyEvent;
         const {
-          participant: { session_id },
-        } = dailyEvent;
+          session_id,
+          audio: hasAudio,
+          video: hasVideo,
+          tracks,
+          joined_at = new Date(),
+          user_id,
+        } = participant;
+        const creationTime = joined_at.getTime();
+
+        const settings = tracks.video.track?.getSettings() ?? {};
+        const { frameRate = 0, height = 0, width = 0 } = settings;
+
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          data: "",
+        };
+
+        let connectionDefaultPrevented = false;
+        const connectionDestroyedEvent: Event<
+          "connectionDestroyed",
+          Session
+        > & {
+          connection: Connection;
+          reason: string;
+        } = {
+          type: "connectionDestroyed",
+          connection,
+          isDefaultPrevented: () => connectionDefaultPrevented,
+          preventDefault: () => {
+            connectionDefaultPrevented = true;
+          },
+          cancelable: false,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("connectionDestroyed", connectionDestroyedEvent);
+
+        const stream: Stream = {
+          streamId: session_id,
+          frameRate,
+          hasAudio,
+          hasVideo,
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
+          videoDimensions: {
+            height,
+            width,
+          },
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime: joined_at.getTime(),
+          connection,
+        };
+
+        let streamDefaultPrevented = true;
+        const streamDestroyedEvent: Event<"streamDestroyed", Session> & {
+          stream: Stream;
+          reason: string;
+        } = {
+          type: "streamDestroyed",
+          reason: "clientDisconnected",
+          target: this,
+          cancelable: true,
+          stream,
+          isDefaultPrevented: () => streamDefaultPrevented,
+          preventDefault: () => {
+            streamDefaultPrevented = true;
+          },
+        };
+
+        this.ee.emit("streamDestroyed", streamDestroyedEvent);
 
         const v = document.getElementById(getVideoTagID(session_id));
         if (v) {
@@ -636,7 +715,18 @@ export class Session extends OTEventEmitter<{
   }
 
   disconnect(): void {
-    notImplemented();
+    if (!window.call) {
+      return;
+    }
+
+    // sessionDisconnected, connectionDestroyed, streamDestroyed are
+    // all handled in listeners setup in connect(). In OpenTok's
+    // implementation, this function does not throw any errors,
+    // so to keep that behavior the same we're logging Daily
+    // errors to the console.
+    window.call.leave().catch((err) => {
+      console.error(err);
+    });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -684,12 +774,33 @@ export class Session extends OTEventEmitter<{
   ): void {
     notImplemented();
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unpublish(publisher: Publisher): void {
-    notImplemented();
+    publisher.session = undefined;
+    if (!window.call) {
+      return;
+    }
+
+    window.call.updateParticipant("local", {
+      setVideo: false,
+      setAudio: false,
+    });
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   unsubscribe(subscriber: Subscriber): void {
-    notImplemented();
+    if (!window.call) {
+      return;
+    }
+
+    const { stream: { streamId } = {} } = subscriber;
+
+    if (streamId) {
+      window.call.updateParticipant(streamId, {
+        setSubscribedTracks: {
+          audio: false,
+          video: false,
+          screenVideo: false,
+          screenAudio: false,
+        },
+      });
+    }
   }
 }
