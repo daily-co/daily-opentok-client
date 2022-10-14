@@ -401,12 +401,14 @@ export class Session extends OTEventEmitter<{
 
         this.ee.emit("sessionDisconnected", tokboxEvent);
 
-        Array.from(document.getElementsByTagName("video"))
-          .filter((v) => v.id.includes("daily-video-"))
-          .forEach((v) => {
-            v.srcObject = null;
-            v.remove();
-          });
+        const videos = Array.from(document.getElementsByTagName("video"));
+
+        for (const video of videos) {
+          if (video.id.includes("daily-video-")) {
+            video.srcObject = null;
+            video.remove();
+          }
+        }
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
