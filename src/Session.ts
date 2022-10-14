@@ -401,7 +401,7 @@ export class Session extends OTEventEmitter<{
 
         this.ee.emit("sessionDisconnected", tokboxEvent);
 
-        const videos = Array.from(document.getElementsByTagName("video"));
+        const videos = document.getElementsByTagName("video");
 
         for (const video of videos) {
           if (video.id.includes("daily-video-")) {
