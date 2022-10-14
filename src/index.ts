@@ -264,8 +264,8 @@ export function initPublisher(
   });
 
   const localParticipant = window.call.participants().local;
-  const videoOn = localParticipant?.video;
-  const audioOn = localParticipant?.audio;
+  const videoOn = localParticipant.video;
+  const audioOn = localParticipant.audio;
   if (videoOn || audioOn) {
     updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
   }
@@ -276,9 +276,8 @@ export function initPublisher(
     window.call.setLocalAudio(true);
   }
 
-  if (completionHandler !== undefined) {
-    runDelayedCallback(completionHandler);
-  }
+  runDelayedCallback(completionHandler);
+
   return publisher;
 }
 
@@ -288,7 +287,7 @@ export function setLogLevel(logLevel: number): void {
 }
 
 // I'm sorry.
-async function runDelayedCallback(callback: (error?: OTError) => void) {
+function runDelayedCallback(callback: (error?: OTError) => void) {
   setTimeout(() => {
     callback();
   }, 1000);
