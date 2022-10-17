@@ -1,7 +1,7 @@
 import { DailyParticipant } from "@daily-co/daily-js";
 
-export function notImplemented(): never {
-  throw new Error("Method not implemented.");
+export function notImplemented(name: string = "unknown"): never {
+  throw new Error(`Function or operation not implemented: ${name}`);
 }
 
 export function getVideoTagID(sessionID: string) {

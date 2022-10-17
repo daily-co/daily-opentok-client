@@ -67,51 +67,51 @@ export class Subscriber extends OTEventEmitter<{
   }
 
   getAudioVolume(): number {
-    notImplemented();
+    notImplemented(this.getAudioVolume.name);
   }
   getImgData(): string | null {
-    notImplemented();
+    notImplemented(this.getImgData.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getStats(callback: (error?: OTError, stats?: SubscriberStats) => void): void {
-    notImplemented();
+    notImplemented(this.getStats.name);
   }
   getRtcStatsReport(): Promise<RTCStatsReport> {
-    notImplemented();
+    notImplemented(this.getRtcStatsReport.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToCaptions(value: boolean): Promise<void> {
-    notImplemented();
+    notImplemented(this.subscribeToCaptions.name);
   }
   isSubscribedToCaptions(): boolean {
-    notImplemented();
+    notImplemented(this.isSubscribedToCaptions.name);
   }
   isAudioBlocked(): boolean {
-    notImplemented();
+    notImplemented(this.isAudioBlocked.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   restrictFrameRate(value: boolean): void {
-    notImplemented();
+    notImplemented(this.restrictFrameRate.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setAudioVolume(volume: number): void {
-    notImplemented();
+    notImplemented(this.setAudioVolume.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreferredFrameRate(frameRate: number): void {
-    notImplemented();
+    notImplemented(this.setPreferredFrameRate.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreferredResolution(resolution: Dimensions): void {
-    notImplemented();
+    notImplemented(this.setPreferredResolution.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToAudio(value: boolean): void {
-    notImplemented();
+    notImplemented(this.subscribeToAudio.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToVideo(value: boolean): void {
-    notImplemented();
+    notImplemented(this.subscribeToVideo.name);
   }
 
   setStyle<Style extends keyof SubscriberStyle>(
@@ -120,13 +120,13 @@ export class Subscriber extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: SubscriberStyle[Style]
   ): void {
-    notImplemented();
+    notImplemented(`suscriber ${this.setStyle.name}`);
   }
 
   videoHeight(): number | undefined {
-    notImplemented();
+    notImplemented(`subscriber ${this.videoHeight.name}`);
   }
   videoWidth(): number | undefined {
-    notImplemented();
+    notImplemented(`subscriber ${this.videoWidth.name}`);
   }
 }
