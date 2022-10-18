@@ -4,8 +4,9 @@ import { defineConfig } from "vite";
 import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
   const isBuild = command === "build";
+  const isDev = mode === "development";
 
   const entry = isBuild
     ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"
@@ -23,10 +24,15 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [mkcert()],
     build: {
-      minify: true,
+      minify: !isDev,
       lib,
       rollupOptions: {
-        output: { format: "iife", name: "OT", exports: "named" },
+        output: {
+          format: "iife",
+          name: "OT",
+          exports: "named",
+          sourcemap: isDev,
+        },
       },
     },
     server: { https: true },
