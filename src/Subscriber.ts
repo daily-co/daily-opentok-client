@@ -120,7 +120,7 @@ export class Subscriber extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: SubscriberStyle[Style]
   ): void {
-    notImplemented(`suscriber ${this.setStyle.name}`);
+    notImplemented(`subscriber ${this.setStyle.name}`);
   }
 
   videoHeight(): number | undefined {
