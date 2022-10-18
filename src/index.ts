@@ -264,8 +264,10 @@ export function initPublisher(
   });
 
   const localParticipant = window.call.participants().local;
-  const videoOn = localParticipant.video;
-  const audioOn = localParticipant.audio;
+  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+  const videoOn = localParticipant?.video;
+  const audioOn = localParticipant?.audio;
+  /* eslint-enable */
   if (videoOn || audioOn) {
     updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
   }
