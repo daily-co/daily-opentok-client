@@ -1,6 +1,6 @@
 import { DailyParticipant } from "@daily-co/daily-js";
 
-export function notImplemented(name: string = "unknown"): never {
+export function notImplemented(name = "unknown"): never {
   throw new Error(`Function or operation not implemented: ${name}`);
 }
 
