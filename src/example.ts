@@ -32,7 +32,8 @@ const cycleVideoBtn = document.querySelector(
 
 let publisher: Publisher | null = null;
 
-function handleError(error: unknown) {
+function handleError(error: unknown, foo) {
+  console.log("handleError: ", error, foo);
   if (error) {
     console.error("handleError: ", error);
   }
@@ -47,7 +48,7 @@ session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event.stream);
   // This is daily remote user stuff
   // if (!window.chrome) {
-  session.subscribe(
+  const subscriber = session.subscribe(
     event.stream,
     "subscriber",
     {
@@ -57,6 +58,8 @@ session.on("streamCreated", function streamCreated(event) {
     },
     handleError
   );
+
+  window.subscriber = subscriber;
   // }
 });
 

@@ -251,6 +251,7 @@ export function initPublisher(
   }
 
   window.call.on("participant-updated", (dailyEvent) => {
+    console.log("participant-updated", dailyEvent);
     if (!dailyEvent) {
       return;
     }
@@ -277,6 +278,17 @@ export function initPublisher(
   if (!audioOn) {
     window.call.setLocalAudio(true);
   }
+
+  window.call.setNetworkTopology({ topology: "sfu" }).catch((error) => {
+    if (error instanceof Error) {
+      const { message, name } = error;
+      callback?.({
+        message,
+        name,
+      });
+      return;
+    }
+  });
 
   runDelayedCallback(completionHandler);
 

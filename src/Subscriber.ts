@@ -7,8 +7,9 @@ import {
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
-import { notImplemented } from "./utils";
+import { dailyUndefinedError, notImplemented } from "./utils";
 import { OTEventEmitter } from "./OTEventEmitter";
+import { DailyParticipantUpdateOptions } from "@daily-co/daily-js";
 
 export class Subscriber extends OTEventEmitter<{
   audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
@@ -105,13 +106,57 @@ export class Subscriber extends OTEventEmitter<{
   setPreferredResolution(resolution: Dimensions): void {
     notImplemented(this.setPreferredResolution.name);
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  subscribeToAudio(value: boolean): void {
-    notImplemented(this.subscribeToAudio.name);
+  subscribeToAudio(value: boolean): this {
+    if (!window.call) {
+      dailyUndefinedError();
+    }
+    const participants = window.call.participants();
+
+    window.call
+      .setNetworkTopology({ topology: "sfu" })
+      .catch(console.error)
+      .finally(() => {
+        const updateList: Record<string, DailyParticipantUpdateOptions> = {};
+        for (const id in participants) {
+          if (id === "local") {
+            continue;
+          }
+          updateList[id] = {
+            setSubscribedTracks: {
+              audio: value,
+            },
+          };
+        }
+        window.call?.updateParticipants(updateList);
+      });
+
+    return this;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  subscribeToVideo(value: boolean): void {
-    notImplemented(this.subscribeToVideo.name);
+  subscribeToVideo(value: boolean): this {
+    if (!window.call) {
+      dailyUndefinedError();
+    }
+    const participants = window.call.participants();
+
+    window.call
+      .setNetworkTopology({ topology: "sfu" })
+      .catch(console.error)
+      .finally(() => {
+        const updateList: Record<string, DailyParticipantUpdateOptions> = {};
+        for (const id in participants) {
+          if (id === "local") {
+            continue;
+          }
+          updateList[id] = {
+            setSubscribedTracks: {
+              video: value,
+            },
+          };
+        }
+        window.call?.updateParticipants(updateList);
+      });
+
+    return this;
   }
 
   setStyle<Style extends keyof SubscriberStyle>(
