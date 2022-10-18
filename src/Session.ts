@@ -163,7 +163,7 @@ export class Session extends OTEventEmitter<{
     }
 
     if (typeof publisher === "string" || publisher instanceof HTMLElement) {
-      notImplemented();
+      notImplemented("string or HTMLElement publisher");
     }
 
     if (!window.call) {
@@ -734,36 +734,36 @@ export class Session extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError) => void
   ): void {
-    notImplemented();
+    notImplemented(this.forceDisconnect.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceUnpublish(stream: Stream, callback: (error?: OTError) => void): void {
-    notImplemented();
+    notImplemented(this.forceUnpublish.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceMuteStream(stream: Stream): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.forceMuteStream.name));
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   forceMuteAll(excludedStreams?: Stream[]): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.forceMuteAll.name));
     });
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPublisherForStream(stream: Stream): Publisher | undefined {
-    notImplemented();
+    notImplemented(this.getPublisherForStream.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getSubscribersForStream(stream: Stream): [Subscriber] {
-    notImplemented();
+    notImplemented(this.getSubscribersForStream.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setEncryptionSecret(secret: string): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.setEncryptionSecret.name));
     });
   }
   signal(
@@ -772,7 +772,7 @@ export class Session extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError) => void
   ): void {
-    notImplemented();
+    notImplemented("signal");
   }
   unpublish(publisher: Publisher): void {
     publisher.session = undefined;

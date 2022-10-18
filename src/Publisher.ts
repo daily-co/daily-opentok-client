@@ -112,34 +112,34 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getImgData(): string | null {
-    notImplemented();
+    notImplemented(this.getImgData.name);
   }
   getStats(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError, stats?: PublisherStatsArr) => void
   ): void {
-    notImplemented();
+    notImplemented(this.getStats.name);
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.getRtcStatsReport.name));
     });
   }
   getStyle(): PublisherProperties {
-    notImplemented();
+    notImplemented(this.getStyle.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.applyVideoFilter.name));
     });
   }
   getVideoFilter(): VideoFilter | null {
-    notImplemented();
+    notImplemented(this.getVideoFilter.name);
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented());
+      reject(notImplemented(this.clearVideoFilter.name));
     });
   }
   publishAudio(value: boolean): void {
@@ -157,7 +157,7 @@ export class Publisher extends OTEventEmitter<{
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishCaptions(value: boolean): void {
-    notImplemented();
+    notImplemented(this.publishCaptions.name);
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     if (!window.call) {
@@ -207,11 +207,11 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getVideoContentHint(): VideoContentHint {
-    notImplemented();
+    notImplemented(this.getVideoContentHint.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setVideoContentHint(hint: VideoContentHint): void {
-    notImplemented();
+    notImplemented(this.setVideoContentHint.name);
   }
   getVideoSource(): {
     deviceId: string | null;
@@ -235,12 +235,12 @@ export class Publisher extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: PublisherStyle[Style]
   ): void {
-    notImplemented();
+    notImplemented(`publisher ${this.setStyle.name}`);
   }
   videoWidth(): number | undefined {
-    notImplemented();
+    notImplemented(`publisher ${this.videoWidth.name}`);
   }
   videoHeight(): number | undefined {
-    notImplemented();
+    notImplemented(`publisher ${this.videoHeight.name}`);
   }
 }

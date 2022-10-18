@@ -37,7 +37,7 @@ export function checkSystemRequirements(): number {
 }
 
 export function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
-  notImplemented();
+  notImplemented(getActiveAudioOutputDevice.name);
 }
 
 export function upgradeSystemRequirements() {
@@ -398,13 +398,13 @@ function updateLocalVideoDOM(
       root.appendChild(videoEl);
       break;
     case "replace":
-      notImplemented();
+      notImplemented("'replace' insert mode");
       break;
     case "before":
-      notImplemented();
+      notImplemented("'before' insert mode");
       break;
     case "after":
-      notImplemented();
+      notImplemented("'after' insert mode");
       break;
     default:
       break;
