@@ -310,14 +310,6 @@ export function registerScreenSharingExtension(
   return;
 }
 
-export default {
-  checkSystemRequirements,
-  upgradeSystemRequirements,
-  getDevices,
-  initSession,
-  initPublisher,
-};
-
 function updateLocalVideoDOM(
   participant: DailyParticipant,
   dailyElementId: string,
