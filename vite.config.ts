@@ -1,6 +1,6 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-import { defineConfig } from "vite";
+import { defineConfig, LibraryOptions } from "vite";
 import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
@@ -14,7 +14,8 @@ export default defineConfig(({ command, mode }) => {
 
   const fileName = isBuild ? "opentok" : "index";
 
-  const lib = {
+  const lib: LibraryOptions = {
+    formats: ["es", "umd"],
     entry,
     name: "OT",
     // the proper extensions will be added
@@ -25,15 +26,8 @@ export default defineConfig(({ command, mode }) => {
     plugins: [mkcert()],
     build: {
       minify: !isDev,
+      sourcemap: isDev,
       lib,
-      rollupOptions: {
-        output: {
-          format: "iife",
-          name: "OT",
-          exports: "named",
-          sourcemap: isDev,
-        },
-      },
     },
     server: { https: true },
   };
