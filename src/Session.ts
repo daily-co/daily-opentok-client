@@ -12,6 +12,7 @@ import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
 import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
+import { initPublisher } from "./index";
 
 interface SessionCollection {
   length: () => number;
@@ -162,9 +163,12 @@ export class Session extends OTEventEmitter<{
       };
     }
 
-    if (typeof publisher === "string" || publisher instanceof HTMLElement) {
-      notImplemented("string or HTMLElement publisher");
-    }
+    // If the publisher is a string or HTMLElement, we need to create a new
+    // Publisher object.
+    const localPublisher: Publisher =
+      typeof publisher === "string" || publisher instanceof HTMLElement
+        ? initPublisher(publisher, properties)
+        : publisher;
 
     if (!window.call) {
       console.error("No daily call object");
@@ -172,7 +176,7 @@ export class Session extends OTEventEmitter<{
         message: "No call",
         name: "NoCall",
       });
-      return publisher;
+      return localPublisher;
     }
 
     window.call.on("participant-joined", (dailyEvent) => {
@@ -234,12 +238,12 @@ export class Session extends OTEventEmitter<{
         stream,
       };
 
-      publisher.stream = stream;
+      localPublisher.stream = stream;
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
     completionHandler();
-    return publisher;
+    return localPublisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
     window.call =
