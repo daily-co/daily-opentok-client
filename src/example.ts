@@ -9,7 +9,7 @@ import "./example.css";
 // } = import.meta.env;
 // OT.setLogLevel(4);
 
-import * as OT from "./";
+import OT from "./";
 import { Publisher } from "./Publisher";
 
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
@@ -18,8 +18,6 @@ const apiKey = "";
 const sessionId = "https://hush.daily.co/demo";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
-
-window.OT = OT;
 
 const audioSelector = document.querySelector(
   "#audio-source-select"

@@ -15,7 +15,7 @@ import {
   dailyUndefinedError,
 } from "./utils";
 
-export function checkScreenSharingCapability(
+function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void
 ): void {
   return Daily.supportedBrowser().supportsScreenShare
@@ -37,11 +37,11 @@ export function checkScreenSharingCapability(
       });
 }
 
-export function checkSystemRequirements(): number {
+function checkSystemRequirements(): number {
   return Daily.supportedBrowser().supported ? 1 : 0;
 }
 
-export function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
+function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
   if (!window.call) {
     dailyUndefinedError();
   }
@@ -62,12 +62,12 @@ export function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
   });
 }
 
-export function upgradeSystemRequirements() {
+function upgradeSystemRequirements() {
   // Left empty
   console.debug("upgradeSystemRequirements called");
 }
 
-export function getDevices(
+function getDevices(
   callback: (error: OTError | undefined, devices?: OT.Device[]) => void
 ): void {
   window.call =
@@ -101,7 +101,7 @@ export function getDevices(
     });
 }
 
-export function getSupportedCodecs(): Promise<{
+function getSupportedCodecs(): Promise<{
   videoEncoders: ("H264" | "VP8")[];
   videoDecoders: ("H264" | "VP8")[];
 }> {
@@ -113,7 +113,7 @@ export function getSupportedCodecs(): Promise<{
     : Promise.resolve({ videoDecoders: [], videoEncoders: [] });
 }
 
-export function getUserMedia(
+function getUserMedia(
   properties?: GetUserMediaProperties
 ): Promise<MediaStream> {
   if (!properties) {
@@ -174,7 +174,7 @@ export function getUserMedia(
   });
 }
 
-export function hasMediaProcessorSupport(): boolean {
+function hasMediaProcessorSupport(): boolean {
   return Daily.supportedBrowser().supportsVideoProcessing;
 }
 
@@ -183,7 +183,7 @@ export function hasMediaProcessorSupport(): boolean {
 // communications with the cloud. It simply initializes
 // the Session object that you can use to connect (and
 // to perform other operations once connected).
-export function initSession(
+function initSession(
   // Doesn't look like Daily needs this at all, but it's required by the opentok API
   partnerId: string,
   // sessionId in tokbox, renamed this to roomUrl to match the Daily API
@@ -208,7 +208,7 @@ export function initSession(
   return session;
 }
 
-export function initPublisher(
+function initPublisher(
   targetElement?: string | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
@@ -306,7 +306,7 @@ export function initPublisher(
 }
 
 let OTlogLevel = 0;
-export function setLogLevel(logLevel: number): void {
+function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
 }
 
@@ -317,13 +317,13 @@ function runDelayedCallback(callback: (error?: OTError) => void) {
   }, 1000);
 }
 
-export function log(message: string): void {
+function log(message: string): void {
   if (OTlogLevel >= 4) {
     console.debug(message);
   }
 }
 
-export function registerScreenSharingExtension(
+function registerScreenSharingExtension(
   kind: string,
   id: string,
   version: number
@@ -433,3 +433,19 @@ function updateLocalVideoDOM(
     console.error(e);
   });
 }
+
+export default {
+  checkScreenSharingCapability,
+  checkSystemRequirements,
+  getActiveAudioOutputDevice,
+  getDevices,
+  getSupportedCodecs,
+  getUserMedia,
+  hasMediaProcessorSupport,
+  initPublisher,
+  initSession,
+  log,
+  registerScreenSharingExtension,
+  setLogLevel,
+  upgradeSystemRequirements,
+};
