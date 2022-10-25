@@ -12,7 +12,9 @@
   "exports": {
     ".": {
       "import": "./dist/opentok.js",
-      "require": "./dist/opentok.umd.cjs"
+      "require": "./dist/opentok.umd.cjs",
+      "default": "./dist/opentok.iife.js",
+      "node": "./dist/opentok.umd.cjs"
     }
   },
   "types": "./dist/src/index.d.ts",
