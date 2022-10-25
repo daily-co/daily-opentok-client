@@ -8,7 +8,12 @@ import {
 import Daily, { DailyParticipant } from "@daily-co/daily-js";
 import { Publisher } from "./Publisher";
 import { Session } from "./Session";
-import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
+import {
+  getParticipantTracks,
+  getVideoTagID,
+  notImplemented,
+  dailyUndefinedError,
+} from "./utils";
 
 export function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void
@@ -37,7 +42,24 @@ export function checkSystemRequirements(): number {
 }
 
 export function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
-  notImplemented(getActiveAudioOutputDevice.name);
+  if (!window.call) {
+    dailyUndefinedError();
+  }
+
+  return window.call.enumerateDevices().then(({ devices }) => {
+    const device = devices.find((device) => device.kind === "audiooutput");
+
+    if (!device) {
+      throw new Error("No audio output device found.");
+    }
+
+    const { deviceId, label } = device;
+
+    return {
+      deviceId,
+      label,
+    };
+  });
 }
 
 export function upgradeSystemRequirements() {
