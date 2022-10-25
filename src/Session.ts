@@ -12,7 +12,7 @@ import { OTEventEmitter } from "./OTEventEmitter";
 import { Publisher } from "./Publisher";
 import { Subscriber } from "./Subscriber";
 import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
-import { initPublisher } from "./index";
+import OT from "./index";
 
 interface SessionCollection {
   length: () => number;
@@ -167,7 +167,7 @@ export class Session extends OTEventEmitter<{
     // Publisher object.
     const localPublisher: Publisher =
       typeof publisher === "string" || publisher instanceof HTMLElement
-        ? initPublisher(publisher, properties)
+        ? OT.initPublisher(publisher, properties)
         : publisher;
 
     if (!window.call) {

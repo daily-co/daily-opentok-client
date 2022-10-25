@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test, jest } from "@jest/globals";
 import { FakeMediaStreamTrack } from "fake-mediastreamtrack";
-import * as OT from "./index";
+import OT from "./index";
 
 const mockGetUserMedia = jest.fn(async () => {
   return new Promise<MediaStream>((resolve) => {
