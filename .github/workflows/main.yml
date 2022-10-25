@@ -1,17 +1,49 @@
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-name: 🚀 Build and Test
+on: [push, pull_request]
+name: Build, Test and maybe Publish
 jobs:
-  build-and-test:
+  test:
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js 16.16.0
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - name: Use Node.js 16.18.0
+        uses: actions/setup-node@v1
         with:
-          node-version: 16.16.0
-      - run: npm install-ci-test
+          node-version: 16.18.0
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: 16.18.0-${{ runner.OS }}-build-${{ hashFiles('package.json') }}
+      - name: Build
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+  publish:
+    name: Publish
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache node_modules
+        id: cache-modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: 16.18.0-${{ runner.OS }}-build-${{ hashFiles('package.json') }}
+      - name: Build
+        if: steps.cache-modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Test
+        run: npm run test
+
+      - name: Publish
+        uses: mikeal/merge-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
