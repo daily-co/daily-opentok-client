@@ -19,6 +19,9 @@ const sessionId = "https://hush.daily.co/demo";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
+// @ts-expect-error OT isn't a built in method on the window object
+window.OT = OT;
+
 const audioSelector = document.querySelector(
   "#audio-source-select"
 ) as HTMLSelectElement;

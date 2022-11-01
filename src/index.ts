@@ -305,6 +305,20 @@ function initPublisher(
   return publisher;
 }
 
+function setAudioOutputDevice(deviceId: string): Promise<void> {
+  if (!window.call) {
+    dailyUndefinedError();
+  }
+  return window.call
+    .setOutputDeviceAsync({
+      outputDeviceId: deviceId,
+    })
+    .then(() => {
+      // return void to match OpenTok's API
+      return;
+    });
+}
+
 let OTlogLevel = 0;
 function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
@@ -446,6 +460,7 @@ export default {
   initSession,
   log,
   registerScreenSharingExtension,
+  setAudioOutputDevice,
   setLogLevel,
   upgradeSystemRequirements,
 };
