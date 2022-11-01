@@ -243,12 +243,30 @@ function initPublisher(
       },
     });
 
+  window.call.on("participant-updated", (dailyEvent) => {
+    if (!dailyEvent) {
+      return;
+    }
+
+    const { participant } = dailyEvent;
+    try {
+      updateLocalVideoDOM(participant, dailyElementId, publisher);
+    } catch (e) {
+      completionHandler(e as OTError);
+    }
+  });
+
   switch (window.call.meetingState()) {
     case "new":
-      window.call.startCamera().catch((err) => {
-        completionHandler(new Error("Failed to start camera"));
-        console.error("startCamera error: ", err);
-      });
+      window.call
+        .startCamera()
+        .then(() => {
+          completionHandler();
+        })
+        .catch((err) => {
+          completionHandler(new Error("Failed to start camera"));
+          console.error("startCamera error: ", err);
+        });
       break;
     case "loading":
       console.debug("loading");
@@ -267,23 +285,24 @@ function initPublisher(
       break;
     case "error":
       console.debug("error");
+      completionHandler(new Error("Daily error"));
+      return publisher;
       break;
     default:
       break;
   }
 
-  window.call.on("participant-updated", (dailyEvent) => {
-    if (!dailyEvent) {
-      return;
-    }
-
-    const { participant } = dailyEvent;
-    try {
-      updateLocalVideoDOM(participant, dailyElementId, publisher);
-    } catch (e) {
-      callback?.(e as OTError);
-    }
-  });
+  navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: true,
+    })
+    .then((d) => {
+      completionHandler();
+    })
+    .catch((e) => {
+      completionHandler(e as OTError);
+    });
 
   const localParticipant = window.call.participants().local;
   /* eslint-disable @typescript-eslint/no-unnecessary-condition */
@@ -299,8 +318,6 @@ function initPublisher(
   if (!audioOn) {
     window.call.setLocalAudio(true);
   }
-
-  runDelayedCallback(completionHandler);
 
   return publisher;
 }
@@ -322,13 +339,6 @@ function setAudioOutputDevice(deviceId: string): Promise<void> {
 let OTlogLevel = 0;
 function setLogLevel(logLevel: number): void {
   OTlogLevel = logLevel;
-}
-
-// I'm sorry.
-function runDelayedCallback(callback: (error?: OTError) => void) {
-  setTimeout(() => {
-    callback();
-  }, 1000);
 }
 
 function log(message: string): void {
@@ -463,4 +473,10 @@ export default {
   setAudioOutputDevice,
   setLogLevel,
   upgradeSystemRequirements,
+  properties: {
+    /**
+     * @deprecated added to support projects that use older versions of OpenTok
+     */
+    loggingURL: "https://hlg.tokbox.com/prod", // 'https://hlg.tokbox.com/prod/logging/ClientEvent'
+  },
 };
