@@ -19,7 +19,6 @@
   },
   "types": "./dist/src/index.d.ts",
   "scripts": {
-    "dev": "vite",
     "start": "vite",
     "start:tag": "run-p build:watch serve",
     "clean": "rm -rf dist/",
