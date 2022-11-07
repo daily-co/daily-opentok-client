@@ -7,7 +7,7 @@ import {
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
-import { notImplemented } from "./utils";
+import { getParticipantTracks, getVideoTagID, notImplemented } from "./utils";
 import { OTEventEmitter } from "./OTEventEmitter";
 
 export class Subscriber extends OTEventEmitter<{

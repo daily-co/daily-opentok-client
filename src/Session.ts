@@ -388,27 +388,9 @@ export class Session extends OTEventEmitter<{
         // TODO(jamsea): emit opentok event
       })
       .on("left-meeting", (dailyEvent) => {
-        console.debug("left-meeting", dailyEvent);
         if (!dailyEvent) {
           return;
         }
-
-        let defaultPrevented = false;
-
-        const tokboxEvent: Event<"sessionDisconnected", Session> & {
-          reason: string;
-        } = {
-          type: "sessionDisconnected",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          cancelable: true,
-          target: this,
-          reason: "clientDisconnected",
-        };
-
-        this.ee.emit("sessionDisconnected", tokboxEvent);
 
         const videos = document.getElementsByTagName("video");
 
@@ -500,6 +482,7 @@ export class Session extends OTEventEmitter<{
         const v = document.getElementById(getVideoTagID(session_id));
         if (v) {
           v.remove();
+          // subscriber.ee.emit("destroyed");
         }
       })
       .join({ url: this.sessionId, token })
@@ -548,6 +531,10 @@ export class Session extends OTEventEmitter<{
       properties = undefined;
     }
 
+    if (typeof callback === "function") {
+      completionHandler = callback;
+    }
+
     if (!completionHandler) {
       completionHandler = () => {
         // intentionally empty
@@ -573,7 +560,15 @@ export class Session extends OTEventEmitter<{
       throw err;
     }
 
-    const subscriber = new Subscriber(root);
+    const subscriber = new Subscriber(
+      root,
+      {
+        stream,
+        id:
+          typeof targetElement === "string" ? targetElement : targetElement.id,
+      },
+      completionHandler
+    );
 
     window.call.on("track-started", (dailyEvent) => {
       // Make sure the track has started before publishing the session
@@ -621,7 +616,7 @@ export class Session extends OTEventEmitter<{
         videoEl = existingVideoElement;
       } else {
         // If video element is on an unexpected type, error out
-        return callback?.(new Error("Video element is invalid."));
+        return completionHandler?.(new Error("Video element is invalid."));
       }
 
       const srcObject = videoEl.srcObject;
@@ -656,20 +651,31 @@ export class Session extends OTEventEmitter<{
         }
         if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
       } else {
-        return callback?.(
+        return completionHandler?.(
           new Error("Video element's source object is invalid.")
         );
       }
     });
 
-    window.call.updateParticipant(streamId, {
+    if (window.call.participants().local.session_id !== streamId) {
+      window.call.updateParticipant(streamId, {
+        setSubscribedTracks: {
+          audio: true,
+          video: true,
+          screenVideo: false,
+          screenAudio: false,
+        },
+      });
+    }
+
+    window.call.updateParticipant("local", {
       setSubscribedTracks: {
         audio: true,
         video: true,
-        screenVideo: false,
-        screenAudio: false,
       },
     });
+
+    completionHandler();
 
     return subscriber;
   }
@@ -733,9 +739,28 @@ export class Session extends OTEventEmitter<{
     // implementation, this function does not throw any errors,
     // so to keep that behavior the same we're logging Daily
     // errors to the console.
-    window.call.leave().catch((err) => {
-      console.error(err);
-    });
+    window.call
+      .leave()
+      .then(() => {
+        let defaultPrevented = false;
+        const tokboxEvent: Event<"sessionDisconnected", Session> & {
+          reason: string;
+        } = {
+          type: "sessionDisconnected",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
+          cancelable: true,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("sessionDisconnected", tokboxEvent);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -801,7 +826,7 @@ export class Session extends OTEventEmitter<{
 
     const { stream: { streamId } = {} } = subscriber;
 
-    if (streamId) {
+    if (streamId && window.call.participants().local.session_id !== streamId) {
       window.call.updateParticipant(streamId, {
         setSubscribedTracks: {
           audio: false,
@@ -811,5 +836,7 @@ export class Session extends OTEventEmitter<{
         },
       });
     }
+
+    subscriber.ee.emit("destroyed"); // This isn't quite right, it should be emitted when the dom element is removed.
   }
 }
