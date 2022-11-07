@@ -295,22 +295,6 @@ export class Session extends OTEventEmitter<{
 
         this.ee.emit("connectionCreated", connectionCreatedEvent);
       })
-      .on("track-stopped", (dailyEvent) => {
-        if (!dailyEvent) return;
-        if (!dailyEvent.participant) return;
-
-        const {
-          participant: { session_id },
-        } = dailyEvent;
-
-        // If it was video that stopped, hide the video element
-        if (dailyEvent.track.kind === "video") {
-          const v = document.getElementById(getVideoTagID(session_id));
-          if (v) {
-            v.style.visibility = "hidden";
-          }
-        }
-      })
       .on("error", (dailyEvent) => {
         console.error("error", dailyEvent);
 
@@ -386,104 +370,6 @@ export class Session extends OTEventEmitter<{
           return;
         }
         // TODO(jamsea): emit opentok event
-      })
-      .on("left-meeting", (dailyEvent) => {
-        if (!dailyEvent) {
-          return;
-        }
-
-        const videos = document.getElementsByTagName("video");
-
-        for (const video of videos) {
-          if (video.id.includes("daily-video-")) {
-            video.srcObject = null;
-            video.remove();
-          }
-        }
-      })
-      .on("participant-left", (dailyEvent) => {
-        if (!dailyEvent) return;
-
-        const { participant } = dailyEvent;
-        const {
-          session_id,
-          audio: hasAudio,
-          video: hasVideo,
-          tracks,
-          joined_at = new Date(),
-          user_id,
-        } = participant;
-        const creationTime = joined_at.getTime();
-
-        const settings = tracks.video.track?.getSettings() ?? {};
-        const { frameRate = 0, height = 0, width = 0 } = settings;
-
-        const connection = {
-          connectionId: user_id,
-          creationTime,
-          data: "",
-        };
-
-        let connectionDefaultPrevented = false;
-        const connectionDestroyedEvent: Event<
-          "connectionDestroyed",
-          Session
-        > & {
-          connection: Connection;
-          reason: string;
-        } = {
-          type: "connectionDestroyed",
-          connection,
-          isDefaultPrevented: () => connectionDefaultPrevented,
-          preventDefault: () => {
-            connectionDefaultPrevented = true;
-          },
-          cancelable: false,
-          target: this,
-          reason: "clientDisconnected",
-        };
-
-        this.ee.emit("connectionDestroyed", connectionDestroyedEvent);
-
-        const stream: Stream = {
-          streamId: session_id,
-          frameRate,
-          hasAudio,
-          hasVideo,
-          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-          name: "",
-          videoDimensions: {
-            height,
-            width,
-          },
-          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-          creationTime: joined_at.getTime(),
-          connection,
-        };
-
-        let streamDefaultPrevented = true;
-        const streamDestroyedEvent: Event<"streamDestroyed", Session> & {
-          stream: Stream;
-          reason: string;
-        } = {
-          type: "streamDestroyed",
-          reason: "clientDisconnected",
-          target: this,
-          cancelable: true,
-          stream,
-          isDefaultPrevented: () => streamDefaultPrevented,
-          preventDefault: () => {
-            streamDefaultPrevented = true;
-          },
-        };
-
-        this.ee.emit("streamDestroyed", streamDestroyedEvent);
-
-        const v = document.getElementById(getVideoTagID(session_id));
-        if (v) {
-          v.remove();
-          // subscriber.ee.emit("destroyed");
-        }
       })
       .join({ url: this.sessionId, token })
       .then((dailyEvent) => {
@@ -570,92 +456,207 @@ export class Session extends OTEventEmitter<{
       completionHandler
     );
 
-    window.call.on("track-started", (dailyEvent) => {
-      // Make sure the track has started before publishing the session
-      // TODO(jamsea): need to figure out the error handling here.
+    window.call
+      .on("track-started", (dailyEvent) => {
+        // Make sure the track has started before publishing the session
+        // TODO(jamsea): need to figure out the error handling here.
 
-      if (!dailyEvent) {
-        console.debug("track-started no daily event");
-        return;
-      }
-
-      const { participant } = dailyEvent;
-      if (!participant) {
-        return;
-      }
-
-      const isLocal = participant.local;
-
-      // Get audio and video tracks from the participant
-      const { audio, video } = getParticipantTracks(participant);
-      if (!audio && !video) {
-        return;
-      }
-
-      const { session_id } = participant;
-
-      // Retrieve the existing video DOM element for this participant
-      const existingVideoElement = document.getElementById(
-        getVideoTagID(session_id)
-      );
-
-      // This will be the element we work with to retrieve/set tracks
-      let videoEl: HTMLVideoElement;
-
-      if (!existingVideoElement) {
-        // If video DOM element does not already exist, create a new one
-        videoEl = document.createElement("video");
-        videoEl.id = getVideoTagID(session_id);
-
-        if (properties && typeof properties !== "function") {
-          videoEl.style.width = properties.width?.toString() ?? "";
-          videoEl.style.height = properties.height?.toString() ?? "";
+        if (!dailyEvent) {
+          console.debug("track-started no daily event");
+          return;
         }
-        root.appendChild(videoEl);
-      } else if (existingVideoElement instanceof HTMLVideoElement) {
-        videoEl = existingVideoElement;
-      } else {
-        // If video element is on an unexpected type, error out
-        return completionHandler?.(new Error("Video element is invalid."));
-      }
 
-      const srcObject = videoEl.srcObject;
-      // If source object is not already set, or is
-      // some unsupported type, create a new MediaStream
-      // and set it.
-      if (!srcObject || !(srcObject instanceof MediaStream)) {
-        const tracks: MediaStreamTrack[] = [];
-        if (video) tracks.push(video);
-        if (!isLocal && audio) tracks.push(audio);
-
-        const newStream = new MediaStream(tracks);
-        videoEl.srcObject = newStream;
-        videoEl.autoplay = true;
-        videoEl.onerror = (e) => {
-          console.error("ERROR IN SESSION VIDEO ", e);
-          if (typeof e === "string") {
-            completionHandler?.(new Error(e));
-          } else if (e instanceof Error) {
-            completionHandler?.(e);
-          }
-        };
-        return;
-      }
-
-      // If source object is an instance of MediaStream,
-      // replace old tracks with new ones as needed
-      if (srcObject instanceof MediaStream) {
-        if (video) {
-          this.updateVideoTrack(srcObject, video);
-          videoEl.style.visibility = "visible";
+        const { participant } = dailyEvent;
+        if (!participant) {
+          return;
         }
-        if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
-      } else {
-        return completionHandler?.(
-          new Error("Video element's source object is invalid.")
+
+        const isLocal = participant.local;
+
+        // Get audio and video tracks from the participant
+        const { audio, video } = getParticipantTracks(participant);
+        if (!audio && !video) {
+          return;
+        }
+
+        const { session_id } = participant;
+
+        // Retrieve the existing video DOM element for this participant
+        const existingVideoElement = document.getElementById(
+          getVideoTagID(session_id)
         );
-      }
-    });
+
+        // This will be the element we work with to retrieve/set tracks
+        let videoEl: HTMLVideoElement;
+
+        if (!existingVideoElement) {
+          // If video DOM element does not already exist, create a new one
+          videoEl = document.createElement("video");
+          videoEl.id = getVideoTagID(session_id);
+
+          if (properties && typeof properties !== "function") {
+            videoEl.style.width = properties.width?.toString() ?? "";
+            videoEl.style.height = properties.height?.toString() ?? "";
+          }
+          root.appendChild(videoEl);
+        } else if (existingVideoElement instanceof HTMLVideoElement) {
+          videoEl = existingVideoElement;
+        } else {
+          // If video element is on an unexpected type, error out
+          return completionHandler?.(new Error("Video element is invalid."));
+        }
+
+        const srcObject = videoEl.srcObject;
+        // If source object is not already set, or is
+        // some unsupported type, create a new MediaStream
+        // and set it.
+        if (!srcObject || !(srcObject instanceof MediaStream)) {
+          const tracks: MediaStreamTrack[] = [];
+          if (video) tracks.push(video);
+          if (!isLocal && audio) tracks.push(audio);
+
+          const newStream = new MediaStream(tracks);
+          videoEl.srcObject = newStream;
+          videoEl.autoplay = true;
+          videoEl.onerror = (e) => {
+            console.error("ERROR IN SESSION VIDEO ", e);
+            if (typeof e === "string") {
+              completionHandler?.(new Error(e));
+            } else if (e instanceof Error) {
+              completionHandler?.(e);
+            }
+          };
+          return;
+        }
+
+        // If source object is an instance of MediaStream,
+        // replace old tracks with new ones as needed
+        if (srcObject instanceof MediaStream) {
+          if (video) {
+            this.updateVideoTrack(srcObject, video);
+            videoEl.style.visibility = "visible";
+          }
+          if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
+        } else {
+          return completionHandler?.(
+            new Error("Video element's source object is invalid.")
+          );
+        }
+      })
+      .on("participant-left", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        const { participant } = dailyEvent;
+        const {
+          session_id,
+          audio: hasAudio,
+          video: hasVideo,
+          tracks,
+          joined_at = new Date(),
+          user_id,
+        } = participant;
+        const creationTime = joined_at.getTime();
+
+        const settings = tracks.video.track?.getSettings() ?? {};
+        const { frameRate = 0, height = 0, width = 0 } = settings;
+
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          data: "",
+        };
+
+        let connectionDefaultPrevented = false;
+        const connectionDestroyedEvent: Event<
+          "connectionDestroyed",
+          Session
+        > & {
+          connection: Connection;
+          reason: string;
+        } = {
+          type: "connectionDestroyed",
+          connection,
+          isDefaultPrevented: () => connectionDefaultPrevented,
+          preventDefault: () => {
+            connectionDefaultPrevented = true;
+          },
+          cancelable: false,
+          target: this,
+          reason: "clientDisconnected",
+        };
+
+        this.ee.emit("connectionDestroyed", connectionDestroyedEvent);
+
+        const stream: Stream = {
+          streamId: session_id,
+          frameRate,
+          hasAudio,
+          hasVideo,
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
+          videoDimensions: {
+            height,
+            width,
+          },
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime: joined_at.getTime(),
+          connection,
+        };
+
+        let streamDefaultPrevented = true;
+        const streamDestroyedEvent: Event<"streamDestroyed", Session> & {
+          stream: Stream;
+          reason: string;
+        } = {
+          type: "streamDestroyed",
+          reason: "clientDisconnected",
+          target: this,
+          cancelable: true,
+          stream,
+          isDefaultPrevented: () => streamDefaultPrevented,
+          preventDefault: () => {
+            streamDefaultPrevented = true;
+          },
+        };
+
+        this.ee.emit("streamDestroyed", streamDestroyedEvent);
+
+        const v = document.getElementById(getVideoTagID(session_id));
+        if (v) {
+          v.remove();
+          subscriber.ee.emit("destroyed");
+        }
+      })
+      .on("left-meeting", (dailyEvent) => {
+        if (!dailyEvent) {
+          return;
+        }
+
+        const videos = document.getElementsByTagName("video");
+
+        for (const video of videos) {
+          if (video.id.includes("daily-video-")) {
+            video.srcObject = null;
+            video.remove();
+            subscriber.ee.emit("destroyed");
+          }
+        }
+      })
+      .on("track-stopped", (dailyEvent) => {
+        if (!dailyEvent) return;
+        if (!dailyEvent.participant) return;
+
+        const {
+          participant: { session_id },
+        } = dailyEvent;
+
+        // Remove video tracks
+        const v = document.getElementById(getVideoTagID(session_id));
+        if (v) {
+          v.remove();
+          subscriber.ee.emit("destroyed");
+        }
+      });
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (window.call.participants().local?.session_id !== streamId) {
