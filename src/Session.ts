@@ -167,7 +167,7 @@ export class Session extends OTEventEmitter<{
     // Publisher object.
     const localPublisher: Publisher =
       typeof publisher === "string" || publisher instanceof HTMLElement
-        ? OT.initPublisher(publisher, properties)
+        ? OT.initPublisher(publisher, properties, completionHandler)
         : publisher;
 
     if (!window.call) {
@@ -242,7 +242,12 @@ export class Session extends OTEventEmitter<{
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
-    completionHandler();
+
+    window.call.updateParticipant("local", {
+      setAudio: true,
+      setVideo: true,
+    });
+
     return localPublisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
