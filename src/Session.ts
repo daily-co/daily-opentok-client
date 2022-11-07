@@ -303,11 +303,12 @@ export class Session extends OTEventEmitter<{
           participant: { session_id },
         } = dailyEvent;
 
-        // Remove video tracks
-        const v = document.getElementById(getVideoTagID(session_id));
-        if (v) {
-          v.remove();
-          // subscriber.ee.emit("destroyed");
+        // If it was video that stopped, hide the video element
+        if (dailyEvent.track.kind === "video") {
+          const v = document.getElementById(getVideoTagID(session_id));
+          if (v) {
+            v.style.visibility = "hidden";
+          }
         }
       })
       .on("error", (dailyEvent) => {
