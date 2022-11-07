@@ -167,7 +167,7 @@ export class Session extends OTEventEmitter<{
     // Publisher object.
     const localPublisher: Publisher =
       typeof publisher === "string" || publisher instanceof HTMLElement
-        ? OT.initPublisher(publisher, properties, completionHandler)
+        ? OT.initPublisher(publisher, properties)
         : publisher;
 
     if (!window.call) {
@@ -242,12 +242,7 @@ export class Session extends OTEventEmitter<{
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
     });
-
-    window.call.updateParticipant("local", {
-      setAudio: true,
-      setVideo: true,
-    });
-
+    completionHandler();
     return localPublisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
@@ -294,6 +289,22 @@ export class Session extends OTEventEmitter<{
         this.connection = connection;
 
         this.ee.emit("connectionCreated", connectionCreatedEvent);
+      })
+      .on("track-stopped", (dailyEvent) => {
+        if (!dailyEvent) return;
+        if (!dailyEvent.participant) return;
+
+        const {
+          participant: { session_id },
+        } = dailyEvent;
+
+        // If it was video that stopped, hide the video element
+        if (dailyEvent.track.kind === "video") {
+          const v = document.getElementById(getVideoTagID(session_id));
+          if (v) {
+            v.style.visibility = "hidden";
+          }
+        }
       })
       .on("error", (dailyEvent) => {
         console.error("error", dailyEvent);
@@ -371,169 +382,36 @@ export class Session extends OTEventEmitter<{
         }
         // TODO(jamsea): emit opentok event
       })
-      .join({ url: this.sessionId, token })
-      .then((dailyEvent) => {
+      .on("left-meeting", (dailyEvent) => {
+        console.debug("left-meeting", dailyEvent);
         if (!dailyEvent) {
           return;
         }
-        const sessionConnectedEvent: Event<"sessionConnected", Session> = {
-          type: "sessionConnected",
-          target: this,
+
+        let defaultPrevented = false;
+
+        const tokboxEvent: Event<"sessionDisconnected", Session> & {
+          reason: string;
+        } = {
+          type: "sessionDisconnected",
+          isDefaultPrevented: () => defaultPrevented,
+          preventDefault: () => {
+            defaultPrevented = true;
+          },
           cancelable: true,
-          isDefaultPrevented: () => true,
-          preventDefault: () => true,
+          target: this,
+          reason: "clientDisconnected",
         };
-        this.ee.emit("sessionConnected", sessionConnectedEvent);
-        callback();
-      })
-      .catch((e) => {
-        if (typeof e === "string") {
-          callback(new Error(e));
-        } else if (e instanceof Error) {
-          callback(e);
-        }
-      });
-  }
-  subscribe(
-    stream: Stream,
-    targetElement?: string | HTMLElement,
-    properties?: SubscriberProperties | ((error?: OTError) => void),
-    callback?: (error?: OTError) => void
-  ): Subscriber {
-    if (!window.call) {
-      throw new Error("No daily call object");
-    }
 
-    let completionHandler: ((error?: OTError) => void) | undefined = undefined;
+        this.ee.emit("sessionDisconnected", tokboxEvent);
 
-    if (typeof targetElement === "function") {
-      completionHandler = targetElement;
-      targetElement = undefined;
-      properties = undefined;
-    }
+        const videos = document.getElementsByTagName("video");
 
-    if (typeof properties === "function") {
-      completionHandler = properties;
-      properties = undefined;
-    }
-
-    if (typeof callback === "function") {
-      completionHandler = callback;
-    }
-
-    if (!completionHandler) {
-      completionHandler = () => {
-        // intentionally empty
-      };
-    }
-
-    if (!targetElement) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
-    }
-
-    const { streamId } = stream;
-
-    const root =
-      targetElement instanceof HTMLElement
-        ? targetElement
-        : document.getElementById(targetElement);
-
-    if (!root) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
-    }
-
-    const subscriber = new Subscriber(root);
-    subscriber.stream = stream;
-
-    window.call
-      .on("track-started", (dailyEvent) => {
-        // Make sure the track has started before publishing the session
-        // TODO(jamsea): need to figure out the error handling here.
-
-        if (!dailyEvent) {
-          console.debug("track-started no daily event");
-          return;
-        }
-
-        const { participant } = dailyEvent;
-        if (!participant) {
-          return;
-        }
-
-        const isLocal = participant.local;
-
-        // Get audio and video tracks from the participant
-        const { audio, video } = getParticipantTracks(participant);
-        if (!audio && !video) {
-          return;
-        }
-
-        const { session_id } = participant;
-
-        // Retrieve the existing video DOM element for this participant
-        const existingVideoElement = document.getElementById(
-          getVideoTagID(session_id)
-        );
-
-        // This will be the element we work with to retrieve/set tracks
-        let videoEl: HTMLVideoElement;
-
-        if (!existingVideoElement) {
-          // If video DOM element does not already exist, create a new one
-          videoEl = document.createElement("video");
-          videoEl.id = getVideoTagID(session_id);
-
-          if (properties && typeof properties !== "function") {
-            videoEl.style.width = properties.width?.toString() ?? "";
-            videoEl.style.height = properties.height?.toString() ?? "";
+        for (const video of videos) {
+          if (video.id.includes("daily-video-")) {
+            video.srcObject = null;
+            video.remove();
           }
-          root.appendChild(videoEl);
-        } else if (existingVideoElement instanceof HTMLVideoElement) {
-          videoEl = existingVideoElement;
-        } else {
-          // If video element is on an unexpected type, error out
-          return callback?.(new Error("Video element is invalid."));
-        }
-
-        const srcObject = videoEl.srcObject;
-        // If source object is not already set, or is
-        // some unsupported type, create a new MediaStream
-        // and set it.
-        if (!srcObject || !(srcObject instanceof MediaStream)) {
-          const tracks: MediaStreamTrack[] = [];
-          if (video) tracks.push(video);
-          if (!isLocal && audio) tracks.push(audio);
-
-          const newStream = new MediaStream(tracks);
-          videoEl.srcObject = newStream;
-          videoEl.autoplay = true;
-          videoEl.onerror = (e) => {
-            console.error("ERROR IN SESSION VIDEO ", e);
-            if (typeof e === "string") {
-              completionHandler?.(new Error(e));
-            } else if (e instanceof Error) {
-              completionHandler?.(e);
-            }
-          };
-          return;
-        }
-
-        // If source object is an instance of MediaStream,
-        // replace old tracks with new ones as needed
-        if (srcObject instanceof MediaStream) {
-          if (video) {
-            this.updateVideoTrack(srcObject, video);
-            videoEl.style.visibility = "visible";
-          }
-          if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
-        } else {
-          return callback?.(
-            new Error("Video element's source object is invalid.")
-          );
         }
       })
       .on("participant-left", (dailyEvent) => {
@@ -617,60 +495,176 @@ export class Session extends OTEventEmitter<{
         const v = document.getElementById(getVideoTagID(session_id));
         if (v) {
           v.remove();
-          subscriber.ee.emit("destroyed");
         }
       })
-      .on("left-meeting", (dailyEvent) => {
-        console.debug("left-meeting", dailyEvent);
+      .join({ url: this.sessionId, token })
+      .then((dailyEvent) => {
         if (!dailyEvent) {
           return;
         }
-
-        const videos = document.getElementsByTagName("video");
-
-        for (const video of videos) {
-          if (video.id.includes("daily-video-")) {
-            video.srcObject = null;
-            video.remove();
-            subscriber.ee.emit("destroyed");
-          }
-        }
+        const sessionConnectedEvent: Event<"sessionConnected", Session> = {
+          type: "sessionConnected",
+          target: this,
+          cancelable: true,
+          isDefaultPrevented: () => true,
+          preventDefault: () => true,
+        };
+        this.ee.emit("sessionConnected", sessionConnectedEvent);
+        callback();
       })
-      .on("track-stopped", (dailyEvent) => {
-        if (!dailyEvent) return;
-        if (!dailyEvent.participant) return;
-
-        const {
-          participant: { session_id },
-        } = dailyEvent;
-
-        // Remove video tracks
-        const v = document.getElementById(getVideoTagID(session_id));
-        if (v) {
-          v.remove();
-          subscriber.ee.emit("destroyed");
+      .catch((e) => {
+        if (typeof e === "string") {
+          callback(new Error(e));
+        } else if (e instanceof Error) {
+          callback(e);
         }
       });
-
-    if (window.call.participants().local.session_id !== streamId) {
-      window.call.updateParticipant(streamId, {
-        setSubscribedTracks: {
-          audio: true,
-          video: true,
-          screenVideo: false,
-          screenAudio: false,
-        },
-      });
+  }
+  subscribe(
+    stream: Stream,
+    targetElement?: string | HTMLElement,
+    properties?: SubscriberProperties | ((error?: OTError) => void),
+    callback?: (error?: OTError) => void
+  ): Subscriber {
+    if (!window.call) {
+      throw new Error("No daily call object");
     }
 
-    window.call.updateParticipant("local", {
+    let completionHandler: ((error?: OTError) => void) | undefined = undefined;
+
+    if (typeof targetElement === "function") {
+      completionHandler = targetElement;
+      targetElement = undefined;
+      properties = undefined;
+    }
+
+    if (typeof properties === "function") {
+      completionHandler = properties;
+      properties = undefined;
+    }
+
+    if (!completionHandler) {
+      completionHandler = () => {
+        // intentionally empty
+      };
+    }
+
+    if (!targetElement) {
+      const err = new Error("No target element");
+      completionHandler(err);
+      throw err;
+    }
+
+    const { streamId } = stream;
+
+    const root =
+      targetElement instanceof HTMLElement
+        ? targetElement
+        : document.getElementById(targetElement);
+
+    if (!root) {
+      const err = new Error("No target element");
+      completionHandler(err);
+      throw err;
+    }
+
+    const subscriber = new Subscriber(root);
+
+    window.call.on("track-started", (dailyEvent) => {
+      // Make sure the track has started before publishing the session
+      // TODO(jamsea): need to figure out the error handling here.
+
+      if (!dailyEvent) {
+        console.debug("track-started no daily event");
+        return;
+      }
+
+      const { participant } = dailyEvent;
+      if (!participant) {
+        return;
+      }
+
+      const isLocal = participant.local;
+
+      // Get audio and video tracks from the participant
+      const { audio, video } = getParticipantTracks(participant);
+      if (!audio && !video) {
+        return;
+      }
+
+      const { session_id } = participant;
+
+      // Retrieve the existing video DOM element for this participant
+      const existingVideoElement = document.getElementById(
+        getVideoTagID(session_id)
+      );
+
+      // This will be the element we work with to retrieve/set tracks
+      let videoEl: HTMLVideoElement;
+
+      if (!existingVideoElement) {
+        // If video DOM element does not already exist, create a new one
+        videoEl = document.createElement("video");
+        videoEl.id = getVideoTagID(session_id);
+
+        if (properties && typeof properties !== "function") {
+          videoEl.style.width = properties.width?.toString() ?? "";
+          videoEl.style.height = properties.height?.toString() ?? "";
+        }
+        root.appendChild(videoEl);
+      } else if (existingVideoElement instanceof HTMLVideoElement) {
+        videoEl = existingVideoElement;
+      } else {
+        // If video element is on an unexpected type, error out
+        return callback?.(new Error("Video element is invalid."));
+      }
+
+      const srcObject = videoEl.srcObject;
+      // If source object is not already set, or is
+      // some unsupported type, create a new MediaStream
+      // and set it.
+      if (!srcObject || !(srcObject instanceof MediaStream)) {
+        const tracks: MediaStreamTrack[] = [];
+        if (video) tracks.push(video);
+        if (!isLocal && audio) tracks.push(audio);
+
+        const newStream = new MediaStream(tracks);
+        videoEl.srcObject = newStream;
+        videoEl.autoplay = true;
+        videoEl.onerror = (e) => {
+          console.error("ERROR IN SESSION VIDEO ", e);
+          if (typeof e === "string") {
+            completionHandler?.(new Error(e));
+          } else if (e instanceof Error) {
+            completionHandler?.(e);
+          }
+        };
+        return;
+      }
+
+      // If source object is an instance of MediaStream,
+      // replace old tracks with new ones as needed
+      if (srcObject instanceof MediaStream) {
+        if (video) {
+          this.updateVideoTrack(srcObject, video);
+          videoEl.style.visibility = "visible";
+        }
+        if (!isLocal && audio) this.updateAudioTrack(srcObject, audio);
+      } else {
+        return callback?.(
+          new Error("Video element's source object is invalid.")
+        );
+      }
+    });
+
+    window.call.updateParticipant(streamId, {
       setSubscribedTracks: {
         audio: true,
         video: true,
+        screenVideo: false,
+        screenAudio: false,
       },
     });
-
-    completionHandler();
 
     return subscriber;
   }
@@ -734,28 +728,9 @@ export class Session extends OTEventEmitter<{
     // implementation, this function does not throw any errors,
     // so to keep that behavior the same we're logging Daily
     // errors to the console.
-    window.call
-      .leave()
-      .then(() => {
-        let defaultPrevented = false;
-        const tokboxEvent: Event<"sessionDisconnected", Session> & {
-          reason: string;
-        } = {
-          type: "sessionDisconnected",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          cancelable: true,
-          target: this,
-          reason: "clientDisconnected",
-        };
-
-        this.ee.emit("sessionDisconnected", tokboxEvent);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    window.call.leave().catch((err) => {
+      console.error(err);
+    });
   }
   forceDisconnect(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -821,7 +796,7 @@ export class Session extends OTEventEmitter<{
 
     const { stream: { streamId } = {} } = subscriber;
 
-    if (streamId && window.call.participants().local.session_id !== streamId) {
+    if (streamId) {
       window.call.updateParticipant(streamId, {
         setSubscribedTracks: {
           audio: false,
@@ -831,7 +806,5 @@ export class Session extends OTEventEmitter<{
         },
       });
     }
-
-    subscriber.ee.emit("destroyed"); // This isn't quite right, it should be emitted when the dom element is removed.
   }
 }
