@@ -167,7 +167,7 @@ export class Session extends OTEventEmitter<{
     // Publisher object.
     const localPublisher: Publisher =
       typeof publisher === "string" || publisher instanceof HTMLElement
-        ? OT.initPublisher(publisher, properties)
+        ? OT.initPublisher(publisher, properties, completionHandler)
         : publisher;
 
     if (!window.call) {
@@ -243,21 +243,10 @@ export class Session extends OTEventEmitter<{
       this.ee.emit("streamCreated", streamEvent);
     });
 
-    window.call
-      .setNetworkTopology({ topology: "sfu" })
-      .then((res) => {
-        return window.call?.updateParticipant("local", {
-          setAudio: true,
-          setVideo: true,
-        });
-      })
-      .then((res) => {
-        completionHandler?.();
-      })
-      .catch((err) => {
-        console.error("setNetworkTopology", err);
-        completionHandler?.(err as OTError);
-      });
+    window.call.updateParticipant("local", {
+      setAudio: true,
+      setVideo: true,
+    });
 
     return localPublisher;
   }
@@ -674,22 +663,14 @@ export class Session extends OTEventEmitter<{
       });
     }
 
-    window.call
-      .setNetworkTopology({ topology: "sfu" })
-      .then(() => {
-        return window.call?.updateParticipant("local", {
-          setSubscribedTracks: {
-            audio: true,
-            video: true,
-          },
-        });
-      })
-      .then(() => {
-        completionHandler?.();
-      })
-      .catch((err) => {
-        completionHandler?.(err as OTError);
-      });
+    window.call.updateParticipant("local", {
+      setSubscribedTracks: {
+        audio: true,
+        video: true,
+      },
+    });
+
+    completionHandler();
 
     return subscriber;
   }
@@ -755,7 +736,7 @@ export class Session extends OTEventEmitter<{
     // errors to the console.
     window.call
       .leave()
-      .then((res) => {
+      .then(() => {
         let defaultPrevented = false;
         const tokboxEvent: Event<"sessionDisconnected", Session> & {
           reason: string;

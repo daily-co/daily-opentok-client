@@ -297,7 +297,7 @@ function initPublisher(
       audio: true,
       video: true,
     })
-    .then((d) => {
+    .then(() => {
       completionHandler();
     })
     .catch((e) => {
