@@ -16,7 +16,7 @@ import { Publisher } from "./Publisher";
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 // apiKey can be blank, Daily's API key is not needed for the shim to work
 const apiKey = "";
-const sessionId = "https://hush.daily.co/demo";
+const sessionId = "https://hush.daily.co/sfu";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
