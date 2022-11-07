@@ -287,7 +287,6 @@ function initPublisher(
       console.debug("error");
       completionHandler(new Error("Daily error"));
       return publisher;
-      break;
     default:
       break;
   }
