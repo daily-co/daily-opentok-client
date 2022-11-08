@@ -657,7 +657,8 @@ export class Session extends OTEventEmitter<{
       }
     });
 
-    if (window.call.participants().local.session_id !== streamId) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (window.call.participants().local?.session_id !== streamId) {
       window.call.updateParticipant(streamId, {
         setSubscribedTracks: {
           audio: true,
