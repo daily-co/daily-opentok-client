@@ -248,6 +248,8 @@ export class Session extends OTEventEmitter<{
       setVideo: true,
     });
 
+    completionHandler();
+
     return localPublisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
@@ -446,15 +448,10 @@ export class Session extends OTEventEmitter<{
       throw err;
     }
 
-    const subscriber = new Subscriber(
-      root,
-      {
-        stream,
-        id:
-          typeof targetElement === "string" ? targetElement : targetElement.id,
-      },
-      completionHandler
-    );
+    const subscriber = new Subscriber(root, {
+      stream,
+      id: typeof targetElement === "string" ? targetElement : targetElement.id,
+    });
 
     window.call
       .on("track-started", (dailyEvent) => {

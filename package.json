@@ -19,7 +19,7 @@
   },
   "types": "./dist/src/index.d.ts",
   "scripts": {
-    "start": "vite",
+    "start": "vite --port 4000",
     "start:tag": "run-p build:watch serve",
     "clean": "rm -rf dist/",
     "build": "vite build && tsc",

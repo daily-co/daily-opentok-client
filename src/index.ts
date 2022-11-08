@@ -217,6 +217,7 @@ function initPublisher(
     width: properties?.width ?? "",
     height: properties?.height ?? "",
     insertMode: properties?.insertMode,
+    showControls: properties?.showControls ?? false,
   });
 
   const completionHandler =
@@ -296,7 +297,8 @@ function initPublisher(
       audio: true,
       video: true,
     })
-    .then(() => {
+    .then((res) => {
+      console.log(res);
       completionHandler();
     })
     .catch((e) => {
