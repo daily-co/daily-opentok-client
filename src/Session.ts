@@ -669,13 +669,6 @@ export class Session extends OTEventEmitter<{
       });
     }
 
-    window.call.updateParticipant("local", {
-      setSubscribedTracks: {
-        audio: true,
-        video: true,
-      },
-    });
-
     completionHandler();
 
     return subscriber;
