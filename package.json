@@ -1,6 +1,6 @@
 {
   "name": "daily-opentok-client",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "license": "BSD-2",
   "description": "Daily Tokbox shim",
   "type": "module",
@@ -19,7 +19,7 @@
   },
   "types": "./dist/src/index.d.ts",
   "scripts": {
-    "start": "vite",
+    "start": "vite --port 4000",
     "start:tag": "run-p build:watch serve",
     "clean": "rm -rf dist/",
     "build": "vite build && tsc",
@@ -33,7 +33,7 @@
     "lint:ts": "tsc"
   },
   "dependencies": {
-    "@daily-co/daily-js": "^0.31.0",
+    "@daily-co/daily-js": "^0.32.0",
     "@opentok/client": "^2.23.0",
     "events": "^3.3.0"
   },
@@ -48,6 +48,7 @@
     "fake-mediastreamtrack": "^1.1.6",
     "jest-environment-jsdom": "^29.0.3",
     "npm-run-all": "^4.1.5",
+    "opentok-network-test-js": "^2.4.4",
     "prettier": "2.7.1",
     "ts-jest": "^29.0.1",
     "ts-node": "^10.9.1",
@@ -60,7 +61,7 @@
     "not dead"
   ],
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "repository": {
     "url": "https://github.com/daily-co/opentok"

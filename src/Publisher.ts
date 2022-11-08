@@ -106,6 +106,13 @@ export class Publisher extends OTEventEmitter<{
           cancelable: false,
           stream: null,
         });
+        this.ee.emit("destroyed", {
+          isDefaultPrevented: () => false,
+          preventDefault: () => false,
+          reason: "disconnected",
+          cancelable: false,
+          stream: null,
+        });
       })
       .catch((err) => {
         console.error(err);
