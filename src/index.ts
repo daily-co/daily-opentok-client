@@ -218,7 +218,20 @@ function initPublisher(
     height: properties?.height ?? "",
     insertMode: properties?.insertMode,
     showControls: properties?.showControls ?? false,
+    insertDefaultUI: properties?.insertDefaultUI ?? false,
+    resolution: properties?.resolution,
+    frameRate: properties?.frameRate,
+    publishAudio: properties?.publishAudio ?? false,
+    publishVideo: properties?.publishVideo ?? false,
   });
+
+  const props = {
+    insertDefaultUI: false,
+    resolution: "320x240",
+    frameRate: 15,
+    publishAudio: true,
+    publishVideo: true,
+  };
 
   const completionHandler =
     typeof callback === "function"
@@ -227,41 +240,29 @@ function initPublisher(
           // empty
         };
 
-  if (!targetElement) {
-    completionHandler(new Error("No target element provided"));
-    return publisher;
-  }
-
   const dailyElementId =
-    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
+    targetElement instanceof HTMLElement ? targetElement.id : "daily-root";
+
+  publisher.id = dailyElementId;
+  publisher.id = "daily-root";
 
   window.call =
     window.call ??
     Daily.createCallObject({
       subscribeToTracksAutomatically: false,
+      videoSource: properties?.videoSource ?? undefined,
       dailyConfig: {
         experimentalChromeVideoMuteLightOff: true,
       },
     });
 
-  window.call.on("participant-updated", (dailyEvent) => {
-    if (!dailyEvent) {
-      return;
-    }
-
-    const { participant } = dailyEvent;
-    try {
-      updateLocalVideoDOM(participant, dailyElementId, publisher);
-    } catch (e) {
-      completionHandler(e as OTError);
-    }
-  });
-
   switch (window.call.meetingState()) {
     case "new":
       window.call
         .startCamera()
-        .then(() => {
+        .then((deviceInfos) => {
+          console.log("startCamera ", deviceInfos.camera);
+
           completionHandler();
         })
         .catch((err) => {
@@ -269,14 +270,44 @@ function initPublisher(
           console.error("startCamera error: ", err);
         });
       break;
+    case "joining-meeting":
+      console.debug("joining-meeting");
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: true,
+          video: true,
+        })
+        .then((stream) => {
+          console.log(stream);
+
+          const localParticipant = window.call?.participants().local;
+          /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+          const videoOn = localParticipant?.video;
+          const audioOn = localParticipant?.audio;
+          /* eslint-enable */
+          if (videoOn || audioOn) {
+            updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
+          }
+          if (!videoOn) {
+            window.call?.setLocalVideo(true);
+          }
+          if (!audioOn) {
+            window.call?.setLocalAudio(true);
+          }
+
+          publisher.id = dailyElementId;
+
+          completionHandler();
+        })
+        .catch((e) => {
+          completionHandler(e as OTError);
+        });
+      break;
     case "loading":
       console.debug("loading");
       break;
     case "loaded":
       console.debug("loaded");
-      break;
-    case "joining-meeting":
-      console.debug("joining-meeting");
       break;
     case "joined-meeting":
       console.debug("joined-meeting");
@@ -290,34 +321,6 @@ function initPublisher(
       return publisher;
     default:
       break;
-  }
-
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
-    .then((res) => {
-      console.log(res);
-      completionHandler();
-    })
-    .catch((e) => {
-      completionHandler(e as OTError);
-    });
-
-  const localParticipant = window.call.participants().local;
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-  const videoOn = localParticipant?.video;
-  const audioOn = localParticipant?.audio;
-  /* eslint-enable */
-  if (videoOn || audioOn) {
-    updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
-  }
-  if (!videoOn) {
-    window.call.setLocalVideo(true);
-  }
-  if (!audioOn) {
-    window.call.setLocalAudio(true);
   }
 
   return publisher;
@@ -377,6 +380,7 @@ function updateLocalVideoDOM(
   const { frameRate = 0, height = 0, width = 0 } = settings;
   const { video } = getParticipantTracks(participant);
 
+  // This is fishy, should have local
   if (!local || !video) {
     return;
   }
@@ -408,10 +412,12 @@ function updateLocalVideoDOM(
 
   if (root === null) {
     root = document.createElement("div");
+    root.id = "daily-root";
     document.body.appendChild(root);
   }
 
   const documentVideoElm = document.getElementById(getVideoTagID(session_id));
+  publisher.id = getVideoTagID(session_id);
 
   if (
     !(documentVideoElm instanceof HTMLVideoElement) &&
@@ -446,6 +452,7 @@ function updateLocalVideoDOM(
       notImplemented("'after' insert mode");
       break;
     default:
+      root.appendChild(videoEl);
       break;
   }
 

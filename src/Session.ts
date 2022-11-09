@@ -241,14 +241,13 @@ export class Session extends OTEventEmitter<{
       localPublisher.stream = stream;
       this.connection = connection;
       this.ee.emit("streamCreated", streamEvent);
+      completionHandler?.();
     });
 
     window.call.updateParticipant("local", {
       setAudio: true,
       setVideo: true,
     });
-
-    completionHandler();
 
     return localPublisher;
   }

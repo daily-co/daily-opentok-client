@@ -56,12 +56,39 @@ export class Publisher extends OTEventEmitter<{
   session?: Session;
   stream?: Stream;
   width?: string;
-  constructor({ width, height, insertMode }: PublisherProperties) {
+  constructor({
+    width,
+    height,
+    insertMode,
+    insertDefaultUI = false,
+    resolution,
+    frameRate,
+    showControls = false,
+    publishAudio = false,
+    publishVideo = false,
+  }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
+    this.width = "";
+    this.height = "";
+    this.publishAudio(publishAudio);
+    this.publishVideo(publishVideo);
+    this.id = "daily-root"; //TODO(jamsea): Don't hardcode this
+
+    const deviceId = this.getVideoSource().deviceId;
+
+    if (deviceId) {
+      this.setVideoSource(deviceId);
+    }
+
+    // Element should be undefined if insertDefaultUI is false
+    // https://tokbox.com/developer/sdks/js/reference/Publisher.html
+    if (!insertDefaultUI) {
+      this.element = undefined;
+    }
 
     window.call =
       window.call ??
@@ -209,7 +236,8 @@ export class Publisher extends OTEventEmitter<{
       .setInputDevicesAsync({
         videoDeviceId: videoSourceId,
       })
-      .then(() => {
+      .then((res) => {
+        console.log(res);
         return undefined;
       });
   }
@@ -244,10 +272,27 @@ export class Publisher extends OTEventEmitter<{
   ): void {
     notImplemented(`publisher ${this.setStyle.name}`);
   }
+
+  /**
+   * @deprecated undocumented opentok function, use https://tokbox.com/developer/sdks/js/reference/VideoElementCreatedEvent.html instead.
+   */
+  videoElement(): HTMLVideoElement | null {
+    if (!this.id) {
+      return null;
+    }
+
+    const video = document.getElementById(
+      `daily-video-${this.id}`
+    ) as HTMLVideoElement | null;
+    return video;
+  }
+
   videoWidth(): number | undefined {
-    notImplemented(`publisher ${this.videoWidth.name}`);
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth
+    return 300;
   }
   videoHeight(): number | undefined {
-    notImplemented(`publisher ${this.videoHeight.name}`);
+    // https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/videoWidth
+    return 300;
   }
 }
