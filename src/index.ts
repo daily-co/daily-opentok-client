@@ -228,10 +228,9 @@ function initPublisher(
         };
 
   const dailyElementId =
-    targetElement instanceof HTMLElement ? targetElement.id : "daily-root";
+    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
 
   publisher.id = dailyElementId;
-  publisher.id = "daily-root";
 
   window.call =
     window.call ??
@@ -418,7 +417,6 @@ function updateLocalVideoDOM(
     throw new Error("Video element id is invalid.");
   }
 
-  // Only fire event if document.createElement("video") is not already in the DOM
   const videoEl = documentVideoElm
     ? documentVideoElm
     : document.createElement("video");
@@ -468,8 +466,10 @@ function updateLocalVideoDOM(
     preventDefault: () => false,
   };
 
-  // If its local publisher emits, if its not local subscriber emits
-  publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
+  // Only fire event if document.createElement("video") was called
+  if (!documentVideoElm) {
+    publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
+  }
 }
 
 export default {
