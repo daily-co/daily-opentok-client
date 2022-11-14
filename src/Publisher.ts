@@ -15,6 +15,10 @@ import { OTEventEmitter } from "./OTEventEmitter";
 import { dailyUndefinedError, notImplemented } from "./utils";
 import { Session } from "./Session";
 
+type StreamCreatedEvent = Event<"streamCreated", Publisher> & {
+  stream: Stream;
+};
+
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
   accessDenied: Event<"accessDenied", Publisher>;
@@ -89,6 +93,56 @@ export class Publisher extends OTEventEmitter<{
           this.ee.emit("accessDenied");
           this.accessAllowed = false;
         }
+      })
+      .on("joined-meeting", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        const participant = dailyEvent.participants.local;
+        const {
+          session_id,
+          audio,
+          video,
+          tracks,
+          joined_at = new Date(),
+          user_id,
+        } = participant;
+        const creationTime = joined_at.getTime();
+
+        const settings = tracks.video.track?.getSettings() ?? {};
+        const { frameRate = 0, height = 0, width = 0 } = settings;
+
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          data: "",
+        };
+
+        const stream: Stream = {
+          streamId: session_id,
+          frameRate,
+          hasAudio: audio,
+          hasVideo: video,
+          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+          name: "",
+          videoDimensions: {
+            height,
+            width,
+          },
+          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+          creationTime,
+          connection,
+        };
+
+        const streamEvent: StreamCreatedEvent = {
+          type: "streamCreated",
+          isDefaultPrevented: () => false,
+          preventDefault: () => false,
+          target: this,
+          cancelable: true,
+          stream: stream,
+        };
+
+        this.ee.emit("streamCreated", streamEvent);
       });
   }
 

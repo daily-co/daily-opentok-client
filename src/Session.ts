@@ -429,11 +429,12 @@ export class Session extends OTEventEmitter<{
       };
     }
 
-    if (!targetElement) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
-    }
+    // This can be undefined
+    // if (!targetElement) {
+    //   const err = new Error("No target element");
+    //   completionHandler(err);
+    //   throw err;
+    // }
 
     const { streamId } = stream;
 

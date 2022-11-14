@@ -60,9 +60,6 @@
     ">0.2%",
     "not dead"
   ],
-  "engines": {
-    "node": "18.x"
-  },
   "repository": {
     "url": "https://github.com/daily-co/opentok"
   }

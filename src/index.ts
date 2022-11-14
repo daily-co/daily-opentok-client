@@ -227,13 +227,11 @@ function initPublisher(
           // empty
         };
 
-  if (!targetElement) {
-    completionHandler(new Error("No target element provided"));
-    return publisher;
-  }
-
   const dailyElementId =
-    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
+    targetElement instanceof HTMLElement ? targetElement.id : "daily-root";
+
+  publisher.id = dailyElementId;
+  publisher.id = "daily-root";
 
   window.call =
     window.call ??
@@ -424,20 +422,6 @@ function updateLocalVideoDOM(
     ? documentVideoElm
     : document.createElement("video");
 
-  const videoElementCreatedEvent: OT.Event<"videoElementCreated", Publisher> & {
-    element: HTMLVideoElement | HTMLObjectElement;
-  } = {
-    type: "videoElementCreated",
-    element: videoEl,
-    target: publisher,
-    cancelable: true,
-    isDefaultPrevented: () => false,
-    preventDefault: () => false,
-  };
-
-  // If its local publisher emits, if its not local subscriber emits
-  publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
-
   if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
     const tracks = videoEl.srcObject.getTracks();
     if (tracks[0].id === video.id) {
@@ -471,6 +455,20 @@ function updateLocalVideoDOM(
   videoEl.play().catch((e) => {
     console.error(e);
   });
+
+  const videoElementCreatedEvent: OT.Event<"videoElementCreated", Publisher> & {
+    element: HTMLVideoElement | HTMLObjectElement;
+  } = {
+    type: "videoElementCreated",
+    element: videoEl,
+    target: publisher,
+    cancelable: true,
+    isDefaultPrevented: () => false,
+    preventDefault: () => false,
+  };
+
+  // If its local publisher emits, if its not local subscriber emits
+  publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
 }
 
 export default {
