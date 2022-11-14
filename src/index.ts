@@ -469,9 +469,7 @@ function updateLocalVideoDOM(
   };
 
   // If its local publisher emits, if its not local subscriber emits
-  if (local) {
-    publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
-  }
+  publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
 }
 
 export default {
