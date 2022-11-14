@@ -429,29 +429,26 @@ export class Session extends OTEventEmitter<{
       };
     }
 
-    // This can be undefined
-    // if (!targetElement) {
-    //   const err = new Error("No target element");
-    //   completionHandler(err);
-    //   throw err;
-    // }
-
     const { streamId } = stream;
 
-    const root =
-      targetElement instanceof HTMLElement
-        ? targetElement
-        : document.getElementById(targetElement);
+    let root: HTMLElement | undefined | null = undefined;
 
-    if (!root) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
+    if (typeof targetElement === "string") {
+      root = document.getElementById(targetElement);
+      if (!root) {
+        throw new Error(`No element with id ${targetElement}`);
+      }
     }
+
+    if (targetElement instanceof HTMLElement) {
+      root = targetElement;
+    }
+
+    // If there's no UI do something
 
     const subscriber = new Subscriber(root, {
       stream,
-      id: typeof targetElement === "string" ? targetElement : targetElement.id,
+      id: root?.id,
     });
 
     window.call

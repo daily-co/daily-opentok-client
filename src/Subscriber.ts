@@ -52,7 +52,7 @@ export class Subscriber extends OTEventEmitter<{
   stream?: Stream;
 
   constructor(
-    targetElement: HTMLElement,
+    targetElement?: HTMLElement,
     options: { stream?: Stream; id?: string } = {},
     completionHandler: () => void = () => {
       return void 0;

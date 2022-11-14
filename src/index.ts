@@ -418,6 +418,7 @@ function updateLocalVideoDOM(
     throw new Error("Video element id is invalid.");
   }
 
+  // Only fire event if document.createElement("video") is not already in the DOM
   const videoEl = documentVideoElm
     ? documentVideoElm
     : document.createElement("video");
@@ -468,7 +469,9 @@ function updateLocalVideoDOM(
   };
 
   // If its local publisher emits, if its not local subscriber emits
-  publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
+  if (local) {
+    publisher.ee.emit("videoElementCreated", videoElementCreatedEvent);
+  }
 }
 
 export default {
