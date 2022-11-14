@@ -6,8 +6,8 @@ import {
   Stream,
 } from "@opentok/client";
 import Daily, { DailyParticipant } from "@daily-co/daily-js";
-import { Publisher } from "./Publisher";
-import { Session } from "./Session";
+import { Publisher } from "./publisher/Publisher";
+import { Session } from "./session/Session";
 import {
   getParticipantTracks,
   getVideoTagID,

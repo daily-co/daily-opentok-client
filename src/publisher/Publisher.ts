@@ -11,9 +11,9 @@ import {
   VideoFilter,
 } from "@opentok/client";
 import Daily from "@daily-co/daily-js";
-import { OTEventEmitter } from "./OTEventEmitter";
-import { dailyUndefinedError, notImplemented } from "./utils";
-import { Session } from "./Session";
+import { OTEventEmitter } from "../OTEventEmitter";
+import { dailyUndefinedError, notImplemented } from "../utils";
+import { Session } from "../session/Session";
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
