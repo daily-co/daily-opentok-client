@@ -10,10 +10,16 @@ import {
   VideoDimensionsChangedEvent,
   VideoFilter,
 } from "@opentok/client";
-import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "../OTEventEmitter";
-import { dailyUndefinedError, notImplemented } from "../utils";
+import {
+  dailyUndefinedError,
+  getOrCreateCallObject,
+  notImplemented,
+} from "../utils";
 import { Session } from "../session/Session";
+import { updateMediaDOM } from "./MediaDOM";
+
+export type InsertMode = "replace" | "after" | "before" | "append";
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
@@ -52,27 +58,23 @@ export class Publisher extends OTEventEmitter<{
   element?: HTMLElement | undefined;
   height?: string;
   id?: string;
-  insertMode?: "replace" | "after" | "before" | "append";
+  insertMode?: InsertMode;
   session?: Session;
   stream?: Stream;
   width?: string;
-  constructor({ width, height, insertMode }: PublisherProperties) {
+  constructor(
+    { width, height, insertMode }: PublisherProperties,
+    rootElementID?: string
+  ) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
 
-    window.call =
-      window.call ??
-      Daily.createCallObject({
-        subscribeToTracksAutomatically: false,
-        dailyConfig: {
-          experimentalChromeVideoMuteLightOff: true,
-        },
-      });
+    const call = getOrCreateCallObject();
 
-    window.call
+    call
       .on("started-camera", () => {
         this.accessAllowed = true;
         this.ee.emit("accessAllowed");
@@ -89,7 +91,34 @@ export class Publisher extends OTEventEmitter<{
           this.ee.emit("accessDenied");
           this.accessAllowed = false;
         }
+      })
+      .on("participant-updated", (dailyEvent) => {
+        if (!dailyEvent) {
+          return;
+        }
+
+        const { participant } = dailyEvent;
+        // LIZA todo: do we need completion handler here?
+        updateMediaDOM(participant, this, rootElementID);
       });
+
+    const localParticipant = call.participants().local;
+    let videoOn = false;
+    let audioOn = false;
+    if (localParticipant) {
+      videoOn = localParticipant.video;
+      audioOn = localParticipant.audio;
+    }
+
+    if (videoOn || audioOn) {
+      updateMediaDOM(localParticipant, this, rootElementID);
+    }
+    if (!videoOn) {
+      call.setLocalVideo(true);
+    }
+    if (!audioOn) {
+      call.setLocalAudio(true);
+    }
   }
 
   destroy(): void {

@@ -5,32 +5,14 @@ import {
   Stream,
   SubscriberProperties,
   PublisherProperties,
-  ExceptionEvent,
 } from "@opentok/client";
-import Daily, {
-  DailyEventObjectFatalError,
-  DailyEventObjectNonFatalError,
-  DailyEventObjectParticipant,
-  DailyEventObjectParticipantLeft,
-  DailyParticipant,
-} from "@daily-co/daily-js";
+import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Publisher } from "../publisher/Publisher";
 import { Subscriber } from "../subscriber/Subscriber";
-import { getParticipantTracks, notImplemented } from "../utils";
+import { notImplemented } from "../utils";
 import OT from "../index";
-import {
-  getConnectionCreatedEvent,
-  getConnectionDestroyedEvent,
-  getSessionDisconnectedEvent,
-  getStreamCreatedEvent,
-  getStreamDestroyedEvent,
-} from "./SessionEvents";
-import {
-  addOrUpdateMedia,
-  getVideoTagID,
-  removeParticipantMedia,
-} from "./MediaDOM";
+import { DailyEventHandler } from "../session/DailyEventHandler";
 
 interface SessionCollection {
   length: () => number;
@@ -117,14 +99,12 @@ export class Session extends OTEventEmitter<{
       return present + hidden;
     },
   };
-  private reconnecting: boolean;
-  private connectionCount = 0;
+  eventHandler: DailyEventHandler;
 
   constructor(_apiKey: string, sessionId: string, _opt: unknown) {
     super();
     this.sessionId = sessionId;
     this.id = this.sessionId;
-    this.reconnecting = false;
 
     // TODO(jamsea): Figure out how to connect this to the daily call object
     // seems related to room tokens https://tokbox.com/developer/sdks/js/reference/Capabilities.html
@@ -141,6 +121,7 @@ export class Session extends OTEventEmitter<{
       creationTime: new Date().getTime(),
       data: "",
     };
+    this.eventHandler = new DailyEventHandler(this);
   }
 
   publish(
@@ -201,7 +182,7 @@ export class Session extends OTEventEmitter<{
         console.debug("No Daily event");
         return;
       }
-      this.onParticipantJoined(dailyEvent?.participant, localPublisher);
+      this.eventHandler.onParticipantJoined(dailyEvent.participant);
     });
 
     window.call.updateParticipant("local", {
@@ -223,19 +204,20 @@ export class Session extends OTEventEmitter<{
         },
       });
 
+    const eh = this.eventHandler;
     window.call
       .on("error", (dailyEvent) => {
-        this.onFatalError(dailyEvent);
+        eh.onFatalError(dailyEvent);
       })
       .on("nonfatal-error", (dailyEvent) => {
-        this.onNonFatalError(dailyEvent);
+        eh.onNonFatalError(dailyEvent);
       })
       .on("network-connection", (dailyEvent) => {
         console.debug("network-connection", dailyEvent);
         if (!dailyEvent) {
           return;
         }
-        this.onNetworkConnection(dailyEvent.event);
+        eh.onNetworkConnection(dailyEvent.event);
       })
       .on("network-quality-change", (dailyEvent) => {
         if (!dailyEvent) {
@@ -305,51 +287,29 @@ export class Session extends OTEventEmitter<{
       throw err;
     }
 
-    const subscriber = new Subscriber(root, {
-      stream,
-      id: typeof targetElement === "string" ? targetElement : targetElement.id,
-    });
+    const subscriber = new Subscriber(
+      root,
+      {
+        stream,
+        id:
+          typeof targetElement === "string" ? targetElement : targetElement.id,
+      },
+      completionHandler,
+      properties
+    );
 
+    const eh = this.eventHandler;
     // Set up Daily call object event listeners.
     call
-      .on("track-started", (dailyEvent) => {
-        // Make sure the track has started before publishing the session
-        // TODO(jamsea): need to figure out the error handling here.
+      .on("participant-joined", (dailyEvent) => {
+        if (!dailyEvent) return;
 
-        if (!dailyEvent?.participant) {
-          console.debug("track-started no participant");
-          return;
-        }
-
-        this.onTrackStarted(
-          dailyEvent.participant,
-          root,
-          properties,
-          completionHandler
-        );
+        eh.onParticipantJoined(dailyEvent.participant);
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
 
-        this.onParticipantLeft(dailyEvent, subscriber);
-      })
-      .on("left-meeting", (dailyEvent) => {
-        if (!dailyEvent) {
-          return;
-        }
-
-        this.onLeftMeeting(subscriber);
-      })
-      .on("track-stopped", (dailyEvent) => {
-        if (!dailyEvent?.participant) return;
-
-        const {
-          participant: { session_id },
-        } = dailyEvent;
-
-        if (removeParticipantMedia(session_id)) {
-          subscriber.ee.emit("destroyed");
-        }
+        eh.onParticipantLeft(dailyEvent);
       });
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -480,222 +440,6 @@ export class Session extends OTEventEmitter<{
 
     subscriber.ee.emit("destroyed"); // This isn't quite right, it should be emitted when the dom element is removed.
   }
-
-  // START DAILY EVENT HANDLERS
-
-  private onFatalError(dailyEvent: DailyEventObjectFatalError | undefined) {
-    console.error("fatal error", dailyEvent);
-    const error = dailyEvent?.error;
-    let msg = "";
-    let type = "";
-    if (error) {
-      msg = error.localizedMsg ?? "";
-      type = error.type;
-    }
-    this.emitExceptionEvent(msg, type);
-  }
-
-  private onNonFatalError(error: DailyEventObjectNonFatalError | undefined) {
-    console.error("nonfatal error", error);
-    let msg = "";
-    let type = "";
-    if (error) {
-      msg = error.errorMsg ?? "";
-      type = error.type;
-    }
-    this.emitExceptionEvent(msg, type);
-  }
-
-  private emitExceptionEvent(msg: string, type: string) {
-    const exceptionEvent: ExceptionEvent = {
-      // TODO: Map out the error codes (https://tokbox.com/developer/sdks/js/reference/ExceptionEvent.html)
-      code: 2000,
-      message: msg,
-      title: type,
-      preventDefault: () => true,
-      isDefaultPrevented: () => true,
-      type: "exception",
-      cancelable: false,
-      target: this,
-    };
-
-    this.ee.emit("exception", exceptionEvent);
-  }
-
-  private onParticipantJoined(
-    participant: DailyParticipant,
-    localPublisher: Publisher
-  ) {
-    const {
-      session_id,
-      audio,
-      video,
-      tracks,
-      joined_at = new Date(),
-      user_id,
-    } = participant;
-    const creationTime = joined_at.getTime();
-
-    const settings = tracks.video.track?.getSettings() ?? {};
-    const { frameRate = 0, height = 0, width = 0 } = settings;
-
-    const connection = {
-      connectionId: user_id,
-      creationTime,
-      data: "",
-    };
-
-    const stream: Stream = {
-      streamId: session_id,
-      frameRate,
-      hasAudio: audio,
-      hasVideo: video,
-      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-      name: "",
-      videoDimensions: {
-        height,
-        width,
-      },
-      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-      creationTime,
-      connection,
-    };
-
-    localPublisher.stream = stream;
-    this.connection = connection;
-    this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
-    this.ee.emit(
-      "connectionCreated",
-      getConnectionCreatedEvent(this, connection)
-    );
-  }
-
-  onTrackStarted(
-    participant: DailyParticipant,
-    root: HTMLElement,
-    properties?: SubscriberProperties | ((error?: OTError) => void),
-    completionHandler: ((error?: OTError) => void) | undefined = undefined
-  ) {
-    // Get audio and video tracks from the participant
-    const tracks = getParticipantTracks(participant);
-
-    const { session_id, local } = participant;
-    try {
-      const videoEl = addOrUpdateMedia(
-        session_id,
-        local,
-        tracks,
-        root,
-        properties
-      );
-      if (videoEl) {
-        videoEl.onerror = (e) => {
-          console.error("Video error", e);
-          if (!completionHandler) return;
-          if (typeof e === "string") {
-            completionHandler(new Error(e));
-          } else if (e instanceof Error) {
-            completionHandler(e);
-          }
-        };
-      }
-      
-    } catch (e) {
-      if (!completionHandler) return;
-      if (typeof e === "string") {
-        completionHandler(new Error(e));
-      } else if (e instanceof Error) {
-        completionHandler(e);
-      }
-    }
-  }
-
-  private onParticipantLeft(
-    dailyEvent: DailyEventObjectParticipantLeft,
-    subscriber: Subscriber
-  ) {
-    const { participant } = dailyEvent;
-    const {
-      session_id,
-      audio: hasAudio,
-      video: hasVideo,
-      tracks,
-      joined_at = new Date(),
-      user_id,
-    } = participant;
-    const creationTime = joined_at.getTime();
-
-    const settings = tracks.video.track?.getSettings() ?? {};
-    const { frameRate = 0, height = 0, width = 0 } = settings;
-
-    const connection = {
-      connectionId: user_id,
-      creationTime,
-      data: "",
-    };
-
-    this.ee.emit(
-      "connectionDestroyed",
-      getConnectionDestroyedEvent(this, connection)
-    );
-
-    const stream: Stream = {
-      streamId: session_id,
-      frameRate,
-      hasAudio,
-      hasVideo,
-      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-      name: "",
-      videoDimensions: {
-        height,
-        width,
-      },
-      videoType: "camera",
-      creationTime: joined_at.getTime(),
-      connection,
-    };
-
-    this.ee.emit("streamDestroyed", getStreamDestroyedEvent(this, stream));
-
-    const v = document.getElementById(getVideoTagID(session_id));
-    if (v) {
-      v.remove();
-      subscriber.ee.emit("destroyed");
-    }
-  }
-
-  private onNetworkConnection(event: string) {
-    const otEvent = getSessionDisconnectedEvent(this);
-
-    switch (event) {
-      case "interrupted":
-        this.ee.emit("sessionReconnecting", otEvent);
-        this.reconnecting = true;
-        break;
-      case "connected":
-        if (this.reconnecting) {
-          this.ee.emit("sessionReconnected", otEvent);
-          this.reconnecting = false;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
-  private onLeftMeeting(subscriber: Subscriber) {
-    const videos = document.getElementsByTagName("video");
-
-    for (const video of videos) {
-      if (video.id.includes("daily-video-")) {
-        video.srcObject = null;
-        video.remove();
-        subscriber.ee.emit("destroyed");
-      }
-    }
-  }
-
-  // END DAILY EVENT HANDLERS
 }
 function setupCompletionHandler(
   targetElement: string | HTMLElement | undefined,

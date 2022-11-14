@@ -1,9 +1,5 @@
 import { OTError, SubscriberProperties } from "@opentok/client";
-import { Tracks } from "../utils";
-
-export function getVideoTagID(sessionID: string) {
-  return `daily-video-${sessionID}`;
-}
+import { getVideoTagID, Tracks } from "../utils";
 
 export function removeParticipantMedia(sessionID: string): boolean {
   // Remove video tracks
@@ -15,13 +11,8 @@ export function removeParticipantMedia(sessionID: string): boolean {
   return false;
 }
 
-export function updateLocalVideoDOM() {
-    
-}
-
 export function addOrUpdateMedia(
   sessionID: string,
-  isLocal: boolean,
   mediaTracks: Tracks,
   root: HTMLElement,
   properties?: SubscriberProperties | ((error?: OTError) => void)
@@ -59,7 +50,7 @@ export function addOrUpdateMedia(
   if (!srcObject || !(srcObject instanceof MediaStream)) {
     const tracks: MediaStreamTrack[] = [];
     if (video) tracks.push(video);
-    if (!isLocal && audio) tracks.push(audio);
+    if (audio) tracks.push(audio);
 
     const newStream = new MediaStream(tracks);
     videoEl.srcObject = newStream;
@@ -75,7 +66,7 @@ export function addOrUpdateMedia(
       updateVideoTrack(srcObject, video);
       videoEl.style.visibility = "visible";
     }
-    if (!isLocal && audio) updateAudioTrack(srcObject, audio);
+    if (audio) updateAudioTrack(srcObject, audio);
   } else {
     throw new Error("Video element's source object is invalid.");
   }

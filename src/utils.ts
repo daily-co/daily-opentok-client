@@ -1,10 +1,25 @@
-import { DailyParticipant } from "@daily-co/daily-js";
+import DailyIframe, { DailyCall, DailyParticipant } from "@daily-co/daily-js";
 
-export type Tracks = {
+export interface Tracks {
   audio?: MediaStreamTrack | null;
   video?: MediaStreamTrack | null;
   screen?: MediaStreamTrack | null;
-};
+}
+
+export function getOrCreateCallObject(): DailyCall {
+  if (window.call) return window.call;
+  window.call = DailyIframe.createCallObject({
+    subscribeToTracksAutomatically: false,
+    dailyConfig: {
+      experimentalChromeVideoMuteLightOff: true,
+    },
+  });
+  return window.call;
+}
+
+export function getVideoTagID(sessionID: string) {
+  return `daily-video-${sessionID}`;
+}
 
 export function notImplemented(name = "unknown"): never {
   throw new Error(`Function or operation not implemented: ${name}`);

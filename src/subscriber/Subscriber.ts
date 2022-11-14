@@ -3,12 +3,18 @@ import {
   Event,
   OTError,
   Stream,
+  SubscriberProperties,
   SubscriberStats,
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
-import { notImplemented } from "../utils";
+import { getOrCreateCallObject, notImplemented } from "../utils";
 import { OTEventEmitter } from "../OTEventEmitter";
+import { DailyEventHandler } from "./DailyEventHandler";
+import {
+  DailyEventObjectParticipantLeft,
+  DailyEventObjectTrack,
+} from "@daily-co/daily-js";
 
 export class Subscriber extends OTEventEmitter<{
   audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
@@ -50,19 +56,43 @@ export class Subscriber extends OTEventEmitter<{
   element?: HTMLElement;
   id?: string;
   stream?: Stream;
+  eventHandler: DailyEventHandler;
 
   constructor(
     targetElement: HTMLElement,
     options: { stream?: Stream; id?: string } = {},
     completionHandler: () => void = () => {
       return void 0;
-    }
+    },
+    properties:
+      | SubscriberProperties
+      | ((error?: OTError | undefined) => void)
+      | undefined
   ) {
     super();
 
     this.element = targetElement;
     this.id = options.id;
     this.stream = options.stream;
+    this.eventHandler = new DailyEventHandler(this.ee);
+    const call = getOrCreateCallObject();
+
+    call
+      .on("track-started", (event?: DailyEventObjectTrack) => {
+        if (!event?.participant) return;
+        this.eventHandler.onTrackStarted(
+          event.participant,
+          targetElement,
+          properties
+        );
+      })
+      .on("participant-left", (event?: DailyEventObjectParticipantLeft) => {
+        if (!event?.participant) return;
+        this.eventHandler.onParticipantLeft(event.participant.session_id);
+      })
+      .on("left-meeting", () => {
+        this.eventHandler.onLeftMeeting();
+      });
     completionHandler();
   }
 
