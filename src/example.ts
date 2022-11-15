@@ -106,13 +106,15 @@ OT.getUserMedia()
 publishBtn.addEventListener("click", () => {
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
-    "publisher",
+    // "publisher",
+    undefined,
     {
-      insertMode: "append",
+      // insertMode: "append",
       width: "100%",
       height: "100%",
       audioSource: audioSelector.value,
       videoSource: videoSelector.value,
+      insertDefaultUI: false,
     },
     (err) => {
       if (err) {
@@ -123,6 +125,13 @@ publishBtn.addEventListener("click", () => {
       }
     }
   );
+
+  publisher.on("videoElementCreated", ({ element }) => {
+    const elm = document.getElementById("publisher");
+    elm?.appendChild(element);
+  });
+
+  console.log(publisher);
 });
 
 // Allow you to switch to different cameras and microphones using

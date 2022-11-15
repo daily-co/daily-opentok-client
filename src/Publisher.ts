@@ -10,9 +10,14 @@ import {
   VideoDimensionsChangedEvent,
   VideoFilter,
 } from "@opentok/client";
-import Daily from "@daily-co/daily-js";
+import Daily, { DailyParticipant } from "@daily-co/daily-js";
 import { OTEventEmitter } from "./OTEventEmitter";
-import { dailyUndefinedError, notImplemented } from "./utils";
+import {
+  dailyUndefinedError,
+  getParticipantTracks,
+  getVideoTagID,
+  notImplemented,
+} from "./utils";
 import { Session } from "./Session";
 
 type StreamCreatedEvent = Event<"streamCreated", Publisher> & {
@@ -60,12 +65,33 @@ export class Publisher extends OTEventEmitter<{
   session?: Session;
   stream?: Stream;
   width?: string;
-  constructor({ width, height, insertMode }: PublisherProperties) {
+  private _videoElement: HTMLVideoElement | null;
+  constructor({
+    width,
+    height,
+    insertMode,
+    insertDefaultUI = true,
+  }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
+    this._videoElement = null;
+
+    // this.id = something
+    // this.element = something;
+
+    if (insertDefaultUI) {
+      // notImplemented("insertDefaultUI");
+      // The UI should be fancier than this in the future
+      this.element = document.createElement("div");
+      this.element.id = "daily-root";
+    } else {
+      // Explicilty set these
+      this.element = undefined;
+      this.id = undefined;
+    }
 
     window.call =
       window.call ??
@@ -94,56 +120,45 @@ export class Publisher extends OTEventEmitter<{
           this.accessAllowed = false;
         }
       })
+      .once("joined-meeting", () => {
+        // stuff
+      })
       .on("joined-meeting", (dailyEvent) => {
         if (!dailyEvent) return;
 
-        const participant = dailyEvent.participants.local;
         const {
-          session_id,
-          audio,
-          video,
-          tracks,
-          joined_at = new Date(),
-          user_id,
-        } = participant;
-        const creationTime = joined_at.getTime();
+          participants: { local },
+        } = dailyEvent;
 
-        const settings = tracks.video.track?.getSettings() ?? {};
-        const { frameRate = 0, height = 0, width = 0 } = settings;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (local) {
+          this.updateLocalVideoDOM(local, insertDefaultUI);
+        }
+      })
+      .on("participant-updated", (dailyEvent) => {
+        // Probably needs to be in Subscriber
+        if (!dailyEvent) {
+          return;
+        }
 
-        const connection = {
-          connectionId: user_id,
-          creationTime,
-          data: "",
-        };
-
-        const stream: Stream = {
-          streamId: session_id,
-          frameRate,
-          hasAudio: audio,
-          hasVideo: video,
-          // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-          name: "",
-          videoDimensions: {
-            height,
-            width,
-          },
-          videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-          creationTime,
-          connection,
-        };
-
-        const streamEvent: StreamCreatedEvent = {
-          type: "streamCreated",
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          target: this,
-          cancelable: true,
-          stream: stream,
-        };
-
-        this.ee.emit("streamCreated", streamEvent);
+        const { participant } = dailyEvent;
+        this.updateLocalVideoDOM(participant, insertDefaultUI);
       });
+
+    const localParticipant = window.call.participants().local;
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
+    const videoOn = localParticipant?.video;
+    const audioOn = localParticipant?.audio;
+    /* eslint-enable */
+    if (videoOn || audioOn) {
+      this.updateLocalVideoDOM(localParticipant, insertDefaultUI);
+    }
+    if (!videoOn) {
+      window.call.setLocalVideo(true);
+    }
+    if (!audioOn) {
+      window.call.setLocalAudio(true);
+    }
   }
 
   destroy(): void {
@@ -303,5 +318,151 @@ export class Publisher extends OTEventEmitter<{
   }
   videoHeight(): number | undefined {
     notImplemented(`publisher ${this.videoHeight.name}`);
+  }
+
+  /**
+   * @deprecated Listen to the videoElementCreated event instead.
+   */
+  public videoElement(): HTMLVideoElement | null {
+    return this._videoElement;
+  }
+
+  private updateLocalVideoDOM(
+    participant: DailyParticipant,
+    insertDefaultUI: boolean
+  ) {
+    const {
+      session_id,
+      audio: hasAudio,
+      video: hasVideo,
+      tracks,
+      joined_at = new Date(),
+      user_id,
+      local,
+    } = participant;
+    const creationTime = joined_at.getTime();
+
+    const settings = tracks.video.track?.getSettings() ?? {};
+    const { frameRate = 0, height = 0, width = 0 } = settings;
+    const { video } = getParticipantTracks(participant);
+
+    if (!local || !video) {
+      return;
+    }
+
+    const stream: Stream = {
+      streamId: session_id,
+      frameRate,
+      hasAudio,
+      hasVideo,
+      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
+      name: "",
+      videoDimensions: {
+        height,
+        width,
+      },
+      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
+      creationTime,
+      connection: {
+        connectionId: user_id, // TODO
+        creationTime,
+        // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
+        // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
+        data: "",
+      },
+    };
+    this.stream = stream;
+
+    let videoElementCreated = false;
+    if (insertDefaultUI) {
+      // TODO(jamsea): do stuff
+    } else {
+      // Make sure this is undefined
+      this.element = undefined;
+    }
+
+    if (!this._videoElement) {
+      this._videoElement = document.createElement("video");
+      this._videoElement.id = getVideoTagID(session_id);
+      this._videoElement.style.width = this.width ?? "";
+      this._videoElement.style.height = this.height ?? "";
+
+      videoElementCreated = true;
+    }
+
+    const documentVideoElm = document.getElementById(getVideoTagID(session_id));
+
+    if (
+      !(documentVideoElm instanceof HTMLVideoElement) &&
+      documentVideoElm != undefined
+    ) {
+      throw new Error("Video element id is invalid.");
+    }
+
+    if (
+      this._videoElement.srcObject &&
+      "getTracks" in this._videoElement.srcObject
+    ) {
+      const tracks = this._videoElement.srcObject.getTracks();
+      if (tracks[0].id === video.id) {
+        return;
+      }
+    }
+
+    // // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    // switch (this.insertMode) {
+    //   case "append":
+    //     if (this.element) {
+    //       document.body.appendChild(this.element);
+    //       this.element.appendChild(this._videoElement);
+    //     }
+    //     break;
+    //   case "replace":
+    //     notImplemented("'replace' insert mode");
+    //     break;
+    //   case "before":
+    //     notImplemented("'before' insert mode");
+    //     break;
+    //   case "after":
+    //     notImplemented("'after' insert mode");
+    //     break;
+    //   default:
+    //     break;
+    // }
+
+    this._videoElement.srcObject = new MediaStream([video]);
+    this._videoElement.play().catch((e) => {
+      console.error(e);
+    });
+
+    const videoElementCreatedEvent: OT.Event<
+      "videoElementCreated",
+      Publisher
+    > & {
+      element: HTMLVideoElement | HTMLObjectElement;
+    } = {
+      type: "videoElementCreated",
+      element: this._videoElement,
+      target: this,
+      cancelable: true,
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+    };
+
+    // Only fire event if document.createElement("video") was called
+    if (videoElementCreated) {
+      this.ee.emit("videoElementCreated", videoElementCreatedEvent);
+    }
+
+    const streamEvent: StreamCreatedEvent = {
+      type: "streamCreated",
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+      target: this,
+      cancelable: true,
+      stream: stream,
+    };
+
+    this.ee.emit("streamCreated", streamEvent);
   }
 }
