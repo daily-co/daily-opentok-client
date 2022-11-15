@@ -21,7 +21,7 @@ export function addOrUpdateMedia(
   }
   const videoData = createOrUpdateMedia(sessionID, mediaTracks, dimensions);
   if (videoData.isNew) {
-    root.appendChild(videoData.video);
+    root.appendChild(videoData.videoEl);
   }
-  return videoData.video;
+  return videoData.videoEl;
 }

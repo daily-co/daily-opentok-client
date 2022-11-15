@@ -1,5 +1,7 @@
 import DailyIframe, { DailyCall } from "@daily-co/daily-js";
 
+// getOrCreateCallObject() retrieves the existing Daily
+// call object, or creates one if it does not exist.
 export function getOrCreateCallObject(): DailyCall {
   if (window.call) return window.call;
   window.call = DailyIframe.createCallObject({

@@ -59,7 +59,7 @@ export function createOrUpdateMedia(
   sessionID: string,
   mediaTracks: Tracks,
   dimensions?: Dimensions
-): { video: HTMLVideoElement; isNew: boolean } {
+): { videoEl: HTMLVideoElement; isNew: boolean } {
   // Retrieve the existing video DOM element for this participant
   let videoEl = getVideoElement(sessionID);
   console.debug("video element:", videoEl);
@@ -75,7 +75,7 @@ export function createOrUpdateMedia(
 
     videoEl = createVideoElement(sessionID, width, height, mediaTracks);
     return {
-      video: videoEl,
+      videoEl: videoEl,
       isNew: true,
     };
   }
@@ -100,7 +100,7 @@ export function createOrUpdateMedia(
   if (audio) updateAudioTrack(srcObject, audio);
 
   return {
-    video: videoEl,
+    videoEl: videoEl,
     isNew: false,
   };
 }

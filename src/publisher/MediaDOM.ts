@@ -36,6 +36,7 @@ export function updateMediaDOM(
 
   const sessionID = participant.session_id;
 
+  // Get root element on which to append the new video element
   let root: HTMLElement | null = null;
   if (rootElementID) {
     root = document.getElementById(rootElementID);
@@ -49,9 +50,9 @@ export function updateMediaDOM(
   const videoData = createOrUpdateMedia(sessionID, tracks, dimensions);
   // If this video was newly created, append it to DOM
   if (videoData.isNew) {
-    attachDOM(root, videoData.video, publisher.insertMode);
+    attachDOM(root, videoData.videoEl, publisher.insertMode);
   }
-  return videoData.video;
+  return videoData.videoEl;
 }
 
 // attachDOM() attaches the given video element to the
