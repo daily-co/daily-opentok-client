@@ -117,9 +117,6 @@ export class Publisher extends OTEventEmitter<{
           this.accessAllowed = false;
         }
       })
-      .once("joined-meeting", () => {
-        // stuff
-      })
       .on("joined-meeting", (dailyEvent) => {
         if (!dailyEvent) return;
 
@@ -133,7 +130,7 @@ export class Publisher extends OTEventEmitter<{
         }
       })
       .on("participant-updated", (dailyEvent) => {
-        // Probably needs to be in Subscriber
+        // Probably needs to be in Subscriber or Session, not in here.
         if (!dailyEvent) {
           return;
         }
@@ -406,27 +403,6 @@ export class Publisher extends OTEventEmitter<{
         return;
       }
     }
-
-    // // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-    // switch (this.insertMode) {
-    //   case "append":
-    //     if (this.element) {
-    //       document.body.appendChild(this.element);
-    //       this.element.appendChild(this._videoElement);
-    //     }
-    //     break;
-    //   case "replace":
-    //     notImplemented("'replace' insert mode");
-    //     break;
-    //   case "before":
-    //     notImplemented("'before' insert mode");
-    //     break;
-    //   case "after":
-    //     notImplemented("'after' insert mode");
-    //     break;
-    //   default:
-    //     break;
-    // }
 
     this._videoElement.srcObject = new MediaStream([video]);
     this._videoElement.play().catch((e) => {
