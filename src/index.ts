@@ -286,6 +286,10 @@ function initPublisher(
     });
 
   switch (window.call.meetingState()) {
+    case "error":
+      console.debug("error");
+      completionHandler(new Error("Daily error"));
+      return publisher;
     case "new":
       window.call
         .startCamera()
@@ -298,39 +302,27 @@ function initPublisher(
         });
       break;
     case "loading":
-      console.debug("loading");
-      break;
     case "loaded":
-      console.debug("loaded");
       break;
     case "joining-meeting":
-      console.debug("joining-meeting");
-      break;
     case "joined-meeting":
-      console.debug("joined-meeting");
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: true,
+          video: true,
+        })
+        .then(() => {
+          completionHandler();
+        })
+        .catch((e) => {
+          completionHandler(e as OTError);
+        });
       break;
     case "left-meeting":
-      console.debug("left-meeting");
-      break;
-    case "error":
-      console.debug("error");
-      completionHandler(new Error("Daily error"));
-      return publisher;
     default:
+      console.debug(window.call.meetingState());
       break;
   }
-
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
-    .then(() => {
-      completionHandler();
-    })
-    .catch((e) => {
-      completionHandler(e as OTError);
-    });
 
   return publisher;
 }

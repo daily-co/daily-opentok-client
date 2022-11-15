@@ -112,9 +112,15 @@ publishBtn.addEventListener("click", () => {
       // insertMode: "append",
       width: "100%",
       height: "100%",
-      audioSource: audioSelector.value,
-      videoSource: videoSelector.value,
+      audioSource: undefined,
+      frameRate: 15,
       insertDefaultUI: false,
+      // audioSource: audioSelector.value,
+      // videoSource: videoSelector.value,
+      publishAudio: true,
+      publishVideo: true,
+      resolution: "320x240",
+      videoSource: undefined,
     },
     (err) => {
       if (err) {

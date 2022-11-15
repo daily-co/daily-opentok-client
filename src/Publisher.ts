@@ -275,7 +275,8 @@ export class Publisher extends OTEventEmitter<{
       .setInputDevicesAsync({
         videoDeviceId: videoSourceId,
       })
-      .then(() => {
+      .then((res) => {
+        console.log("setVideoSource: ", res);
         return undefined;
       });
   }
