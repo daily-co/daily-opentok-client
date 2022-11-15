@@ -303,9 +303,9 @@ function initPublisher(
       break;
     case "loading":
     case "loaded":
-      break;
     case "joining-meeting":
     case "joined-meeting":
+      console.debug(window.call.meetingState());
       navigator.mediaDevices
         .getUserMedia({
           audio: true,

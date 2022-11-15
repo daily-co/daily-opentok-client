@@ -51,16 +51,23 @@ session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event.stream);
   // This is daily remote user stuff
   // if (!window.chrome) {
-  session.subscribe(
+  const subscriber = session.subscribe(
     event.stream,
-    "subscriber",
+    // "subscriber",
+    undefined,
     {
-      insertMode: "append",
+      // insertMode: "append",
       width: "100%",
       height: "100%",
+      insertDefaultUI: false,
     },
     handleError
   );
+
+  subscriber.on("videoElementCreated", ({ element }) => {
+    const elm = document.getElementById("subscriber");
+    elm?.appendChild(element);
+  });
   // }
 });
 
