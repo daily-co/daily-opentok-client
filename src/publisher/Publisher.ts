@@ -14,9 +14,7 @@ import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
 import { errDailyUndefined, errNotImplemented } from "../shared/errors";
 import { removeAllParticipantMedias } from "../shared/media";
-import {
-  getOrCreateCallObject,
-} from "../shared/utils";
+import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
@@ -117,6 +115,7 @@ export class Publisher extends OTEventEmitter<{
     const localParticipant = call.participants().local;
     let videoOn = false;
     let audioOn = false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (localParticipant) {
       videoOn = localParticipant.video;
       audioOn = localParticipant.audio;

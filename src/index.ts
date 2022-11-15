@@ -7,7 +7,8 @@ import {
 import Daily from "@daily-co/daily-js";
 import { initSession } from "./session/Init";
 import { initPublisher } from "./publisher/Init";
-import { dailyUndefinedError, getOrCreateCallObject } from "./shared/utils";
+import { getOrCreateCallObject } from "./shared/utils";
+import { errDailyUndefined } from "./shared/errors";
 
 function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void
@@ -37,7 +38,7 @@ function checkSystemRequirements(): number {
 
 function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
   if (!window.call) {
-    dailyUndefinedError();
+    errDailyUndefined();
   }
 
   return window.call.enumerateDevices().then(({ devices }) => {
@@ -167,7 +168,7 @@ function hasMediaProcessorSupport(): boolean {
 
 function setAudioOutputDevice(deviceId: string): Promise<void> {
   if (!window.call) {
-    dailyUndefinedError();
+    errDailyUndefined();
   }
   return window.call
     .setOutputDeviceAsync({

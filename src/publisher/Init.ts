@@ -87,6 +87,7 @@ export function initPublisher(
   const localParticipant = call.participants().local;
   let videoOn = false;
   let audioOn = false;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (localParticipant) {
     videoOn = localParticipant.video;
     audioOn = localParticipant.audio;
