@@ -79,14 +79,11 @@ export class Publisher extends OTEventEmitter<{
     this.accessAllowed = true;
     this._videoElement = null;
 
-    // this.id = something
-    // this.element = something;
-
     if (insertDefaultUI) {
-      // notImplemented("insertDefaultUI");
       // The UI should be fancier than this in the future
       this.element = document.createElement("div");
       this.element.id = "daily-root";
+      this.id = "daily-root";
     } else {
       // Explicilty set these
       this.element = undefined;

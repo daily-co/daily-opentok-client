@@ -325,8 +325,7 @@ function initPublisher(
       audio: true,
       video: true,
     })
-    .then((res) => {
-      console.log(res);
+    .then(() => {
       completionHandler();
     })
     .catch((e) => {
