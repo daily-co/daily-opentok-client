@@ -1,7 +1,8 @@
 import { OTError } from "@opentok/client";
 import { Publisher } from "./Publisher";
 import { updateMediaDOM } from "./MediaDOM";
-import { dailyUndefinedError, getOrCreateCallObject } from "../shared/utils";
+import { getOrCreateCallObject } from "../shared/utils";
+import { errDailyUndefined } from "../shared/errors";
 
 // initPublisher() sets up and returns a Publisher to the caller
 export function initPublisher(
@@ -92,7 +93,7 @@ export function initPublisher(
   }
 
   if (!window.call) {
-    dailyUndefinedError();
+    errDailyUndefined();
   }
 
   if (videoOn || audioOn) {

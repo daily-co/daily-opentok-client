@@ -12,7 +12,7 @@ import { Publisher } from "../publisher/Publisher";
 import { Subscriber } from "../subscriber/Subscriber";
 import OT from "../index";
 import { DailyEventHandler } from "../session/DailyEventHandler";
-import { notImplemented } from "../shared/utils";
+import { errNotImplemented } from "../shared/errors";
 
 interface SessionCollection {
   length: () => number;
@@ -367,43 +367,43 @@ export class Session extends OTEventEmitter<{
     _connection: OT.Connection,
     _callback: (error?: OTError) => void
   ): void {
-    notImplemented(this.forceDisconnect.name);
+    errNotImplemented(this.forceDisconnect.name);
   }
 
   forceUnpublish(_stream: Stream, _callback: (error?: OTError) => void): void {
-    notImplemented(this.forceUnpublish.name);
+    errNotImplemented(this.forceUnpublish.name);
   }
 
   forceMuteStream(_stream: Stream): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented(this.forceMuteStream.name));
+      reject(errNotImplemented(this.forceMuteStream.name));
     });
   }
 
   forceMuteAll(_excludedStreams?: Stream[]): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented(this.forceMuteAll.name));
+      reject(errNotImplemented(this.forceMuteAll.name));
     });
   }
 
   getPublisherForStream(_stream: Stream): Publisher | undefined {
-    notImplemented(this.getPublisherForStream.name);
+    errNotImplemented(this.getPublisherForStream.name);
   }
 
   getSubscribersForStream(_stream: Stream): [Subscriber] {
-    notImplemented(this.getSubscribersForStream.name);
+    errNotImplemented(this.getSubscribersForStream.name);
   }
 
   setEncryptionSecret(_secret: string): Promise<void> {
     return new Promise((_, reject) => {
-      reject(notImplemented(this.setEncryptionSecret.name));
+      reject(errNotImplemented(this.setEncryptionSecret.name));
     });
   }
   signal(
     _signal: { type?: string; data?: string; to?: OT.Connection },
     _callback: (error?: OTError) => void
   ): void {
-    notImplemented("signal");
+    errNotImplemented("signal");
   }
   unpublish(publisher: Publisher): void {
     publisher.session = undefined;

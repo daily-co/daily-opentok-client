@@ -19,11 +19,3 @@ export function toPixelDimensions(num: number | string): string {
   }
   throw new Error("Failed to convert input to pixel dimension string");
 }
-
-export function notImplemented(name = "unknown"): never {
-  throw new Error(`Function or operation not implemented: ${name}`);
-}
-
-export function dailyUndefinedError(): never {
-  throw new Error("Daily call object not initialized.");
-}

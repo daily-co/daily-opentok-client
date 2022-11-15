@@ -1,12 +1,13 @@
 import { DailyParticipant } from "@daily-co/daily-js";
 import { Stream } from "@opentok/client";
-import { notImplemented, toPixelDimensions } from "../shared/utils";
+import { toPixelDimensions } from "../shared/utils";
 import {
   createOrUpdateMedia,
   Dimensions,
   getParticipantTracks,
 } from "../shared/media";
 import { InsertMode, Publisher } from "./Publisher";
+import { errNotImplemented } from "../shared/errors";
 
 // updateMediaDOM() updates the DOM element(s) associated
 // with the given participant's media tracks.
@@ -65,13 +66,13 @@ function attachDOM(
       root.appendChild(videoEl);
       break;
     case "replace":
-      notImplemented("'replace' insert mode");
+      errNotImplemented("'replace' insert mode");
       break;
     case "before":
-      notImplemented("'before' insert mode");
+      errNotImplemented("'before' insert mode");
       break;
     case "after":
-      notImplemented("'after' insert mode");
+      errNotImplemented("'after' insert mode");
       break;
     default:
       break;

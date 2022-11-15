@@ -12,11 +12,10 @@ import {
 } from "@opentok/client";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
+import { errDailyUndefined, errNotImplemented } from "../shared/errors";
 import { removeAllParticipantMedias } from "../shared/media";
 import {
-  dailyUndefinedError,
   getOrCreateCallObject,
-  notImplemented,
 } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
 
@@ -136,7 +135,7 @@ export class Publisher extends OTEventEmitter<{
 
   destroy(): void {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call
       .leave()
@@ -161,56 +160,56 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getImgData(): string | null {
-    notImplemented(this.getImgData.name);
+    errNotImplemented(this.getImgData.name);
   }
   getStats(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError, stats?: PublisherStatsArr) => void
   ): void {
-    notImplemented(this.getStats.name);
+    errNotImplemented(this.getStats.name);
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.getRtcStatsReport.name));
+      reject(errNotImplemented(this.getRtcStatsReport.name));
     });
   }
   getStyle(): PublisherProperties {
-    notImplemented(this.getStyle.name);
+    errNotImplemented(this.getStyle.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.applyVideoFilter.name));
+      reject(errNotImplemented(this.applyVideoFilter.name));
     });
   }
   getVideoFilter(): VideoFilter | null {
-    notImplemented(this.getVideoFilter.name);
+    errNotImplemented(this.getVideoFilter.name);
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.clearVideoFilter.name));
+      reject(errNotImplemented(this.clearVideoFilter.name));
     });
   }
   publishAudio(value: boolean): void {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishCaptions(value: boolean): void {
-    notImplemented(this.publishCaptions.name);
+    errNotImplemented(this.publishCaptions.name);
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     return window.call.cycleCamera().then((device) => {
@@ -219,7 +218,7 @@ export class Publisher extends OTEventEmitter<{
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     const audioDeviceId =
@@ -235,7 +234,7 @@ export class Publisher extends OTEventEmitter<{
   }
   getAudioSource(): MediaStreamTrack | null {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     const { local: { tracks: { audio: { persistentTrack } = {} } = {} } = {} } =
       window.call.participants();
@@ -244,7 +243,7 @@ export class Publisher extends OTEventEmitter<{
   }
   setVideoSource(videoSourceId: string): Promise<undefined> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     return window.call
@@ -256,11 +255,11 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getVideoContentHint(): VideoContentHint {
-    notImplemented(this.getVideoContentHint.name);
+    errNotImplemented(this.getVideoContentHint.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setVideoContentHint(hint: VideoContentHint): void {
-    notImplemented(this.setVideoContentHint.name);
+    errNotImplemented(this.setVideoContentHint.name);
   }
   getVideoSource(): {
     deviceId: string | null;
@@ -268,7 +267,7 @@ export class Publisher extends OTEventEmitter<{
     track: MediaStreamTrack | null;
   } {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     const { local: { tracks: { video: { persistentTrack } = {} } = {} } = {} } =
       window.call.participants();
@@ -284,12 +283,12 @@ export class Publisher extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: PublisherStyle[Style]
   ): void {
-    notImplemented(`publisher ${this.setStyle.name}`);
+    errNotImplemented(`publisher ${this.setStyle.name}`);
   }
   videoWidth(): number | undefined {
-    notImplemented(`publisher ${this.videoWidth.name}`);
+    errNotImplemented(`publisher ${this.videoWidth.name}`);
   }
   videoHeight(): number | undefined {
-    notImplemented(`publisher ${this.videoHeight.name}`);
+    errNotImplemented(`publisher ${this.videoHeight.name}`);
   }
 }
