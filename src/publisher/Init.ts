@@ -1,8 +1,6 @@
 import { OTError } from "@opentok/client";
 import { Publisher } from "./Publisher";
-import { updateMediaDOM } from "./MediaDOM";
 import { getOrCreateCallObject } from "../shared/utils";
-import { errDailyUndefined } from "../shared/errors";
 
 // initPublisher() sets up and returns a Publisher to the caller
 export function initPublisher(
@@ -10,9 +8,11 @@ export function initPublisher(
   properties?: OT.PublisherProperties | undefined,
   callback?: ((error?: OTError | undefined) => void) | undefined
 ): Publisher {
+  // Get ID of the element to which all publisher media will be attached
   const rootElementID =
     targetElement instanceof HTMLElement ? targetElement.id : targetElement;
 
+  // Instantiate publisher with provided properties
   const publisher = new Publisher(
     {
       width: properties?.width ?? "",
@@ -30,14 +30,25 @@ export function initPublisher(
           // empty
         };
 
+  // If target element is falsy, invoke completion handler
+  // with an error
   if (!targetElement) {
     completionHandler(new Error("No target element provided"));
+    // TODO: [Liza] Should we throw an exception here instead of
+    // returning what seems to be an incomplete publisher?
     return publisher;
   }
 
   const call = getOrCreateCallObject();
+
+  // Address current meeting state
   switch (call.meetingState()) {
     case "new":
+      // TODO: [Liza] This should be failing because
+      // afaik `startCamera()` requires a URL. What is
+      // the intent of this call? Publisher instantiation
+      // already enabled video/audio, is that enough?
+      // Docs: https://docs.daily.co/reference/rn-daily-js/instance-methods/start-camera#main
       call
         .startCamera()
         .then(() => {
@@ -71,6 +82,7 @@ export function initPublisher(
       break;
   }
 
+  // TODO: [Liza] - is this for the network test parts?
   navigator.mediaDevices
     .getUserMedia({
       audio: true,
@@ -84,28 +96,6 @@ export function initPublisher(
       completionHandler(e as OTError);
     });
 
-  const localParticipant = call.participants().local;
-  let videoOn = false;
-  let audioOn = false;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (localParticipant) {
-    videoOn = localParticipant.video;
-    audioOn = localParticipant.audio;
-  }
-
-  if (!window.call) {
-    errDailyUndefined();
-  }
-
-  if (videoOn || audioOn) {
-    updateMediaDOM(localParticipant, publisher, rootElementID);
-  }
-  if (!videoOn) {
-    window.call.setLocalVideo(true);
-  }
-  if (!audioOn) {
-    window.call.setLocalAudio(true);
-  }
-
+  // TODO: [Liza] Should we run `completionHandler()` here?
   return publisher;
 }

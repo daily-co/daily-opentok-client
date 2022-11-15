@@ -27,6 +27,5 @@ export function initSession(
   }
 ): Session {
   const session = new Session(partnerId, roomUrl, options);
-
   return session;
 }

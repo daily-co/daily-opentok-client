@@ -6,12 +6,15 @@ import { EventEmitter } from "stream";
 import { addOrUpdateMedia } from "./MediaDOM";
 import { getParticipantTracks, removeParticipantMedia } from "../shared/media";
 
+// DailyEventHandler is a class that handles Daily events and
+// emits relevant OT events via the provided emitter
 export class DailyEventHandler {
   private ee: EventEmitter;
   constructor(ee: EventEmitter) {
     this.ee = ee;
   }
 
+  // onTrackStarted() handles Daily's "track-started" event
   onTrackStarted(
     participant: DailyParticipant,
     root: HTMLElement,
@@ -47,6 +50,7 @@ export class DailyEventHandler {
     }
   }
 
+  // onParticipantLeft() handles Daily's "participant-left" event
   onParticipantLeft(sessionID: string) {
     if (removeParticipantMedia(sessionID)) {
       this.ee.emit("destroyed");

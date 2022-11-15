@@ -27,6 +27,7 @@ export class DailyEventHandler {
     this.ee = session.ee;
   }
 
+  // onFatalError() handles Daily's "error" event
   onFatalError(dailyEvent: DailyEventObjectFatalError | undefined) {
     console.error("fatal error", dailyEvent);
     const error = dailyEvent?.error;
@@ -39,6 +40,7 @@ export class DailyEventHandler {
     this.emitExceptionEvent(msg, type);
   }
 
+  // onNonFatalError() handles Daily's "nonfatal-error" event
   onNonFatalError(error: DailyEventObjectNonFatalError | undefined) {
     console.error("nonfatal error", error);
     let msg = "";
@@ -50,6 +52,7 @@ export class DailyEventHandler {
     this.emitExceptionEvent(msg, type);
   }
 
+  // onParticipantJoined() handles Daily's "participant-joined" event
   onParticipantJoined(participant: DailyParticipant) {
     const {
       session_id,
@@ -93,6 +96,7 @@ export class DailyEventHandler {
     );
   }
 
+  // onParticipantLeft() handles Daily's "participant-left" event
   onParticipantLeft(dailyEvent: DailyEventObjectParticipantLeft) {
     const { participant } = dailyEvent;
     const {
@@ -141,6 +145,7 @@ export class DailyEventHandler {
     );
   }
 
+  // onNetworkConnection() handles Daily's "network-connection" event
   onNetworkConnection(event: string) {
     const otEvent = getSessionDisconnectedEvent(this.session);
 
@@ -160,6 +165,7 @@ export class DailyEventHandler {
     }
   }
 
+  // emitExceptionEvent() emits an exception OT event
   private emitExceptionEvent(msg: string, type: string) {
     const exceptionEvent: ExceptionEvent = {
       // TODO: Map out the error codes (https://tokbox.com/developer/sdks/js/reference/ExceptionEvent.html)

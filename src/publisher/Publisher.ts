@@ -1,3 +1,4 @@
+import { DailyCall } from "@daily-co/daily-js";
 import {
   Event,
   OTError,
@@ -71,7 +72,15 @@ export class Publisher extends OTEventEmitter<{
     this.accessAllowed = true;
 
     const call = getOrCreateCallObject();
+    this.setupEventHandlers(call, rootElementID);
+    this.enableMedia(call, rootElementID);
+  }
 
+  // setupEventHandlers() sets up handlers for relevant Daily events.
+  private setupEventHandlers(
+    call: DailyCall,
+    rootElementID: string | undefined
+  ) {
     call
       .on("started-camera", () => {
         this.accessAllowed = true;
@@ -94,6 +103,7 @@ export class Publisher extends OTEventEmitter<{
         if (!dailyEvent?.participant) {
           return;
         }
+        console.debug("publisher track started");
 
         const { participant } = dailyEvent;
         // LIZA todo: do we need completion handler here?
@@ -103,7 +113,7 @@ export class Publisher extends OTEventEmitter<{
         if (!dailyEvent?.participant) {
           return;
         }
-
+        console.debug("publisher track stopped");
         const { participant } = dailyEvent;
         // LIZA todo: do we need completion handler here?
         updateMediaDOM(participant, this, rootElementID);
@@ -111,7 +121,11 @@ export class Publisher extends OTEventEmitter<{
       .on("left-meeting", () => {
         removeAllParticipantMedias();
       });
+  }
 
+  // enableMedia() turns on the user's camera and microphone if they
+  // are not already enabled.
+  private enableMedia(call: DailyCall, rootElementID: string | undefined) {
     const localParticipant = call.participants().local;
     let videoOn = false;
     let audioOn = false;

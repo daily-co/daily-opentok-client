@@ -1,6 +1,6 @@
 import { OTError, SubscriberProperties } from "@opentok/client";
 import { createOrUpdateMedia, Dimensions, Tracks } from "../shared/media";
-import { toPixelDimensions } from "../shared/utils";
+import { toCSSDimensions } from "../shared/utils";
 
 export function addOrUpdateMedia(
   sessionID: string,
@@ -16,8 +16,8 @@ export function addOrUpdateMedia(
   if (properties && typeof properties !== "function") {
     const w = properties.width;
     const h = properties.height;
-    if (w) dimensions.width = toPixelDimensions(w);
-    if (h) dimensions.height = toPixelDimensions(h);
+    if (w) dimensions.width = toCSSDimensions(w);
+    if (h) dimensions.height = toCSSDimensions(h);
   }
   const videoData = createOrUpdateMedia(sessionID, mediaTracks, dimensions);
   if (videoData.isNew) {

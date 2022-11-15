@@ -6,13 +6,13 @@ import {
   SubscriberProperties,
   PublisherProperties,
 } from "@opentok/client";
-import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Publisher } from "../publisher/Publisher";
 import { Subscriber } from "../subscriber/Subscriber";
 import OT from "../index";
 import { DailyEventHandler } from "../session/DailyEventHandler";
 import { errNotImplemented } from "../shared/errors";
+import { getOrCreateCallObject } from "../shared/utils";
 
 interface SessionCollection {
   length: () => number;
@@ -195,17 +195,10 @@ export class Session extends OTEventEmitter<{
     return localPublisher;
   }
   connect(token: string, callback: (error?: OTError) => void): void {
-    window.call =
-      window.call ??
-      Daily.createCallObject({
-        subscribeToTracksAutomatically: false,
-        dailyConfig: {
-          experimentalChromeVideoMuteLightOff: true,
-        },
-      });
+    const call = getOrCreateCallObject();
 
     const eh = this.eventHandler;
-    window.call
+    call
       .on("error", (dailyEvent) => {
         eh.onFatalError(dailyEvent);
       })
@@ -224,6 +217,14 @@ export class Session extends OTEventEmitter<{
           return;
         }
         // TODO(jamsea): emit opentok event
+      })
+      .on("participant-joined", (dailyEvent) => {
+        if (!dailyEvent) return;
+        eh.onParticipantJoined(dailyEvent.participant);
+      })
+      .on("participant-left", (dailyEvent) => {
+        if (!dailyEvent) return;
+        eh.onParticipantLeft(dailyEvent);
       })
       .join({ url: this.sessionId, token })
       .then((dailyEvent) => {
@@ -249,6 +250,8 @@ export class Session extends OTEventEmitter<{
       });
   }
 
+  // subscribe() subscribes creates a new Subscriber
+  // and renders their video/audio.
   subscribe(
     stream: Stream,
     targetElement?: string | HTMLElement,
@@ -268,13 +271,12 @@ export class Session extends OTEventEmitter<{
       callback
     ));
 
+    // If target element does not exist, error out
     if (!targetElement) {
       const err = new Error("No target element");
       completionHandler(err);
       throw err;
     }
-
-    const { streamId } = stream;
 
     const root =
       targetElement instanceof HTMLElement
@@ -298,20 +300,8 @@ export class Session extends OTEventEmitter<{
       properties
     );
 
-    const eh = this.eventHandler;
-    // Set up Daily call object event listeners.
-    call
-      .on("participant-joined", (dailyEvent) => {
-        if (!dailyEvent) return;
-
-        eh.onParticipantJoined(dailyEvent.participant);
-      })
-      .on("participant-left", (dailyEvent) => {
-        if (!dailyEvent) return;
-
-        eh.onParticipantLeft(dailyEvent);
-      });
-
+    // Subscribe to the user's tracks
+    const { streamId } = stream;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (call.participants().local?.session_id !== streamId) {
       call.updateParticipant(streamId, {

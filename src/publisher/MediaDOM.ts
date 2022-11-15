@@ -1,6 +1,5 @@
 import { DailyParticipant } from "@daily-co/daily-js";
 import { Stream } from "@opentok/client";
-import { toPixelDimensions } from "../shared/utils";
 import {
   createOrUpdateMedia,
   Dimensions,
@@ -8,6 +7,7 @@ import {
 } from "../shared/media";
 import { InsertMode, Publisher } from "./Publisher";
 import { errNotImplemented } from "../shared/errors";
+import { toCSSDimensions } from "../shared/utils";
 
 // updateMediaDOM() updates the DOM element(s) associated
 // with the given participant's media tracks.
@@ -31,8 +31,8 @@ export function updateMediaDOM(
   } as Dimensions;
   const w = publisher.width;
   const h = publisher.height;
-  if (w) dimensions.width = toPixelDimensions(w);
-  if (h) dimensions.height = toPixelDimensions(h);
+  if (w) dimensions.width = toCSSDimensions(w);
+  if (h) dimensions.height = toCSSDimensions(h);
 
   const sessionID = participant.session_id;
 
@@ -54,6 +54,8 @@ export function updateMediaDOM(
   return videoData.video;
 }
 
+// attachDOM() attaches the given video element to the
+// provided root.
 function attachDOM(
   root: HTMLElement,
   videoEl: HTMLVideoElement,

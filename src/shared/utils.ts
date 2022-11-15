@@ -11,7 +11,10 @@ export function getOrCreateCallObject(): DailyCall {
   return window.call;
 }
 
-export function toPixelDimensions(num: number | string): string {
+// toCSSDimensions() converts given number or string into
+// a CSS value. If the value is a number, it is converted
+// to a string and a "px" suffix is added.
+export function toCSSDimensions(num: number | string): string {
   if (typeof num === "string") {
     return num;
   } else if (typeof num === "number") {
