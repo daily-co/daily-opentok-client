@@ -494,21 +494,23 @@ export class Session extends OTEventEmitter<{
             videoEl.style.height = properties.height?.toString() ?? "";
           }
 
-          const videoElementCreatedEvent: OT.Event<
-            "videoElementCreated",
-            Subscriber
-          > & {
-            element: HTMLVideoElement | HTMLObjectElement;
-          } = {
-            type: "videoElementCreated",
-            element: videoEl,
-            target: subscriber,
-            cancelable: true,
-            isDefaultPrevented: () => false,
-            preventDefault: () => false,
-          };
+          if (!isLocal) {
+            const videoElementCreatedEvent: OT.Event<
+              "videoElementCreated",
+              Subscriber
+            > & {
+              element: HTMLVideoElement | HTMLObjectElement;
+            } = {
+              type: "videoElementCreated",
+              element: videoEl,
+              target: subscriber,
+              cancelable: true,
+              isDefaultPrevented: () => false,
+              preventDefault: () => false,
+            };
 
-          subscriber.ee.emit("videoElementCreated", videoElementCreatedEvent);
+            subscriber.ee.emit("videoElementCreated", videoElementCreatedEvent);
+          }
 
           if (root) {
             root.appendChild(videoEl);
