@@ -3,8 +3,8 @@
 import { DailyParticipant } from "@daily-co/daily-js";
 import { OTError, SubscriberProperties } from "@opentok/client";
 import { EventEmitter } from "stream";
-import { addOrUpdateMedia, removeParticipantMedia } from "./MediaDOM";
-import { getParticipantTracks } from "../utils";
+import { addOrUpdateMedia } from "./MediaDOM";
+import { getParticipantTracks, removeParticipantMedia } from "../shared/media";
 
 export class DailyEventHandler {
   private ee: EventEmitter;
@@ -50,18 +50,6 @@ export class DailyEventHandler {
   onParticipantLeft(sessionID: string) {
     if (removeParticipantMedia(sessionID)) {
       this.ee.emit("destroyed");
-    }
-  }
-
-  onLeftMeeting() {
-    const videos = document.getElementsByTagName("video");
-
-    for (const video of videos) {
-      if (video.id.includes("daily-video-")) {
-        video.srcObject = null;
-        video.remove();
-        this.ee.emit("destroyed");
-      }
     }
   }
 }

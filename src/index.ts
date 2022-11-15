@@ -7,8 +7,7 @@ import {
 import Daily from "@daily-co/daily-js";
 import { initSession } from "./session/Init";
 import { initPublisher } from "./publisher/Init";
-
-import { dailyUndefinedError, getOrCreateCallObject } from "./utils";
+import { dailyUndefinedError, getOrCreateCallObject } from "./shared/utils";
 
 function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void

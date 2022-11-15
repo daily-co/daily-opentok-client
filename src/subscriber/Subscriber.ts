@@ -8,7 +8,7 @@ import {
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
-import { getOrCreateCallObject, notImplemented } from "../utils";
+import { getOrCreateCallObject, notImplemented } from "../shared/utils";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { DailyEventHandler } from "./DailyEventHandler";
 import {
@@ -59,7 +59,7 @@ export class Subscriber extends OTEventEmitter<{
   eventHandler: DailyEventHandler;
 
   constructor(
-    targetElement: HTMLElement,
+    rootElement: HTMLElement,
     options: { stream?: Stream; id?: string } = {},
     completionHandler: () => void = () => {
       return void 0;
@@ -71,7 +71,7 @@ export class Subscriber extends OTEventEmitter<{
   ) {
     super();
 
-    this.element = targetElement;
+    this.element = rootElement;
     this.id = options.id;
     this.stream = options.stream;
     this.eventHandler = new DailyEventHandler(this.ee);
@@ -82,16 +82,13 @@ export class Subscriber extends OTEventEmitter<{
         if (!event?.participant) return;
         this.eventHandler.onTrackStarted(
           event.participant,
-          targetElement,
+          rootElement,
           properties
         );
       })
       .on("participant-left", (event?: DailyEventObjectParticipantLeft) => {
         if (!event?.participant) return;
         this.eventHandler.onParticipantLeft(event.participant.session_id);
-      })
-      .on("left-meeting", () => {
-        this.eventHandler.onLeftMeeting();
       });
     completionHandler();
   }

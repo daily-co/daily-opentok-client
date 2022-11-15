@@ -11,12 +11,13 @@ import {
   VideoFilter,
 } from "@opentok/client";
 import { OTEventEmitter } from "../OTEventEmitter";
+import { Session } from "../session/Session";
+import { removeAllParticipantMedias } from "../shared/media";
 import {
   dailyUndefinedError,
   getOrCreateCallObject,
   notImplemented,
-} from "../utils";
-import { Session } from "../session/Session";
+} from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
@@ -92,14 +93,26 @@ export class Publisher extends OTEventEmitter<{
           this.accessAllowed = false;
         }
       })
-      .on("participant-updated", (dailyEvent) => {
-        if (!dailyEvent) {
+      .on("track-started", (dailyEvent) => {
+        if (!dailyEvent?.participant) {
           return;
         }
 
         const { participant } = dailyEvent;
         // LIZA todo: do we need completion handler here?
         updateMediaDOM(participant, this, rootElementID);
+      })
+      .on("track-stopped", (dailyEvent) => {
+        if (!dailyEvent?.participant) {
+          return;
+        }
+
+        const { participant } = dailyEvent;
+        // LIZA todo: do we need completion handler here?
+        updateMediaDOM(participant, this, rootElementID);
+      })
+      .on("left-meeting", () => {
+        removeAllParticipantMedias();
       });
 
     const localParticipant = call.participants().local;

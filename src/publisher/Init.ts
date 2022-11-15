@@ -1,8 +1,9 @@
 import { OTError } from "@opentok/client";
 import { Publisher } from "./Publisher";
-import { dailyUndefinedError, getOrCreateCallObject } from "../utils";
 import { updateMediaDOM } from "./MediaDOM";
+import { dailyUndefinedError, getOrCreateCallObject } from "../shared/utils";
 
+// initPublisher() sets up and returns a Publisher to the caller
 export function initPublisher(
   targetElement?: string | HTMLElement | undefined,
   properties?: OT.PublisherProperties | undefined,

@@ -10,9 +10,9 @@ import Daily from "@daily-co/daily-js";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Publisher } from "../publisher/Publisher";
 import { Subscriber } from "../subscriber/Subscriber";
-import { notImplemented } from "../utils";
 import OT from "../index";
 import { DailyEventHandler } from "../session/DailyEventHandler";
+import { notImplemented } from "../shared/utils";
 
 interface SessionCollection {
   length: () => number;
