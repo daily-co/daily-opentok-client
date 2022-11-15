@@ -2,23 +2,23 @@
 import "./example.css";
 import NetworkTest from "opentok-network-test-js";
 
-// import * as OT from "@opentok/client";
-// const {
-//   VITE_TOKBOX_API_KEY: apiKey = "",
-//   VITE_TOKBOX_SESSION_ID: sessionId = "",
-//   VITE_TOKBOX_TOKEN: token = "",
-// } = import.meta.env;
-// OT.setLogLevel(4);
+import * as OT from "@opentok/client";
+const {
+  VITE_TOKBOX_API_KEY: apiKey = "",
+  VITE_TOKBOX_SESSION_ID: sessionId = "",
+  VITE_TOKBOX_TOKEN: token = "",
+} = import.meta.env;
+OT.setLogLevel(4);
 
-import OT from "./";
-import { Publisher } from "./Publisher";
+// import OT from "./";
+// import { Publisher } from "./Publisher";
 
-const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
-// apiKey can be blank, Daily's API key is not needed for the shim to work
-const apiKey = "";
-const sessionId = "https://hush.daily.co/sfu";
-const token =
-  typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
+// const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
+// // apiKey can be blank, Daily's API key is not needed for the shim to work
+// const apiKey = "";
+// const sessionId = "https://hush.daily.co/sfu";
+// const token =
+//   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
 // @ts-expect-error OT isn't a built in method on the window object
 window.OT = OT;
@@ -34,7 +34,7 @@ const cycleVideoBtn = document.querySelector(
   "#cycle-video-btn"
 ) as HTMLButtonElement;
 
-let publisher: Publisher | null = null;
+let publisher: OT.Publisher | null = null;
 
 function handleError(error: unknown) {
   if (error) {
@@ -57,8 +57,8 @@ session.on("streamCreated", function streamCreated(event) {
     undefined,
     {
       // insertMode: "append",
-      width: "100%",
-      height: "100%",
+      // width: "100%",
+      // height: "100%",
       insertDefaultUI: false,
     },
     handleError
