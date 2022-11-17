@@ -71,6 +71,8 @@ export class Publisher extends OTEventEmitter<{
     height,
     insertMode,
     insertDefaultUI = true,
+    videoSource,
+    audioSource,
   }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
@@ -94,29 +96,14 @@ export class Publisher extends OTEventEmitter<{
       window.call ??
       Daily.createCallObject({
         subscribeToTracksAutomatically: false,
+        videoSource: videoSource ?? undefined,
+        audioSource: audioSource ?? undefined,
         dailyConfig: {
           experimentalChromeVideoMuteLightOff: true,
         },
       });
 
     window.call
-      .on("started-camera", () => {
-        this.accessAllowed = true;
-        this.ee.emit("accessAllowed");
-        console.debug(
-          "accessAllowed Count",
-          this.ee.listenerCount("accessAllowed"),
-          this.ee.listeners("accessAllowed")
-        );
-      })
-      .on("camera-error", (error) => {
-        if (!error) return;
-
-        if (error.errorMsg.errorMsg === "not allowed") {
-          this.ee.emit("accessDenied");
-          this.accessAllowed = false;
-        }
-      })
       .on("joined-meeting", (dailyEvent) => {
         if (!dailyEvent) return;
 
@@ -363,7 +350,7 @@ export class Publisher extends OTEventEmitter<{
         creationTime,
         // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
         // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-        data: "",
+        data: "{}",
       },
     };
     this.stream = stream;

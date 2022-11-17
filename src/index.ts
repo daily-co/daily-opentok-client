@@ -42,9 +42,14 @@ function checkSystemRequirements(): number {
 }
 
 function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
-  if (!window.call) {
-    dailyUndefinedError();
-  }
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: false,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
 
   return window.call.enumerateDevices().then(({ devices }) => {
     const device = devices.find((device) => device.kind === "audiooutput");
@@ -219,6 +224,8 @@ function initPublisher(
     insertMode: properties?.insertMode,
     showControls: properties?.showControls ?? false,
     insertDefaultUI: properties?.insertDefaultUI ?? true,
+    videoSource: properties?.videoSource,
+    audioSource: properties?.audioSource,
   });
 
   publisher.on("videoElementCreated", ({ element }) => {
@@ -291,32 +298,34 @@ function initPublisher(
       completionHandler(new Error("Daily error"));
       return publisher;
     case "new":
-      window.call
-        .startCamera()
-        .then(() => {
-          completionHandler();
-        })
-        .catch((err) => {
-          completionHandler(new Error("Failed to start camera"));
-          console.error("startCamera error: ", err);
-        });
-      break;
     case "loading":
     case "loaded":
     case "joining-meeting":
-    case "joined-meeting":
-      console.debug(window.call.meetingState());
-      navigator.mediaDevices
-        .getUserMedia({
-          audio: true,
-          video: true,
+      if (window.call.participants().local) {
+        break;
+      }
+      window.call
+        .startCamera({
+          url: "https://hush.daily.co/nooks",
         })
-        .then(() => {
+        .then((f) => {
+          console.log("start camera device info:", f);
           completionHandler();
+          publisher.accessAllowed = true;
+          publisher.ee.emit("accessAllowed");
         })
         .catch((e) => {
+          console.error(e);
           completionHandler(e as OTError);
+          publisher.accessAllowed = false;
+          publisher.ee.emit("accessDenied");
         });
+      break;
+    case "joined-meeting":
+      window.call.setLocalVideo(properties?.publishVideo ?? false);
+      window.call.setLocalAudio(properties?.publishAudio ?? false);
+      console.debug(window.call.meetingState());
+      // completionHandler(); // maybe?
       break;
     case "left-meeting":
     default:
