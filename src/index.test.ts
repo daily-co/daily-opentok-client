@@ -2,6 +2,10 @@ import { beforeAll, describe, expect, test, jest } from "@jest/globals";
 import { FakeMediaStreamTrack } from "fake-mediastreamtrack";
 import OT from "./index";
 
+if (process.env.DEBUG === "jest") {
+  jest.setTimeout(5 * 60 * 1000);
+}
+
 const mockGetUserMedia = jest.fn(async () => {
   return new Promise<MediaStream>((resolve) => {
     resolve({
@@ -131,5 +135,57 @@ describe("static methods", () => {
     });
     expect(result).toBeDefined();
     expect(result.id).toEqual("DKeEJiV39EtB8hsbyCN57nuc4krQAragOQd0");
+  });
+
+  test.only("OT.initPublisher() insertDefaultUI: false", (done) => {
+    const publisher = OT.initPublisher(
+      undefined,
+      {
+        width: "100%",
+        height: "100%",
+        insertDefaultUI: false,
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+        expect(publisher.id).toBeUndefined();
+        expect(publisher.element).toBeUndefined();
+        done();
+      }
+    );
+  });
+
+  test("OT.initPublisher() insertDefaultUI: true", (done) => {
+    const publisher = OT.initPublisher(
+      "publisher",
+      {
+        insertMode: "append",
+        width: "100%",
+        height: "100%",
+        insertDefaultUI: true,
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+        expect(publisher.id).toEqual("daily-root");
+        expect(publisher.element).toBeDefined();
+        done();
+      }
+    );
+  });
+
+  test("OT.initPublisher() insertDefaultUI: undefined", (done) => {
+    const publisher = OT.initPublisher(
+      "publisher",
+      {
+        insertMode: "append",
+        width: "100%",
+        height: "100%",
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+        expect(publisher.id).toEqual("daily-root");
+        expect(publisher.element).toBeDefined();
+        done();
+      }
+    );
   });
 });

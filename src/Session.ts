@@ -122,7 +122,7 @@ export class Session extends OTEventEmitter<{
     this.connection = {
       connectionId: "local",
       creationTime: new Date().getTime(),
-      data: "",
+      data: "{}",
     };
   }
 
@@ -207,7 +207,7 @@ export class Session extends OTEventEmitter<{
       const connection = {
         connectionId: user_id,
         creationTime,
-        data: "",
+        data: "{}",
       };
 
       const stream: Stream = {
@@ -279,7 +279,7 @@ export class Session extends OTEventEmitter<{
           creationTime,
           // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
           // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-          data: "",
+          data: "{}",
         };
 
         const connectionCreatedEvent: Event<"connectionCreated", Session> & {
@@ -354,14 +354,17 @@ export class Session extends OTEventEmitter<{
 
         switch (event) {
           case "interrupted":
-            this.ee.emit("sessionReconnecting", tokboxEvent);
-            this.reconnecting = true;
+            console.log("INTERRUPTED", event);
+            // this.ee.emit("sessionReconnecting", tokboxEvent);
+            // this.reconnecting = true;
             break;
           case "connected":
-            if (this.reconnecting) {
-              this.ee.emit("sessionReconnected", tokboxEvent);
-              this.reconnecting = false;
-            }
+            console.log("CONNECTED", event);
+
+            // if (this.reconnecting) {
+            //   this.ee.emit("sessionReconnected", tokboxEvent);
+            //   this.reconnecting = false;
+            // }
             break;
           default:
             break;
@@ -429,29 +432,29 @@ export class Session extends OTEventEmitter<{
       };
     }
 
-    if (!targetElement) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
-    }
-
     const { streamId } = stream;
 
-    const root =
-      targetElement instanceof HTMLElement
-        ? targetElement
-        : document.getElementById(targetElement);
+    let root: HTMLElement | undefined | null = undefined;
 
-    if (!root) {
-      const err = new Error("No target element");
-      completionHandler(err);
-      throw err;
+    if (typeof targetElement === "string") {
+      root = document.getElementById(targetElement);
+      if (!root) {
+        throw new Error(`No element with id ${targetElement}`);
+      }
     }
+
+    if (targetElement instanceof HTMLElement) {
+      root = targetElement;
+    }
+
+    // If there's no UI do something
 
     const subscriber = new Subscriber(root, {
       stream,
-      id: typeof targetElement === "string" ? targetElement : targetElement.id,
+      id: root?.id,
     });
+
+    const { insertDefaultUI = true } = properties ?? {};
 
     window.call
       .on("track-started", (dailyEvent) => {
@@ -479,12 +482,10 @@ export class Session extends OTEventEmitter<{
         const { session_id } = participant;
 
         // Retrieve the existing video DOM element for this participant
-        const existingVideoElement = document.getElementById(
-          getVideoTagID(session_id)
-        );
+        const existingVideoElement = subscriber.videoElement;
 
         // This will be the element we work with to retrieve/set tracks
-        let videoEl: HTMLVideoElement;
+        let videoEl: HTMLVideoElement | null = null;
 
         if (!existingVideoElement) {
           // If video DOM element does not already exist, create a new one
@@ -495,7 +496,30 @@ export class Session extends OTEventEmitter<{
             videoEl.style.width = properties.width?.toString() ?? "";
             videoEl.style.height = properties.height?.toString() ?? "";
           }
-          root.appendChild(videoEl);
+
+          if (!isLocal && !insertDefaultUI) {
+            const videoElementCreatedEvent: OT.Event<
+              "videoElementCreated",
+              Subscriber
+            > & {
+              element: HTMLVideoElement | HTMLObjectElement;
+            } = {
+              type: "videoElementCreated",
+              element: videoEl,
+              target: subscriber,
+              cancelable: true,
+              isDefaultPrevented: () => false,
+              preventDefault: () => false,
+            };
+
+            subscriber.videoElement = videoEl;
+
+            subscriber.ee.emit("videoElementCreated", videoElementCreatedEvent);
+          }
+
+          if (root) {
+            root.appendChild(videoEl);
+          }
         } else if (existingVideoElement instanceof HTMLVideoElement) {
           videoEl = existingVideoElement;
         } else {
@@ -560,7 +584,7 @@ export class Session extends OTEventEmitter<{
         const connection = {
           connectionId: user_id,
           creationTime,
-          data: "",
+          data: "{}",
         };
 
         let connectionDefaultPrevented = false;

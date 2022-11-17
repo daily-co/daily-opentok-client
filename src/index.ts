@@ -42,9 +42,14 @@ function checkSystemRequirements(): number {
 }
 
 function getActiveAudioOutputDevice(): Promise<AudioOutputDevice> {
-  if (!window.call) {
-    dailyUndefinedError();
-  }
+  window.call =
+    window.call ??
+    Daily.createCallObject({
+      subscribeToTracksAutomatically: false,
+      dailyConfig: {
+        experimentalChromeVideoMuteLightOff: true,
+      },
+    });
 
   return window.call.enumerateDevices().then(({ devices }) => {
     const device = devices.find((device) => device.kind === "audiooutput");
@@ -218,6 +223,57 @@ function initPublisher(
     height: properties?.height ?? "",
     insertMode: properties?.insertMode,
     showControls: properties?.showControls ?? false,
+    insertDefaultUI: properties?.insertDefaultUI ?? true,
+    videoSource: properties?.videoSource,
+    audioSource: properties?.audioSource,
+  });
+
+  publisher.on("videoElementCreated", ({ element }) => {
+    if (properties?.insertDefaultUI === false) {
+      return;
+    }
+
+    let target = null;
+    if (!targetElement) {
+      target = document.getElementsByTagName("body")[0];
+    }
+
+    if (typeof targetElement === "string") {
+      target = document.getElementById(targetElement);
+
+      if (!target) {
+        throw new Error(`Target element ${targetElement} not found.`);
+      }
+    }
+
+    if (!target) {
+      console.error("No target element found.");
+      return;
+    }
+
+    if (!publisher.element) {
+      console.error("No publisher element", publisher);
+      return;
+    }
+
+    // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
+    switch (properties?.insertMode) {
+      case "append":
+        target.appendChild(publisher.element);
+        publisher.element.appendChild(element);
+        break;
+      case "replace":
+        notImplemented("'replace' insert mode");
+        break;
+      case "before":
+        notImplemented("'before' insert mode");
+        break;
+      case "after":
+        notImplemented("'after' insert mode");
+        break;
+      default:
+        break;
+    }
   });
 
   const completionHandler =
@@ -226,14 +282,6 @@ function initPublisher(
       : () => {
           // empty
         };
-
-  if (!targetElement) {
-    completionHandler(new Error("No target element provided"));
-    return publisher;
-  }
-
-  const dailyElementId =
-    targetElement instanceof HTMLElement ? targetElement.id : targetElement;
 
   window.call =
     window.call ??
@@ -244,80 +292,45 @@ function initPublisher(
       },
     });
 
-  window.call.on("participant-updated", (dailyEvent) => {
-    if (!dailyEvent) {
-      return;
-    }
-
-    const { participant } = dailyEvent;
-    try {
-      updateLocalVideoDOM(participant, dailyElementId, publisher);
-    } catch (e) {
-      completionHandler(e as OTError);
-    }
-  });
-
   switch (window.call.meetingState()) {
-    case "new":
-      window.call
-        .startCamera()
-        .then(() => {
-          completionHandler();
-        })
-        .catch((err) => {
-          completionHandler(new Error("Failed to start camera"));
-          console.error("startCamera error: ", err);
-        });
-      break;
-    case "loading":
-      console.debug("loading");
-      break;
-    case "loaded":
-      console.debug("loaded");
-      break;
-    case "joining-meeting":
-      console.debug("joining-meeting");
-      break;
-    case "joined-meeting":
-      console.debug("joined-meeting");
-      break;
-    case "left-meeting":
-      console.debug("left-meeting");
-      break;
     case "error":
       console.debug("error");
       completionHandler(new Error("Daily error"));
       return publisher;
-    default:
+    case "new":
+    case "loading":
+    case "loaded":
+    case "joining-meeting":
+      if (window.call.participants().local) {
+        break;
+      }
+      window.call
+        .startCamera({
+          url: "https://hush.daily.co/nooks",
+        })
+        .then((f) => {
+          console.log("start camera device info:", f);
+          completionHandler();
+          publisher.accessAllowed = true;
+          publisher.ee.emit("accessAllowed");
+        })
+        .catch((e) => {
+          console.error(e);
+          completionHandler(e as OTError);
+          publisher.accessAllowed = false;
+          publisher.ee.emit("accessDenied");
+        });
       break;
-  }
-
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
-    .then((res) => {
-      console.log(res);
-      completionHandler();
-    })
-    .catch((e) => {
-      completionHandler(e as OTError);
-    });
-
-  const localParticipant = window.call.participants().local;
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-  const videoOn = localParticipant?.video;
-  const audioOn = localParticipant?.audio;
-  /* eslint-enable */
-  if (videoOn || audioOn) {
-    updateLocalVideoDOM(localParticipant, dailyElementId, publisher);
-  }
-  if (!videoOn) {
-    window.call.setLocalVideo(true);
-  }
-  if (!audioOn) {
-    window.call.setLocalAudio(true);
+    case "joined-meeting":
+      window.call.setLocalVideo(properties?.publishVideo ?? false);
+      window.call.setLocalAudio(properties?.publishAudio ?? false);
+      console.debug(window.call.meetingState());
+      // completionHandler(); // maybe?
+      break;
+    case "left-meeting":
+    default:
+      console.debug(window.call.meetingState());
+      break;
   }
 
   return publisher;
@@ -355,108 +368,6 @@ function registerScreenSharingExtension(
 ) {
   console.debug("registerScreenSharingExtension: ", kind, id, version);
   return;
-}
-
-function updateLocalVideoDOM(
-  participant: DailyParticipant,
-  dailyElementId: string,
-  publisher: Publisher
-) {
-  const {
-    session_id,
-    audio: hasAudio,
-    video: hasVideo,
-    tracks,
-    joined_at = new Date(),
-    user_id,
-    local,
-  } = participant;
-  const creationTime = joined_at.getTime();
-
-  const settings = tracks.video.track?.getSettings() ?? {};
-  const { frameRate = 0, height = 0, width = 0 } = settings;
-  const { video } = getParticipantTracks(participant);
-
-  if (!local || !video) {
-    return;
-  }
-
-  const stream: Stream = {
-    streamId: session_id,
-    frameRate,
-    hasAudio,
-    hasVideo,
-    // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-    name: "",
-    videoDimensions: {
-      height,
-      width,
-    },
-    videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-    creationTime,
-    connection: {
-      connectionId: user_id, // TODO
-      creationTime,
-      // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-      // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-      data: "",
-    },
-  };
-  publisher.stream = stream;
-
-  let root = document.getElementById(dailyElementId);
-
-  if (root === null) {
-    root = document.createElement("div");
-    document.body.appendChild(root);
-  }
-
-  const documentVideoElm = document.getElementById(getVideoTagID(session_id));
-
-  if (
-    !(documentVideoElm instanceof HTMLVideoElement) &&
-    documentVideoElm != undefined
-  ) {
-    throw new Error("Video element id is invalid.");
-  }
-
-  const videoEl = documentVideoElm
-    ? documentVideoElm
-    : document.createElement("video");
-
-  if (videoEl.srcObject && "getTracks" in videoEl.srcObject) {
-    const tracks = videoEl.srcObject.getTracks();
-    if (tracks[0].id === video.id) {
-      return;
-    }
-  }
-
-  // TODO(jamsea): handle all insert modes https://tokbox.com/developer/sdks/js/reference/OT.html#initPublisher
-  switch (publisher.insertMode) {
-    case "append":
-      root.appendChild(videoEl);
-      break;
-    case "replace":
-      notImplemented("'replace' insert mode");
-      break;
-    case "before":
-      notImplemented("'before' insert mode");
-      break;
-    case "after":
-      notImplemented("'after' insert mode");
-      break;
-    default:
-      break;
-  }
-
-  videoEl.style.width = publisher.width ?? "";
-  videoEl.style.height = publisher.height ?? "";
-  videoEl.srcObject = new MediaStream([video]);
-
-  videoEl.id = getVideoTagID(session_id);
-  videoEl.play().catch((e) => {
-    console.error(e);
-  });
 }
 
 export default {

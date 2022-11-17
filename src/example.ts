@@ -51,16 +51,26 @@ session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event.stream);
   // This is daily remote user stuff
   // if (!window.chrome) {
-  session.subscribe(
+  const subscriber = session.subscribe(
     event.stream,
-    "subscriber",
+    // "subscriber",
+    undefined,
     {
-      insertMode: "append",
-      width: "100%",
-      height: "100%",
+      // insertMode: "append",
+      // width: "100%",
+      // height: "100%",
+      insertDefaultUI: false,
     },
     handleError
   );
+
+  //@ts-expect-error window stuff
+  window.sub = subscriber;
+
+  subscriber.on("videoElementCreated", ({ element }) => {
+    const elm = document.getElementById("subscriber");
+    elm?.appendChild(element);
+  });
   // }
 });
 
@@ -106,23 +116,38 @@ OT.getUserMedia()
 publishBtn.addEventListener("click", () => {
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
-    "publisher",
+    // "publisher",
+    undefined,
     {
-      insertMode: "append",
+      // insertMode: "append",
       width: "100%",
       height: "100%",
-      audioSource: audioSelector.value,
-      videoSource: videoSelector.value,
+      audioSource: undefined,
+      frameRate: 15,
+      insertDefaultUI: false,
+      // audioSource: audioSelector.value,
+      // videoSource: videoSelector.value,
+      publishAudio: true,
+      publishVideo: true,
+      resolution: "320x240",
+      videoSource: undefined,
     },
     (err) => {
       if (err) {
         console.error("Publish error ", err);
       } else {
-        setupDeviceSwitching();
-        setupAudioLevelMeter();
+        // setupDeviceSwitching();
+        // setupAudioLevelMeter();
       }
     }
   );
+
+  publisher.on("videoElementCreated", ({ element }) => {
+    const elm = document.getElementById("publisher");
+    elm?.appendChild(element);
+  });
+
+  console.log(publisher);
 });
 
 // Allow you to switch to different cameras and microphones using

@@ -51,8 +51,13 @@ export class Subscriber extends OTEventEmitter<{
   id?: string;
   stream?: Stream;
 
+  /**
+   * @deprecated do not use this. Listen to the `videoElementCreated` event instead.
+   */
+  public videoElement: HTMLVideoElement | HTMLObjectElement | undefined;
+
   constructor(
-    targetElement: HTMLElement,
+    targetElement?: HTMLElement,
     options: { stream?: Stream; id?: string } = {},
     completionHandler: () => void = () => {
       return void 0;
