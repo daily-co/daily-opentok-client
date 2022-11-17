@@ -4,12 +4,11 @@ import {
   OTError,
   ScreenSharingCapabilityResponse,
 } from "@opentok/client";
-import Daily, { DailyParticipant } from "@daily-co/daily-js";
+import Daily from "@daily-co/daily-js";
 import { initSession } from "./session/Init";
 import { initPublisher } from "./publisher/Init";
 import { getOrCreateCallObject } from "./shared/utils";
 import { errDailyUndefined } from "./shared/errors";
-import { Publisher } from "./publisher/Publisher";
 
 function checkScreenSharingCapability(
   callback: (response: ScreenSharingCapabilityResponse) => void

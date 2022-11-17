@@ -70,7 +70,14 @@ export class Publisher extends OTEventEmitter<{
 
   private _videoElement: HTMLVideoElement | null;
   constructor(
-    { width, height, insertMode, insertDefaultUI = true }: PublisherProperties,
+    {
+      width,
+      height,
+      insertMode,
+      insertDefaultUI = true,
+      videoSource,
+      audioSource,
+    }: PublisherProperties,
     rootElementID?: string
   ) {
     super();
@@ -389,7 +396,7 @@ export class Publisher extends OTEventEmitter<{
         creationTime,
         // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
         // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-        data: "",
+        data: "{}",
       },
     };
     this.stream = stream;

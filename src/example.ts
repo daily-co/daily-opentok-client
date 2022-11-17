@@ -61,6 +61,14 @@ session.on("streamCreated", function streamCreated(event) {
     },
     handleError
   );
+
+  //@ts-expect-error window stuff
+  window.sub = subscriber;
+
+  subscriber.on("videoElementCreated", ({ element }) => {
+    const elm = document.getElementById("subscriber");
+    elm?.appendChild(element);
+  });
   // }
 });
 
@@ -118,8 +126,8 @@ publishBtn.addEventListener("click", () => {
       if (err) {
         console.error("Publish error ", err);
       } else {
-        setupDeviceSwitching();
-        setupAudioLevelMeter();
+        // setupDeviceSwitching();
+        // setupAudioLevelMeter();
       }
     }
   );
