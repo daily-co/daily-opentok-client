@@ -74,7 +74,6 @@ export class Subscriber extends OTEventEmitter<{
 
     this.element = rootElement;
     this.id = options.id;
-    this.stream = options.stream;
     this.eventHandler = new DailyEventHandler(this.ee);
     const call = getOrCreateCallObject();
 

@@ -34,8 +34,6 @@ export function initPublisher(
   // with an error
   if (!targetElement) {
     completionHandler(new Error("No target element provided"));
-    // TODO: [Liza] Should we throw an exception here instead of
-    // returning what seems to be an incomplete publisher?
     return publisher;
   }
 
@@ -44,11 +42,6 @@ export function initPublisher(
   // Address current meeting state
   switch (call.meetingState()) {
     case "new":
-      // TODO: [Liza] This should be failing because
-      // afaik `startCamera()` requires a URL. What is
-      // the intent of this call? Publisher instantiation
-      // already enabled video/audio, is that enough?
-      // Docs: https://docs.daily.co/reference/rn-daily-js/instance-methods/start-camera#main
       call
         .startCamera()
         .then(() => {
@@ -96,6 +89,5 @@ export function initPublisher(
       completionHandler(e as OTError);
     });
 
-  // TODO: [Liza] Should we run `completionHandler()` here?
   return publisher;
 }

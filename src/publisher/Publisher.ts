@@ -15,8 +15,10 @@ import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
 import { errDailyUndefined, errNotImplemented } from "../shared/errors";
 import { removeAllParticipantMedias } from "../shared/media";
+import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
+import { getStreamCreatedEvent } from "./OTEvents";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
 
@@ -106,8 +108,9 @@ export class Publisher extends OTEventEmitter<{
         console.debug("publisher track started");
 
         const { participant } = dailyEvent;
-        // LIZA todo: do we need completion handler here?
         updateMediaDOM(participant, this, rootElementID);
+        const stream = createStream(participant);
+        this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
       })
       .on("track-stopped", (dailyEvent) => {
         if (!dailyEvent?.participant) {
@@ -115,7 +118,6 @@ export class Publisher extends OTEventEmitter<{
         }
         console.debug("publisher track stopped");
         const { participant } = dailyEvent;
-        // LIZA todo: do we need completion handler here?
         updateMediaDOM(participant, this, rootElementID);
       })
       .on("left-meeting", () => {
