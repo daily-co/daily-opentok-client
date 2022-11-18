@@ -51,7 +51,7 @@ session.on("streamCreated", function streamCreated(event) {
   console.log("[streamCreated] index.ts: ", event.stream);
   // This is daily remote user stuff
   // if (!window.chrome) {
-  session.subscribe(
+  const subscriber = session.subscribe(
     event.stream,
     "subscriber",
     {

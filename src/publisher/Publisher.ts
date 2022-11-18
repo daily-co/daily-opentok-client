@@ -1,4 +1,4 @@
-import { DailyCall, DailyParticipant } from "@daily-co/daily-js";
+import { DailyCall } from "@daily-co/daily-js";
 import {
   Event,
   OTError,
@@ -21,10 +21,6 @@ import { updateMediaDOM } from "./MediaDOM";
 import { getStreamCreatedEvent } from "./OTEvents";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
-
-type StreamCreatedEvent = Event<"streamCreated", Publisher> & {
-  stream: Stream;
-};
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
@@ -99,6 +95,28 @@ export class Publisher extends OTEventEmitter<{
     }
 
     const call = getOrCreateCallObject();
+    call
+      .setInputDevicesAsync({
+        videoSource:
+          videoSource instanceof MediaStreamTrack || videoSource === false
+            ? videoSource
+            : undefined,
+        videoDeviceId:
+          typeof videoSource === "string" || videoSource === false
+            ? videoSource
+            : null,
+        audioSource:
+          audioSource instanceof MediaStreamTrack || audioSource === false
+            ? audioSource
+            : undefined,
+        audioDeviceId:
+          typeof audioSource === "string" || audioSource === false
+            ? audioSource
+            : null,
+      })
+      .catch((err) => {
+        console.error(err);
+      });
     this.setupEventHandlers(call, rootElementID);
     this.enableMedia(call, rootElementID);
   }
@@ -148,21 +166,6 @@ export class Publisher extends OTEventEmitter<{
       .on("left-meeting", () => {
         removeAllParticipantMedias();
       });
-
-    const localParticipant = window.call.participants().local;
-    /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-    const videoOn = localParticipant?.video;
-    const audioOn = localParticipant?.audio;
-    /* eslint-enable */
-    if (videoOn || audioOn) {
-      this.updateLocalVideoDOM(localParticipant, insertDefaultUI);
-    }
-    if (!videoOn) {
-      window.call.setLocalVideo(true);
-    }
-    if (!audioOn) {
-      window.call.setLocalAudio(true);
-    }
   }
 
   // enableMedia() turns on the user's camera and microphone if they
@@ -353,123 +356,5 @@ export class Publisher extends OTEventEmitter<{
    */
   public videoElement(): HTMLVideoElement | null {
     return this._videoElement;
-  }
-
-  private updateLocalVideoDOM(
-    participant: DailyParticipant,
-    insertDefaultUI: boolean
-  ) {
-    const {
-      session_id,
-      audio: hasAudio,
-      video: hasVideo,
-      tracks,
-      joined_at = new Date(),
-      user_id,
-      local,
-    } = participant;
-    const creationTime = joined_at.getTime();
-
-    const settings = tracks.video.track?.getSettings() ?? {};
-    const { frameRate = 0, height = 0, width = 0 } = settings;
-    const { video } = getParticipantTracks(participant);
-
-    if (!local || !video) {
-      return;
-    }
-
-    const stream: Stream = {
-      streamId: session_id,
-      frameRate,
-      hasAudio,
-      hasVideo,
-      // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
-      name: "",
-      videoDimensions: {
-        height,
-        width,
-      },
-      videoType: "camera", // TODO(jamsea): perhaps we emit two events? One for camera and one for screen share?
-      creationTime,
-      connection: {
-        connectionId: user_id, // TODO
-        creationTime,
-        // TODO(jamsea): https://tokbox.com/developer/guides/create-token/ looks like a way to add metadata
-        // I think this could tie into userData(https://github.com/daily-co/pluot-core/pull/5728). If so,
-        data: "{}",
-      },
-    };
-    this.stream = stream;
-
-    let videoElementCreated = false;
-    if (insertDefaultUI) {
-      // TODO(jamsea): do stuff
-    } else {
-      // Make sure this is undefined
-      this.element = undefined;
-    }
-
-    if (!this._videoElement) {
-      this._videoElement = document.createElement("video");
-      this._videoElement.id = getVideoTagID(session_id);
-      this._videoElement.style.width = this.width ?? "";
-      this._videoElement.style.height = this.height ?? "";
-
-      videoElementCreated = true;
-    }
-
-    const documentVideoElm = document.getElementById(getVideoTagID(session_id));
-
-    if (
-      !(documentVideoElm instanceof HTMLVideoElement) &&
-      documentVideoElm != undefined
-    ) {
-      throw new Error("Video element id is invalid.");
-    }
-
-    if (
-      this._videoElement.srcObject &&
-      "getTracks" in this._videoElement.srcObject
-    ) {
-      const tracks = this._videoElement.srcObject.getTracks();
-      if (tracks[0].id === video.id) {
-        return;
-      }
-    }
-
-    this._videoElement.srcObject = new MediaStream([video]);
-    this._videoElement.play().catch((e) => {
-      console.error(e);
-    });
-
-    const videoElementCreatedEvent: OT.Event<
-      "videoElementCreated",
-      Publisher
-    > & {
-      element: HTMLVideoElement | HTMLObjectElement;
-    } = {
-      type: "videoElementCreated",
-      element: this._videoElement,
-      target: this,
-      cancelable: true,
-      isDefaultPrevented: () => false,
-      preventDefault: () => false,
-    };
-
-    // Only fire event if document.createElement("video") was called
-    if (videoElementCreated) {
-      this.ee.emit("videoElementCreated", videoElementCreatedEvent);
-    }
-
-    const streamEvent: StreamCreatedEvent = {
-      type: "streamCreated",
-      isDefaultPrevented: () => false,
-      preventDefault: () => false,
-      target: this,
-      cancelable: true,
-      stream: stream,
-    };
-
-    this.ee.emit("streamCreated", streamEvent);
   }
 }
