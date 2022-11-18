@@ -1,3 +1,4 @@
+import { DailyCall } from "@daily-co/daily-js";
 import {
   Event,
   OTError,
@@ -10,10 +11,16 @@ import {
   VideoDimensionsChangedEvent,
   VideoFilter,
 } from "@opentok/client";
-import Daily from "@daily-co/daily-js";
-import { OTEventEmitter } from "./OTEventEmitter";
-import { dailyUndefinedError, notImplemented } from "./utils";
-import { Session } from "./Session";
+import { OTEventEmitter } from "../OTEventEmitter";
+import { Session } from "../session/Session";
+import { errDailyUndefined, errNotImplemented } from "../shared/errors";
+import { removeAllParticipantMedias } from "../shared/media";
+import { createStream } from "../shared/ot";
+import { getOrCreateCallObject } from "../shared/utils";
+import { updateMediaDOM } from "./MediaDOM";
+import { getStreamCreatedEvent } from "./OTEvents";
+
+export type InsertMode = "replace" | "after" | "before" | "append";
 
 export class Publisher extends OTEventEmitter<{
   accessAllowed: Event<"accessAllowed", Publisher>;
@@ -52,27 +59,31 @@ export class Publisher extends OTEventEmitter<{
   element?: HTMLElement | undefined;
   height?: string;
   id?: string;
-  insertMode?: "replace" | "after" | "before" | "append";
+  insertMode?: InsertMode;
   session?: Session;
   stream?: Stream;
   width?: string;
-  constructor({ width, height, insertMode }: PublisherProperties) {
+  constructor(
+    { width, height, insertMode }: PublisherProperties,
+    rootElementID?: string
+  ) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
 
-    window.call =
-      window.call ??
-      Daily.createCallObject({
-        subscribeToTracksAutomatically: false,
-        dailyConfig: {
-          experimentalChromeVideoMuteLightOff: true,
-        },
-      });
+    const call = getOrCreateCallObject();
+    this.setupEventHandlers(call, rootElementID);
+    this.enableMedia(call, rootElementID);
+  }
 
-    window.call
+  // setupEventHandlers() sets up handlers for relevant Daily events.
+  private setupEventHandlers(
+    call: DailyCall,
+    rootElementID: string | undefined
+  ) {
+    call
       .on("started-camera", () => {
         this.accessAllowed = true;
         this.ee.emit("accessAllowed");
@@ -89,12 +100,57 @@ export class Publisher extends OTEventEmitter<{
           this.ee.emit("accessDenied");
           this.accessAllowed = false;
         }
+      })
+      .on("track-started", (dailyEvent) => {
+        if (!dailyEvent?.participant) {
+          return;
+        }
+        console.debug("publisher track started");
+
+        const { participant } = dailyEvent;
+        updateMediaDOM(participant, this, rootElementID);
+        const stream = createStream(participant);
+        this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
+      })
+      .on("track-stopped", (dailyEvent) => {
+        if (!dailyEvent?.participant) {
+          return;
+        }
+        console.debug("publisher track stopped");
+        const { participant } = dailyEvent;
+        updateMediaDOM(participant, this, rootElementID);
+      })
+      .on("left-meeting", () => {
+        removeAllParticipantMedias();
       });
+  }
+
+  // enableMedia() turns on the user's camera and microphone if they
+  // are not already enabled.
+  private enableMedia(call: DailyCall, rootElementID: string | undefined) {
+    const localParticipant = call.participants().local;
+    let videoOn = false;
+    let audioOn = false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (localParticipant) {
+      videoOn = localParticipant.video;
+      audioOn = localParticipant.audio;
+    }
+
+    if (videoOn || audioOn) {
+      updateMediaDOM(localParticipant, this, rootElementID);
+    }
+    if (!videoOn) {
+      call.setLocalVideo(true);
+    }
+    if (!audioOn) {
+      call.setLocalAudio(true);
+    }
   }
 
   destroy(): void {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call
       .leave()
@@ -119,56 +175,56 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getImgData(): string | null {
-    notImplemented(this.getImgData.name);
+    errNotImplemented(this.getImgData.name);
   }
   getStats(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     callback: (error?: OTError, stats?: PublisherStatsArr) => void
   ): void {
-    notImplemented(this.getStats.name);
+    errNotImplemented(this.getStats.name);
   }
   getRtcStatsReport(): Promise<PublisherRtcStatsReportArr> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.getRtcStatsReport.name));
+      reject(errNotImplemented(this.getRtcStatsReport.name));
     });
   }
   getStyle(): PublisherProperties {
-    notImplemented(this.getStyle.name);
+    errNotImplemented(this.getStyle.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   applyVideoFilter(videoFilter: VideoFilter): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.applyVideoFilter.name));
+      reject(errNotImplemented(this.applyVideoFilter.name));
     });
   }
   getVideoFilter(): VideoFilter | null {
-    notImplemented(this.getVideoFilter.name);
+    errNotImplemented(this.getVideoFilter.name);
   }
   clearVideoFilter(): Promise<void> {
     return new Promise((resolve, reject) => {
-      reject(notImplemented(this.clearVideoFilter.name));
+      reject(errNotImplemented(this.clearVideoFilter.name));
     });
   }
   publishAudio(value: boolean): void {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     window.call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publishCaptions(value: boolean): void {
-    notImplemented(this.publishCaptions.name);
+    errNotImplemented(this.publishCaptions.name);
   }
   cycleVideo(): Promise<{ deviceId: string }> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     return window.call.cycleCamera().then((device) => {
@@ -177,7 +233,7 @@ export class Publisher extends OTEventEmitter<{
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     const audioDeviceId =
@@ -193,7 +249,7 @@ export class Publisher extends OTEventEmitter<{
   }
   getAudioSource(): MediaStreamTrack | null {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     const { local: { tracks: { audio: { persistentTrack } = {} } = {} } = {} } =
       window.call.participants();
@@ -202,7 +258,7 @@ export class Publisher extends OTEventEmitter<{
   }
   setVideoSource(videoSourceId: string): Promise<undefined> {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
 
     return window.call
@@ -214,11 +270,11 @@ export class Publisher extends OTEventEmitter<{
       });
   }
   getVideoContentHint(): VideoContentHint {
-    notImplemented(this.getVideoContentHint.name);
+    errNotImplemented(this.getVideoContentHint.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setVideoContentHint(hint: VideoContentHint): void {
-    notImplemented(this.setVideoContentHint.name);
+    errNotImplemented(this.setVideoContentHint.name);
   }
   getVideoSource(): {
     deviceId: string | null;
@@ -226,7 +282,7 @@ export class Publisher extends OTEventEmitter<{
     track: MediaStreamTrack | null;
   } {
     if (!window.call) {
-      dailyUndefinedError();
+      errDailyUndefined();
     }
     const { local: { tracks: { video: { persistentTrack } = {} } = {} } = {} } =
       window.call.participants();
@@ -242,12 +298,12 @@ export class Publisher extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: PublisherStyle[Style]
   ): void {
-    notImplemented(`publisher ${this.setStyle.name}`);
+    errNotImplemented(`publisher ${this.setStyle.name}`);
   }
   videoWidth(): number | undefined {
-    notImplemented(`publisher ${this.videoWidth.name}`);
+    errNotImplemented(`publisher ${this.videoWidth.name}`);
   }
   videoHeight(): number | undefined {
-    notImplemented(`publisher ${this.videoHeight.name}`);
+    errNotImplemented(`publisher ${this.videoHeight.name}`);
   }
 }

@@ -28,9 +28,8 @@
     "prepublishOnly": "npm run clean && npm run build",
     "test": "npm run lint && npm run test:js",
     "test:js": "jest",
-    "lint": "npm run lint:ts && npm run lint:js",
-    "lint:js": "eslint . --cache --cache-location node_modules/.eslintcache && prettier --check .",
-    "lint:ts": "tsc"
+    "lint": "eslint . --cache --cache-location node_modules/.eslintcache && prettier --check .",
+    "lintFix": "eslint . --fix && prettier --write ."
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.32.0",

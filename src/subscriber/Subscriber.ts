@@ -3,12 +3,19 @@ import {
   Event,
   OTError,
   Stream,
+  SubscriberProperties,
   SubscriberStats,
   SubscriberStyle,
   VideoDimensionsChangedEvent,
 } from "@opentok/client";
-import { notImplemented } from "./utils";
-import { OTEventEmitter } from "./OTEventEmitter";
+import { getOrCreateCallObject } from "../shared/utils";
+import { OTEventEmitter } from "../OTEventEmitter";
+import { DailyEventHandler } from "./DailyEventHandler";
+import {
+  DailyEventObjectParticipantLeft,
+  DailyEventObjectTrack,
+} from "@daily-co/daily-js";
+import { errNotImplemented } from "../shared/errors";
 
 export class Subscriber extends OTEventEmitter<{
   audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
@@ -50,68 +57,88 @@ export class Subscriber extends OTEventEmitter<{
   element?: HTMLElement;
   id?: string;
   stream?: Stream;
+  eventHandler: DailyEventHandler;
 
   constructor(
-    targetElement: HTMLElement,
+    rootElement: HTMLElement,
     options: { stream?: Stream; id?: string } = {},
     completionHandler: () => void = () => {
       return void 0;
-    }
+    },
+    properties:
+      | SubscriberProperties
+      | ((error?: OTError | undefined) => void)
+      | undefined
   ) {
     super();
 
-    this.element = targetElement;
+    this.element = rootElement;
     this.id = options.id;
-    this.stream = options.stream;
+    this.eventHandler = new DailyEventHandler(this.ee);
+    const call = getOrCreateCallObject();
+
+    call
+      .on("track-started", (event?: DailyEventObjectTrack) => {
+        if (!event?.participant) return;
+        this.eventHandler.onTrackStarted(
+          event.participant,
+          rootElement,
+          properties
+        );
+      })
+      .on("participant-left", (event?: DailyEventObjectParticipantLeft) => {
+        if (!event?.participant) return;
+        this.eventHandler.onParticipantLeft(event.participant.session_id);
+      });
     completionHandler();
   }
 
   getAudioVolume(): number {
-    notImplemented(this.getAudioVolume.name);
+    errNotImplemented(this.getAudioVolume.name);
   }
   getImgData(): string | null {
-    notImplemented(this.getImgData.name);
+    errNotImplemented(this.getImgData.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getStats(callback: (error?: OTError, stats?: SubscriberStats) => void): void {
-    notImplemented(this.getStats.name);
+    errNotImplemented(this.getStats.name);
   }
   getRtcStatsReport(): Promise<RTCStatsReport> {
-    notImplemented(this.getRtcStatsReport.name);
+    errNotImplemented(this.getRtcStatsReport.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToCaptions(value: boolean): Promise<void> {
-    notImplemented(this.subscribeToCaptions.name);
+    errNotImplemented(this.subscribeToCaptions.name);
   }
   isSubscribedToCaptions(): boolean {
-    notImplemented(this.isSubscribedToCaptions.name);
+    errNotImplemented(this.isSubscribedToCaptions.name);
   }
   isAudioBlocked(): boolean {
-    notImplemented(this.isAudioBlocked.name);
+    errNotImplemented(this.isAudioBlocked.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   restrictFrameRate(value: boolean): void {
-    notImplemented(this.restrictFrameRate.name);
+    errNotImplemented(this.restrictFrameRate.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setAudioVolume(volume: number): void {
-    notImplemented(this.setAudioVolume.name);
+    errNotImplemented(this.setAudioVolume.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreferredFrameRate(frameRate: number): void {
-    notImplemented(this.setPreferredFrameRate.name);
+    errNotImplemented(this.setPreferredFrameRate.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreferredResolution(resolution: Dimensions): void {
-    notImplemented(this.setPreferredResolution.name);
+    errNotImplemented(this.setPreferredResolution.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToAudio(value: boolean): void {
-    notImplemented(this.subscribeToAudio.name);
+    errNotImplemented(this.subscribeToAudio.name);
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   subscribeToVideo(value: boolean): void {
-    notImplemented(this.subscribeToVideo.name);
+    errNotImplemented(this.subscribeToVideo.name);
   }
 
   setStyle<Style extends keyof SubscriberStyle>(
@@ -120,13 +147,13 @@ export class Subscriber extends OTEventEmitter<{
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     value: SubscriberStyle[Style]
   ): void {
-    notImplemented(`subscriber ${this.setStyle.name}`);
+    errNotImplemented(`subscriber ${this.setStyle.name}`);
   }
 
   videoHeight(): number | undefined {
-    notImplemented(`subscriber ${this.videoHeight.name}`);
+    errNotImplemented(`subscriber ${this.videoHeight.name}`);
   }
   videoWidth(): number | undefined {
-    notImplemented(`subscriber ${this.videoWidth.name}`);
+    errNotImplemented(`subscriber ${this.videoWidth.name}`);
   }
 }

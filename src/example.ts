@@ -11,7 +11,7 @@ import NetworkTest from "opentok-network-test-js";
 // OT.setLogLevel(4);
 
 import OT from "./";
-import { Publisher } from "./Publisher";
+import { Publisher } from "./publisher/Publisher";
 
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 // apiKey can be blank, Daily's API key is not needed for the shim to work
