@@ -2,15 +2,15 @@ import { OTError, SubscriberProperties } from "@opentok/client";
 import { getVideoElementCreatedEvent } from "../publisher/OTEvents";
 import { createOrUpdateMedia, Dimensions, Tracks } from "../shared/media";
 import { toCSSDimensions } from "../shared/utils";
-import { DailyEventHandler } from "./DailyEventHandler";
+import { Subscriber } from "./Subscriber";
 
 export function addOrUpdateMedia(
-  dailyEventHandler: DailyEventHandler,
+  subscriber: Subscriber,
   sessionID: string,
   mediaTracks: Tracks,
   root: HTMLElement,
   properties?: SubscriberProperties | ((error?: OTError) => void)
-) {
+): HTMLVideoElement {
   const dimensions = {
     width: "",
     height: "",
@@ -24,10 +24,18 @@ export function addOrUpdateMedia(
     if (w) dimensions.width = toCSSDimensions(w);
     if (h) dimensions.height = toCSSDimensions(h);
   }
-  const videoData = createOrUpdateMedia(sessionID, mediaTracks, dimensions);
-  if (videoData.isNew) {
-    // Only attach if insertDefaultUI is false
-    if (!insertDefaultUI) root.appendChild(videoData.videoEl);
+  const { videoEl, isNew } = createOrUpdateMedia(
+    sessionID,
+    mediaTracks,
+    dimensions
+  );
+  // Only attach if insertDefaultUI is true
+  if (isNew) {
+    subscriber.ee.emit(
+      "videoElementCreated",
+      getVideoElementCreatedEvent(videoEl, subscriber)
+    );
+    if (insertDefaultUI) root.appendChild(videoEl);
   }
-  return videoData;
+  return videoEl;
 }

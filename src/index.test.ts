@@ -137,7 +137,7 @@ describe("static methods", () => {
     expect(result.id).toEqual("DKeEJiV39EtB8hsbyCN57nuc4krQAragOQd0");
   });
 
-  test.only("OT.initPublisher() insertDefaultUI: false", (done) => {
+  test("OT.initPublisher() insertDefaultUI: false", (done) => {
     const publisher = OT.initPublisher(
       undefined,
       {

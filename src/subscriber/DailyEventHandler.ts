@@ -2,16 +2,16 @@
 
 import { DailyParticipant } from "@daily-co/daily-js";
 import { OTError, SubscriberProperties } from "@opentok/client";
-import { EventEmitter } from "stream";
 import { addOrUpdateMedia } from "./MediaDOM";
 import { getParticipantTracks, removeParticipantMedia } from "../shared/media";
+import { Subscriber } from "./Subscriber";
 
 // DailyEventHandler is a class that handles Daily events and
 // emits relevant OT events via the provided emitter
 export class DailyEventHandler {
-  private ee: EventEmitter;
-  constructor(ee: EventEmitter) {
-    this.ee = ee;
+  private subscriber: Subscriber;
+  constructor(subscriber: Subscriber) {
+    this.subscriber = subscriber;
   }
 
   // onTrackStarted() handles Daily's "track-started" event
@@ -30,21 +30,13 @@ export class DailyEventHandler {
     const tracks = getParticipantTracks(participant);
 
     try {
-      const { videoEl, isNew } = addOrUpdateMedia(
-        this,
+      const videoEl = addOrUpdateMedia(
+        this.subscriber,
         session_id,
         tracks,
         root,
         properties
       );
-
-      if (isNew) {
-        this.ee.emit(
-          "videoElementCreated",
-          // Need a reference to subscriber :thinking-face:
-          getVideoElementCreatedEvent(videoEl, subscriber)
-        );
-      }
 
       videoEl.onerror = (e) => {
         console.error("Video error", e);
@@ -68,7 +60,7 @@ export class DailyEventHandler {
   // onParticipantLeft() handles Daily's "participant-left" event
   onParticipantLeft(sessionID: string) {
     if (removeParticipantMedia(sessionID)) {
-      this.ee.emit("destroyed");
+      this.subscriber.ee.emit("destroyed");
     }
   }
 }

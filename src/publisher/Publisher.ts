@@ -18,7 +18,7 @@ import { removeAllParticipantMedias } from "../shared/media";
 import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
-import { getStreamCreatedEvent, getVideoElementCreatedEvent } from "./OTEvents";
+import { getStreamCreatedEvent } from "./OTEvents";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
 
@@ -89,7 +89,7 @@ export class Publisher extends OTEventEmitter<{
       this.element.id = "daily-root";
       this.id = "daily-root";
     } else {
-      // Explicilty set these
+      // Explicilty set these to undefined
       this.element = undefined;
       this.id = undefined;
     }
@@ -117,14 +117,15 @@ export class Publisher extends OTEventEmitter<{
       .catch((err) => {
         console.error(err);
       });
-    this.setupEventHandlers(call, rootElementID);
-    this.enableMedia(call, rootElementID);
+    this.setupEventHandlers(call, rootElementID, insertDefaultUI);
+    this.enableMedia(call, rootElementID, insertDefaultUI);
   }
 
   // setupEventHandlers() sets up handlers for relevant Daily events.
   private setupEventHandlers(
     call: DailyCall,
-    rootElementID: string | undefined
+    rootElementID: string | undefined,
+    insertDefaultUI: boolean
   ) {
     call
       .on("started-camera", () => {
@@ -151,7 +152,7 @@ export class Publisher extends OTEventEmitter<{
         console.debug("publisher track started");
 
         const { participant } = dailyEvent;
-        updateMediaDOM(participant, this, rootElementID);
+        updateMediaDOM(participant, this, rootElementID, insertDefaultUI);
         const stream = createStream(participant);
         this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
       })
@@ -161,7 +162,7 @@ export class Publisher extends OTEventEmitter<{
         }
         console.debug("publisher track stopped");
         const { participant } = dailyEvent;
-        updateMediaDOM(participant, this, rootElementID);
+        updateMediaDOM(participant, this, rootElementID, insertDefaultUI);
       })
       .on("left-meeting", () => {
         removeAllParticipantMedias();
@@ -170,7 +171,11 @@ export class Publisher extends OTEventEmitter<{
 
   // enableMedia() turns on the user's camera and microphone if they
   // are not already enabled.
-  private enableMedia(call: DailyCall, rootElementID: string | undefined) {
+  private enableMedia(
+    call: DailyCall,
+    rootElementID: string | undefined,
+    insertDefaultUI: boolean
+  ) {
     const localParticipant = call.participants().local;
     let videoOn = false;
     let audioOn = false;
@@ -181,7 +186,7 @@ export class Publisher extends OTEventEmitter<{
     }
 
     if (videoOn || audioOn) {
-      updateMediaDOM(localParticipant, this, rootElementID);
+      updateMediaDOM(localParticipant, this, rootElementID, insertDefaultUI);
     }
     if (!videoOn) {
       call.setLocalVideo(true);

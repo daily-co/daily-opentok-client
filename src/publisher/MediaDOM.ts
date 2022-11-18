@@ -14,7 +14,8 @@ import { getVideoElementCreatedEvent } from "./OTEvents";
 export function updateMediaDOM(
   participant: DailyParticipant,
   publisher: Publisher,
-  rootElementID?: string
+  rootElementID: string | undefined,
+  insertDefaultUI = true
 ) {
   // Early out if the participant is not local
   const isLocal = participant.local;
@@ -54,8 +55,8 @@ export function updateMediaDOM(
       "videoElementCreated",
       getVideoElementCreatedEvent(videoData.videoEl, publisher)
     );
-    // Only attach if insertDefaultUI is false
-    attachDOM(root, videoData.videoEl, publisher.insertMode);
+    if (insertDefaultUI)
+      attachDOM(root, videoData.videoEl, publisher.insertMode);
   }
   return videoData.videoEl;
 }
