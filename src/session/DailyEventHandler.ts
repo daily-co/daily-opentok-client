@@ -124,18 +124,20 @@ export class DailyEventHandler {
 
   // onNetworkConnection() handles Daily's "network-connection" event
   onNetworkConnection(event: string) {
-    const otEvent = getSessionDisconnectedEvent(this.session);
+    // const otEvent = getSessionDisconnectedEvent(this.session);
 
     switch (event) {
       case "interrupted":
-        this.ee.emit("sessionReconnecting", otEvent);
-        this.reconnecting = true;
+        console.log("INTERRUPTED");
+        // this.ee.emit("sessionReconnecting", otEvent);
+        // this.reconnecting = true;
         break;
       case "connected":
-        if (this.reconnecting) {
-          this.ee.emit("sessionReconnected", otEvent);
-          this.reconnecting = false;
-        }
+        console.log("CONNECTED");
+        // if (this.reconnecting) {
+        //   this.ee.emit("sessionReconnected", otEvent);
+        //   this.reconnecting = false;
+        // }
         break;
       default:
         break;
