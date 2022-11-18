@@ -20,7 +20,7 @@ export function createStream(participant: DailyParticipant): Stream {
   const connection = {
     connectionId: user_id,
     creationTime,
-    data: "",
+    data: "{}",
   };
 
   const stream: Stream = {

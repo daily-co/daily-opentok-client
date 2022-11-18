@@ -61,7 +61,7 @@ export class DailyEventHandler {
     const connection = {
       connectionId: user_id,
       creationTime,
-      data: "",
+      data: "{}",
     };
 
     const stream = createStream(participant);
@@ -92,7 +92,7 @@ export class DailyEventHandler {
     const connection = {
       connectionId: user_id,
       creationTime,
-      data: "",
+      data: "{}",
     };
 
     this.ee.emit(

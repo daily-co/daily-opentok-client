@@ -119,7 +119,7 @@ export class Session extends OTEventEmitter<{
     this.connection = {
       connectionId: "local",
       creationTime: new Date().getTime(),
-      data: "",
+      data: "{}",
     };
     this.eventHandler = new DailyEventHandler(this);
   }
