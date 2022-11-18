@@ -18,7 +18,7 @@ import { removeAllParticipantMedias } from "../shared/media";
 import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
-import { getStreamCreatedEvent } from "./OTEvents";
+import { getStreamCreatedEvent, getVideoElementCreatedEvent } from "./OTEvents";
 
 export type InsertMode = "replace" | "after" | "before" | "append";
 

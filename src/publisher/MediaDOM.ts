@@ -7,6 +7,7 @@ import {
 import { InsertMode, Publisher } from "./Publisher";
 import { errNotImplemented } from "../shared/errors";
 import { toCSSDimensions } from "../shared/utils";
+import { getVideoElementCreatedEvent } from "./OTEvents";
 
 // updateMediaDOM() updates the DOM element(s) associated
 // with the given participant's media tracks.
@@ -42,12 +43,18 @@ export function updateMediaDOM(
 
   if (root === null) {
     root = document.createElement("div");
+
     document.body.appendChild(root);
   }
 
   const videoData = createOrUpdateMedia(sessionID, tracks, dimensions);
   // If this video was newly created, append it to DOM
   if (videoData.isNew) {
+    publisher.ee.emit(
+      "videoElementCreated",
+      getVideoElementCreatedEvent(videoData.videoEl, publisher)
+    );
+    // Only attach if insertDefaultUI is false
     attachDOM(root, videoData.videoEl, publisher.insertMode);
   }
   return videoData.videoEl;

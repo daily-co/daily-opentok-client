@@ -30,7 +30,22 @@ export class DailyEventHandler {
     const tracks = getParticipantTracks(participant);
 
     try {
-      const videoEl = addOrUpdateMedia(session_id, tracks, root, properties);
+      const { videoEl, isNew } = addOrUpdateMedia(
+        this,
+        session_id,
+        tracks,
+        root,
+        properties
+      );
+
+      if (isNew) {
+        this.ee.emit(
+          "videoElementCreated",
+          // Need a reference to subscriber :thinking-face:
+          getVideoElementCreatedEvent(videoEl, subscriber)
+        );
+      }
+
       videoEl.onerror = (e) => {
         console.error("Video error", e);
         if (!completionHandler) return;

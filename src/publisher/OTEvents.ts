@@ -1,4 +1,4 @@
-import { Event, Stream } from "@opentok/client";
+import { Event, Stream, Subscriber } from "@opentok/client";
 import { Publisher } from "./Publisher";
 
 type StreamCreatedEvent = Event<"streamCreated", Publisher> & {
@@ -8,6 +8,14 @@ type StreamCreatedEvent = Event<"streamCreated", Publisher> & {
 type StreamDestroyedEvent = Event<"streamDestroyed", Publisher> & {
   stream: Stream;
   reason: string;
+};
+
+// Can be Publisher or Subscriber
+type VideoElementCreatedEvent = Event<
+  "videoElementCreated",
+  Subscriber | Publisher
+> & {
+  element: HTMLVideoElement | HTMLObjectElement;
 };
 
 export function getStreamCreatedEvent(
@@ -47,4 +55,20 @@ export function getStreamDestroyedEvent(
     },
   };
   return event;
+}
+
+export function getVideoElementCreatedEvent(
+  element: HTMLVideoElement,
+  target: Publisher | Subscriber
+): VideoElementCreatedEvent {
+  const videoElementCreatedEvent: VideoElementCreatedEvent = {
+    type: "videoElementCreated",
+    element,
+    target,
+    cancelable: true,
+    isDefaultPrevented: () => false,
+    preventDefault: () => false,
+  };
+
+  return videoElementCreatedEvent;
 }

@@ -1,6 +1,9 @@
 // This file handles all shared operations related to participant
 // media and media DOM.
 import { DailyParticipant } from "@daily-co/daily-js";
+import { Publisher } from "@opentok/client";
+import { getVideoElementCreatedEvent } from "../publisher/OTEvents";
+import { Subscriber } from "../subscriber/Subscriber";
 
 export const participantMediaClassName = "participant-media";
 
@@ -74,6 +77,7 @@ export function createOrUpdateMedia(
     }
 
     videoEl = createVideoElement(sessionID, width, height, mediaTracks);
+
     return {
       videoEl: videoEl,
       isNew: true,
