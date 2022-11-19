@@ -324,7 +324,7 @@ export class Session extends OTEventEmitter<{
       return;
     }
 
-    // sessionDisconnected, connectionDestroyed, streamDestroyed are
+    // connectionDestroyed, streamDestroyed are
     // all handled in listeners setup in connect(). In OpenTok's
     // implementation, this function does not throw any errors,
     // so to keep that behavior the same we're logging Daily

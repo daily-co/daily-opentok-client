@@ -65,17 +65,14 @@ export class Publisher extends OTEventEmitter<{
   width?: string;
 
   private _videoElement: HTMLVideoElement | null;
-  constructor(
-    {
-      width,
-      height,
-      insertMode,
-      insertDefaultUI = true,
-      videoSource,
-      audioSource,
-    }: PublisherProperties,
-    rootElementID?: string
-  ) {
+  constructor({
+    width,
+    height,
+    insertMode,
+    insertDefaultUI = true,
+    videoSource,
+    audioSource,
+  }: PublisherProperties) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
@@ -117,8 +114,8 @@ export class Publisher extends OTEventEmitter<{
       .catch((err) => {
         console.error(err);
       });
-    this.setupEventHandlers(call, rootElementID, insertDefaultUI);
-    this.enableMedia(call, rootElementID, insertDefaultUI);
+    this.setupEventHandlers(call, this.element, insertDefaultUI);
+    this.enableMedia(call, this.element, insertDefaultUI);
   }
 
   // setupEventHandlers() sets up handlers for relevant Daily events.
@@ -163,10 +160,11 @@ export class Publisher extends OTEventEmitter<{
         console.debug("publisher track stopped");
         const { participant } = dailyEvent;
         updateMediaDOM(participant, this, rootElementID, insertDefaultUI);
-      })
-      .on("left-meeting", () => {
-        removeAllParticipantMedias();
       });
+    // .on("left-meeting", () => {
+    //   // We don't wan't to remove the PUBLISHER media, just remote participants.
+    //   removeAllParticipantMedias();
+    // });
   }
 
   // enableMedia() turns on the user's camera and microphone if they

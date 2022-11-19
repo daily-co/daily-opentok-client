@@ -13,15 +13,12 @@ export function initPublisher(
     targetElement instanceof HTMLElement ? targetElement.id : targetElement;
 
   // Instantiate publisher with provided properties
-  const publisher = new Publisher(
-    {
-      width: properties?.width ?? "",
-      height: properties?.height ?? "",
-      insertMode: properties?.insertMode,
-      showControls: properties?.showControls ?? false,
-    },
-    rootElementID
-  );
+  const publisher = new Publisher({
+    width: properties?.width ?? "",
+    height: properties?.height ?? "",
+    insertMode: properties?.insertMode,
+    showControls: properties?.showControls ?? false,
+  });
 
   const completionHandler =
     typeof callback === "function"
@@ -29,13 +26,6 @@ export function initPublisher(
       : () => {
           // empty
         };
-
-  // If target element is falsy, invoke completion handler
-  // with an error
-  if (!targetElement) {
-    completionHandler(new Error("No target element provided"));
-    return publisher;
-  }
 
   const call = getOrCreateCallObject();
 

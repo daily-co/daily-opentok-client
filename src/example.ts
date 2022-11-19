@@ -53,17 +53,15 @@ session.on("streamCreated", function streamCreated(event) {
   // if (!window.chrome) {
   const subscriber = session.subscribe(
     event.stream,
-    "subscriber",
+    // "subscriber",
+    undefined,
     {
-      insertMode: "append",
+      // insertMode: "append",
       width: "100%",
       height: "100%",
     },
     handleError
   );
-
-  //@ts-expect-error window stuff
-  window.sub = subscriber;
 
   subscriber.on("videoElementCreated", ({ element }) => {
     const elm = document.getElementById("subscriber");
@@ -114,9 +112,11 @@ OT.getUserMedia()
 publishBtn.addEventListener("click", () => {
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
-    "publisher",
+    // "publisher",
+    undefined,
     {
-      insertMode: "append",
+      insertDefaultUI: false,
+      // insertMode: "append",
       width: "100%",
       height: "100%",
       audioSource: audioSelector.value,
@@ -126,8 +126,8 @@ publishBtn.addEventListener("click", () => {
       if (err) {
         console.error("Publish error ", err);
       } else {
-        // setupDeviceSwitching();
-        // setupAudioLevelMeter();
+        setupDeviceSwitching();
+        setupAudioLevelMeter();
       }
     }
   );
