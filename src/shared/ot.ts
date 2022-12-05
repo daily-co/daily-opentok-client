@@ -24,6 +24,11 @@ export function createStream(participant: DailyParticipant): Stream {
   };
 
   const stream: Stream = {
+    /**
+     * @deprecated use streamId instead. Added to support opentok-accelerator-core.
+     */
+    // @ts-expect-error - deprecated
+    id: session_id,
     streamId: session_id,
     frameRate,
     hasAudio: audio,

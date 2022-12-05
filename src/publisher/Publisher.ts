@@ -62,33 +62,38 @@ export class Publisher extends OTEventEmitter<{
   insertMode?: InsertMode;
   session?: Session;
   stream?: Stream;
+  streamId?: string;
   width?: string;
   constructor(
     { width, height, insertMode }: PublisherProperties,
-    rootElementID?: string
+    rootElementID?: string,
+    completionHandler?: (error?: OTError) => void
   ) {
     super();
     this.width = width ? width.toString() : undefined;
     this.height = height ? height.toString() : undefined;
     this.insertMode = insertMode;
     this.accessAllowed = true;
+    this.id = rootElementID;
 
     const call = getOrCreateCallObject();
-    this.setupEventHandlers(call, rootElementID);
+    this.setupEventHandlers(call, rootElementID, completionHandler);
     this.enableMedia(call, rootElementID);
   }
 
   // setupEventHandlers() sets up handlers for relevant Daily events.
   private setupEventHandlers(
     call: DailyCall,
-    rootElementID: string | undefined
+    rootElementID: string | undefined,
+    completionHandler?: (error?: OTError) => void
   ) {
     call
       .on("started-camera", () => {
         this.accessAllowed = true;
+
         this.ee.emit("accessAllowed");
         console.debug(
-          "accessAllowed Count",
+          "startedCamera accessAllowed Count",
           this.ee.listenerCount("accessAllowed"),
           this.ee.listeners("accessAllowed")
         );
@@ -97,8 +102,11 @@ export class Publisher extends OTEventEmitter<{
         if (!error) return;
 
         if (error.errorMsg.errorMsg === "not allowed") {
-          this.ee.emit("accessDenied");
           this.accessAllowed = false;
+
+          // Completion handler from initPublisher
+          completionHandler?.(error.error as OTError);
+          this.ee.emit("accessDenied");
         }
       })
       .on("track-started", (dailyEvent) => {
@@ -108,9 +116,8 @@ export class Publisher extends OTEventEmitter<{
         console.debug("publisher track started");
 
         const { participant } = dailyEvent;
+
         updateMediaDOM(participant, this, rootElementID);
-        const stream = createStream(participant);
-        this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
       })
       .on("track-stopped", (dailyEvent) => {
         if (!dailyEvent?.participant) {
@@ -122,6 +129,16 @@ export class Publisher extends OTEventEmitter<{
       })
       .on("left-meeting", () => {
         removeAllParticipantMedias();
+      })
+      .once("participant-updated", (dailyEvent) => {
+        // Fire local only once.
+        if (!dailyEvent?.participant.local) return;
+
+        const stream = createStream(dailyEvent.participant);
+        this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
+
+        // Completion handler from initPublisher
+        completionHandler?.();
       });
   }
 
@@ -139,12 +156,6 @@ export class Publisher extends OTEventEmitter<{
 
     if (videoOn || audioOn) {
       updateMediaDOM(localParticipant, this, rootElementID);
-    }
-    if (!videoOn) {
-      call.setLocalVideo(true);
-    }
-    if (!audioOn) {
-      call.setLocalAudio(true);
     }
   }
 

@@ -64,6 +64,12 @@ session.on("streamCreated", function streamCreated(event) {
   // }
 });
 
+const connections: OT.Connection[] = [];
+session.on("connectionCreated", (connectionCreatedEvent) => {
+  console.log("session connectionCreatedEvent: ", connectionCreatedEvent);
+  connections.push(connectionCreatedEvent.connection);
+});
+
 session.on("sessionDisconnected", function sessionDisconnected(event) {
   console.debug("[sessionDisconnected]", event);
 });
@@ -124,6 +130,12 @@ publishBtn.addEventListener("click", () => {
     }
   );
 });
+
+function destroy() {
+  console.log("click unpublish");
+  publisher.destroy();
+}
+document.getElementById("destroy-btn")?.addEventListener("click", destroy);
 
 // Allow you to switch to different cameras and microphones using
 // setAudioSource and cycleVideo
@@ -202,7 +214,7 @@ function connect() {
     console.debug("[session.connect]");
 
     if (!publisher) {
-      console.error("No publisher");
+      console.debug("No publisher");
       return;
     }
 
@@ -227,6 +239,18 @@ function disconnect() {
 document
   .getElementById("disconnect-btn")
   ?.addEventListener("click", disconnect);
+
+function forceDisconnect() {
+  console.log("click force disconnect");
+  connections.forEach((connection) => {
+    session.forceDisconnect(connection, (err) => {
+      console.error(err);
+    });
+  });
+}
+document
+  .getElementById("force-disconnect-btn")
+  ?.addEventListener("click", forceDisconnect);
 
 function networkTest() {
   const otNetworkTest = new NetworkTest(

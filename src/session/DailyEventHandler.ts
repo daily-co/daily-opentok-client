@@ -66,11 +66,20 @@ export class DailyEventHandler {
 
     const stream = createStream(participant);
 
+    // session connected
+
     this.ee.emit("streamCreated", getStreamCreatedEvent(this.session, stream));
     this.ee.emit(
       "connectionCreated",
       getConnectionCreatedEvent(this.session, connection)
     );
+  }
+
+  // onLocalParticipantJoined() handles Daily's "participant-updated" event for
+  // local participant
+  onLocalParticipantUpdated(participant: DailyParticipant) {
+    const stream = createStream(participant);
+    this.ee.emit("streamCreated", getStreamCreatedEvent(this.session, stream));
   }
 
   // onParticipantLeft() handles Daily's "participant-left" event

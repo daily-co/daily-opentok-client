@@ -16,6 +16,8 @@ export function getStreamCreatedEvent(
 ): StreamCreatedEvent {
   // Format as an opentok event
   let defaultPrevented = false;
+  target.stream = stream;
+  target.streamId = stream.streamId;
   const streamEvent: StreamCreatedEvent = {
     type: "streamCreated",
     isDefaultPrevented: () => defaultPrevented,

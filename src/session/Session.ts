@@ -13,6 +13,7 @@ import OT from "../index";
 import { DailyEventHandler } from "../session/DailyEventHandler";
 import { errNotImplemented } from "../shared/errors";
 import { getOrCreateCallObject } from "../shared/utils";
+import { getConnectionCreatedEvent } from "./OTEvents";
 
 interface SessionCollection {
   length: () => number;
@@ -165,8 +166,10 @@ export class Session extends OTEventEmitter<{
     // Publisher object.
     const localPublisher: Publisher =
       typeof publisher === "string" || publisher instanceof HTMLElement
-        ? OT.initPublisher(publisher, properties, completionHandler)
+        ? OT.initPublisher(publisher, properties)
         : publisher;
+
+    localPublisher.session = this;
 
     if (!window.call) {
       console.error("No daily call object");
@@ -177,20 +180,37 @@ export class Session extends OTEventEmitter<{
       return localPublisher;
     }
 
-    window.call.on("participant-joined", (dailyEvent) => {
-      if (!dailyEvent) {
-        console.debug("No Daily event");
-        return;
-      }
-      this.eventHandler.onParticipantJoined(dailyEvent.participant);
-    });
+    window.call
+      .on("participant-joined", (dailyEvent) => {
+        // remote
+        if (!dailyEvent) {
+          console.debug("No Daily event");
+          return;
+        }
+        this.eventHandler.onParticipantJoined(dailyEvent.participant);
+      })
+      .once("participant-updated", (dailyEvent) => {
+        // run once for local participant only
+        if (!dailyEvent) {
+          console.debug("No Daily event");
+          return;
+        }
+
+        const { participant } = dailyEvent;
+
+        if (!participant.local) {
+          console.debug("Not local participant");
+          return;
+        }
+        completionHandler?.();
+
+        this.eventHandler.onLocalParticipantUpdated(participant);
+      });
 
     window.call.updateParticipant("local", {
       setAudio: true,
       setVideo: true,
     });
-
-    completionHandler();
 
     return localPublisher;
   }
@@ -218,19 +238,21 @@ export class Session extends OTEventEmitter<{
         }
         // TODO(jamsea): emit opentok event
       })
-      .on("participant-joined", (dailyEvent) => {
-        if (!dailyEvent) return;
-        eh.onParticipantJoined(dailyEvent.participant);
-      })
-      .on("participant-left", (dailyEvent) => {
-        if (!dailyEvent) return;
-        eh.onParticipantLeft(dailyEvent);
-      })
-      .join({ url: this.sessionId, token })
-      .then((dailyEvent) => {
-        if (!dailyEvent) {
-          return;
-        }
+      .on("joined-meeting", (dailyEvent) => {
+        // Local
+        if (!dailyEvent?.participants.local) return;
+
+        const { joined_at = new Date(), user_id } =
+          dailyEvent.participants.local;
+        const creationTime = joined_at.getTime();
+
+        const connection = {
+          connectionId: user_id,
+          creationTime,
+          data: "",
+        };
+
+        callback();
         const sessionConnectedEvent: Event<"sessionConnected", Session> = {
           type: "sessionConnected",
           target: this,
@@ -238,8 +260,26 @@ export class Session extends OTEventEmitter<{
           isDefaultPrevented: () => true,
           preventDefault: () => true,
         };
+        this.ee.emit(
+          "connectionCreated",
+          getConnectionCreatedEvent(this, connection)
+        );
         this.ee.emit("sessionConnected", sessionConnectedEvent);
-        callback();
+      })
+      .on("participant-joined", (dailyEvent) => {
+        // Remote
+        if (!dailyEvent) return;
+        eh.onParticipantJoined(dailyEvent.participant);
+      })
+      .on("participant-left", (dailyEvent) => {
+        if (!dailyEvent) return;
+        eh.onParticipantLeft(dailyEvent);
+      })
+      .join({
+        url: this.sessionId,
+        token,
+        startVideoOff: true,
+        startAudioOff: true,
       })
       .catch((e) => {
         if (typeof e === "string") {
@@ -313,8 +353,6 @@ export class Session extends OTEventEmitter<{
         },
       });
     }
-
-    completionHandler();
 
     return subscriber;
   }

@@ -12,6 +12,13 @@ export function initPublisher(
   const rootElementID =
     targetElement instanceof HTMLElement ? targetElement.id : targetElement;
 
+  const completionHandler =
+    typeof callback === "function"
+      ? callback
+      : () => {
+          // empty
+        };
+
   // Instantiate publisher with provided properties
   const publisher = new Publisher(
     {
@@ -19,16 +26,12 @@ export function initPublisher(
       height: properties?.height ?? "",
       insertMode: properties?.insertMode,
       showControls: properties?.showControls ?? false,
+      publishAudio: properties?.publishAudio ?? true,
+      publishVideo: properties?.publishVideo ?? true,
     },
-    rootElementID
+    rootElementID,
+    completionHandler
   );
-
-  const completionHandler =
-    typeof callback === "function"
-      ? callback
-      : () => {
-          // empty
-        };
 
   // If target element is falsy, invoke completion handler
   // with an error
@@ -39,55 +42,31 @@ export function initPublisher(
 
   const call = getOrCreateCallObject();
 
-  // Address current meeting state
   switch (call.meetingState()) {
     case "new":
-      call
-        .startCamera()
-        .then(() => {
-          completionHandler();
-        })
-        .catch((err) => {
-          completionHandler(new Error("Failed to start camera"));
-          console.error("startCamera error: ", err);
-        });
-      break;
-    case "loading":
-      console.debug("loading");
-      break;
-    case "loaded":
-      console.debug("loaded");
-      break;
-    case "joining-meeting":
-      console.debug("joining-meeting");
-      break;
-    case "joined-meeting":
-      console.debug("joined-meeting");
-      break;
     case "left-meeting":
-      console.debug("left-meeting");
+    case "loading":
+    case "loaded":
+      call.startCamera().catch((err) => {
+        completionHandler(new Error("Failed to start camera"));
+        console.error("startCamera error: ", err);
+      });
       break;
     case "error":
-      console.debug("error");
-      completionHandler(new Error("Daily error"));
-      return publisher;
-    default:
+      console.error("error");
       break;
+    // Validate call state: startCamera() is only allowed if you haven't
+    // already joined (or aren't in the process of joining).
+    case "joined-meeting":
+    case "joining-meeting":
+      call.updateParticipant("local", {
+        setAudio: properties?.publishAudio ?? true,
+        setVideo: properties?.publishVideo ?? true,
+      });
+      break;
+    default:
+      console.log("---  init meetingState: ", call.meetingState());
   }
-
-  // TODO: [Liza] - is this for the network test parts?
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true,
-    })
-    .then((res) => {
-      console.log(res);
-      completionHandler();
-    })
-    .catch((e) => {
-      completionHandler(e as OTError);
-    });
 
   return publisher;
 }
