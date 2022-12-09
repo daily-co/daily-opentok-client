@@ -1,8 +1,8 @@
 {
   "name": "daily-opentok-client",
   "version": "0.0.11",
-  "license": "BSD-2",
-  "description": "Daily Tokbox shim",
+  "license": "MIT",
+  "description": "Daily's OpenTok client-side shim",
   "type": "module",
   "files": [
     "dist"
