@@ -1,4 +1,4 @@
-import { DailyCall } from "@daily-co/daily-js";
+import { DailyCall, DailyEventObjectParticipant } from "@daily-co/daily-js";
 import {
   Event,
   OTError,
@@ -87,6 +87,18 @@ export class Publisher extends OTEventEmitter<{
     rootElementID: string | undefined,
     completionHandler?: (error?: OTError) => void
   ) {
+    const onParticipantUpdated = (dailyEvent?: DailyEventObjectParticipant) => {
+      // Fire local only once.
+      if (!dailyEvent?.participant.local) return;
+      call.off("participant-updated", onParticipantUpdated);
+
+      const stream = createStream(dailyEvent.participant);
+      this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
+
+      // Completion handler from initPublisher
+      completionHandler?.();
+    };
+
     call
       .on("started-camera", () => {
         this.accessAllowed = true;
@@ -130,16 +142,7 @@ export class Publisher extends OTEventEmitter<{
       .on("left-meeting", () => {
         removeAllParticipantMedias();
       })
-      .once("participant-updated", (dailyEvent) => {
-        // Fire local only once.
-        if (!dailyEvent?.participant.local) return;
-
-        const stream = createStream(dailyEvent.participant);
-        this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
-
-        // Completion handler from initPublisher
-        completionHandler?.();
-      });
+      .on("participant-updated", onParticipantUpdated);
   }
 
   // enableMedia() turns on the user's camera and microphone if they
