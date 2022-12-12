@@ -14,6 +14,7 @@ import { DailyEventHandler } from "../session/DailyEventHandler";
 import { errNotImplemented } from "../shared/errors";
 import { getOrCreateCallObject } from "../shared/utils";
 import { getConnectionCreatedEvent } from "./OTEvents";
+import { DailyEventObjectParticipant } from "@daily-co/daily-js";
 
 interface SessionCollection {
   length: () => number;
@@ -171,16 +172,28 @@ export class Session extends OTEventEmitter<{
 
     localPublisher.session = this;
 
-    if (!window.call) {
-      console.error("No daily call object");
-      completionHandler({
-        message: "No call",
-        name: "NoCall",
-      });
-      return localPublisher;
-    }
+    const call = getOrCreateCallObject();
 
-    window.call
+    const onParticipantUpdated = (dailyEvent?: DailyEventObjectParticipant) => {
+      // run once for local participant only
+      if (!dailyEvent) {
+        console.debug("No Daily event");
+        return;
+      }
+
+      const { participant } = dailyEvent;
+
+      if (!participant.local) {
+        console.debug("Not local participant");
+        return;
+      }
+      call.off("participant-updated", onParticipantUpdated);
+      completionHandler?.();
+
+      this.eventHandler.onLocalParticipantUpdated(participant);
+    };
+
+    call
       .on("participant-joined", (dailyEvent) => {
         // remote
         if (!dailyEvent) {
@@ -189,28 +202,11 @@ export class Session extends OTEventEmitter<{
         }
         this.eventHandler.onParticipantJoined(dailyEvent.participant);
       })
-      .once("participant-updated", (dailyEvent) => {
-        // run once for local participant only
-        if (!dailyEvent) {
-          console.debug("No Daily event");
-          return;
-        }
-
-        const { participant } = dailyEvent;
-
-        if (!participant.local) {
-          console.debug("Not local participant");
-          return;
-        }
-        completionHandler?.();
-
-        this.eventHandler.onLocalParticipantUpdated(participant);
+      .on("participant-updated", onParticipantUpdated)
+      .updateParticipant("local", {
+        setAudio: true,
+        setVideo: true,
       });
-
-    window.call.updateParticipant("local", {
-      setAudio: true,
-      setVideo: true,
-    });
 
     return localPublisher;
   }
