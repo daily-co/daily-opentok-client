@@ -133,7 +133,7 @@ publishBtn.addEventListener("click", () => {
 
 function destroy() {
   console.log("click unpublish");
-  publisher.destroy();
+  publisher?.destroy();
 }
 document.getElementById("destroy-btn")?.addEventListener("click", destroy);
 
