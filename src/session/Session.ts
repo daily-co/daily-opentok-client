@@ -274,8 +274,8 @@ export class Session extends OTEventEmitter<{
       .join({
         url: this.sessionId,
         token,
-        startVideoOff: true,
-        startAudioOff: true,
+        startVideoOff: call.localVideo(),
+        startAudioOff: call.localAudio(),
       })
       .catch((e) => {
         if (typeof e === "string") {
