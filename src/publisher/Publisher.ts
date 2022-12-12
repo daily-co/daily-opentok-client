@@ -93,6 +93,8 @@ export class Publisher extends OTEventEmitter<{
       call.off("participant-updated", onParticipantUpdated);
 
       const stream = createStream(dailyEvent.participant);
+      this.stream = stream;
+      this.streamId = stream.streamId;
       this.ee.emit("streamCreated", getStreamCreatedEvent(this, stream));
 
       // Completion handler from initPublisher

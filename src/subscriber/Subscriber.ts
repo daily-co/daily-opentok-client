@@ -12,6 +12,7 @@ import { getOrCreateCallObject } from "../shared/utils";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { DailyEventHandler } from "./DailyEventHandler";
 import {
+  DailyEventObjectParticipant,
   DailyEventObjectParticipantLeft,
   DailyEventObjectTrack,
 } from "@daily-co/daily-js";
@@ -79,6 +80,18 @@ export class Subscriber extends OTEventEmitter<{
     this.eventHandler = new DailyEventHandler(this.ee);
     const call = getOrCreateCallObject();
 
+    const onParticipantUpdated = (dailyEvent?: DailyEventObjectParticipant) => {
+      if (!dailyEvent) return;
+      // Create stream and add it to subscriber
+
+      if (this.id === dailyEvent.participant.session_id) {
+        const stream = createStream(dailyEvent.participant);
+        this.stream = stream;
+        call.off("participant-updated", onParticipantUpdated);
+        completionHandler();
+      }
+    };
+
     call
       .on("track-started", (event?: DailyEventObjectTrack) => {
         if (!event?.participant) return;
@@ -92,13 +105,7 @@ export class Subscriber extends OTEventEmitter<{
         if (!event?.participant) return;
         this.eventHandler.onParticipantLeft(event.participant.session_id);
       })
-      .once("participant-updated", (dailyEvent) => {
-        if (!dailyEvent) return;
-        // Create stream and add it to subscriber
-        const stream = createStream(dailyEvent.participant);
-        this.stream = stream;
-        completionHandler();
-      });
+      .on("participant-updated", onParticipantUpdated);
   }
 
   getAudioVolume(): number {
