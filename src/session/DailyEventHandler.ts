@@ -75,7 +75,7 @@ export class DailyEventHandler {
     );
   }
 
-  // onLocalParticipantJoined() handles Daily's "participant-updated" event for
+  // onLocalParticipantUpdated() handles Daily's "participant-updated" event for
   // local participant
   onLocalParticipantUpdated(participant: DailyParticipant) {
     const stream = createStream(participant);
