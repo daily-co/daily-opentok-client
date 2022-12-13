@@ -12,6 +12,7 @@ import {
   getConnectionCreatedEvent,
   getConnectionDestroyedEvent,
   getSessionDisconnectedEvent,
+  getSignalEvent,
   getStreamCreatedEvent,
   getStreamDestroyedEvent,
 } from "./OTEvents";
@@ -26,6 +27,32 @@ export class DailyEventHandler {
   constructor(session: Session) {
     this.session = session;
     this.ee = session.ee;
+  }
+  // onAppMessage() handles Daily's "app-message" event
+  onAppMessage(dailyEvent: {
+    fromId: string;
+    data: { type?: string; data?: string };
+  }) {
+    const d = dailyEvent.data;
+
+    const connection: OT.Connection = {
+      connectionId: dailyEvent.fromId,
+      creationTime: new Date().getTime(),
+      data: "",
+    };
+
+    const signalEvent = getSignalEvent(
+      this.session,
+      d.type,
+      d.data,
+      connection
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (signalEvent.type) {
+      this.ee.emit(`signal:${signalEvent.type}`, signalEvent);
+    }
+    this.ee.emit("signal", signalEvent);
   }
 
   // onFatalError() handles Daily's "error" event
@@ -55,11 +82,11 @@ export class DailyEventHandler {
 
   // onParticipantJoined() handles Daily's "participant-joined" event
   onParticipantJoined(participant: DailyParticipant, connectionData = "") {
-    const { joined_at = new Date(), user_id } = participant;
+    const { joined_at = new Date(), session_id } = participant;
     const creationTime = joined_at.getTime();
 
     const connection = {
-      connectionId: user_id,
+      connectionId: session_id,
       creationTime,
       data: connectionData,
     };
@@ -91,7 +118,6 @@ export class DailyEventHandler {
       video: hasVideo,
       tracks,
       joined_at = new Date(),
-      user_id,
     } = participant;
     const creationTime = joined_at.getTime();
 
@@ -99,7 +125,7 @@ export class DailyEventHandler {
     const { frameRate = 0, height = 0, width = 0 } = settings;
 
     const connection = {
-      connectionId: user_id,
+      connectionId: session_id,
       creationTime,
       data: "",
     };
