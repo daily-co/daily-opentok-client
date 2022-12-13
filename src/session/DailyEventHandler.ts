@@ -55,11 +55,11 @@ export class DailyEventHandler {
 
   // onParticipantJoined() handles Daily's "participant-joined" event
   onParticipantJoined(participant: DailyParticipant) {
-    const { joined_at = new Date(), user_id } = participant;
+    const { joined_at = new Date(), session_id } = participant;
     const creationTime = joined_at.getTime();
 
     const connection = {
-      connectionId: user_id,
+      connectionId: session_id,
       creationTime,
       data: "",
     };
@@ -99,7 +99,7 @@ export class DailyEventHandler {
     const { frameRate = 0, height = 0, width = 0 } = settings;
 
     const connection = {
-      connectionId: user_id,
+      connectionId: session_id,
       creationTime,
       data: "",
     };

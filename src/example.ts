@@ -278,3 +278,42 @@ function networkTest() {
 document
   .getElementById("network-test-btn")
   ?.addEventListener("click", networkTest);
+
+function sendSignal() {
+  console.log("click send signal");
+  // session.signal(
+  //   {
+  //     data: "message to everyone",
+  //   },
+  //   function (error) {
+  //     if (error) {
+  //       console.log("signal error (" + error.name + "): " + error.message);
+  //     } else {
+  //       console.log("signal sent.");
+  //     }
+  //   }
+  // );
+
+  session.signal(
+    {
+      data: "test message",
+      type: "test",
+    },
+    function (error) {
+      if (error) {
+        console.log("signal error (" + error.name + "): " + error.message);
+      } else {
+        console.log("signal sent.");
+      }
+    }
+  );
+}
+document.getElementById("signal-btn")?.addEventListener("click", sendSignal);
+
+session.on("signal", (event) => {
+  console.log("signal", event);
+});
+
+session.on("signal:test", (event) => {
+  console.log("signal:test", event);
+});
