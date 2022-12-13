@@ -64,14 +64,31 @@ session.on("streamCreated", function streamCreated(event) {
   // }
 });
 
-const connections: OT.Connection[] = [];
+let connections: OT.Connection[] = [];
 session.on("connectionCreated", (connectionCreatedEvent) => {
   console.log("session connectionCreatedEvent: ", connectionCreatedEvent);
   connections.push(connectionCreatedEvent.connection);
+
+  if (
+    connections.find(
+      (connection) =>
+        connection.connectionId ===
+        connectionCreatedEvent.connection.connectionId
+    )
+  ) {
+    console.log("connection already exists");
+    return;
+  }
+  connections.push(connectionCreatedEvent.connection);
 });
 
-session.on("sessionDisconnected", function sessionDisconnected(event) {
-  console.debug("[sessionDisconnected]", event);
+session.on("connectionDestroyed", (connectionDestroyedEvent) => {
+  console.log("session connectionDestroyedEvent: ", connectionDestroyedEvent);
+  connections = connections.filter(
+    (connection) =>
+      connection.connectionId !==
+      connectionDestroyedEvent.connection.connectionId
+  );
 });
 
 // Get the list of devices and populate the drop down lists
@@ -278,3 +295,32 @@ function networkTest() {
 document
   .getElementById("network-test-btn")
   ?.addEventListener("click", networkTest);
+
+function sendSignal() {
+  console.log("click send signal");
+  connections.forEach((connection) => {
+    session.signal(
+      {
+        data: "test message to " + connection.connectionId,
+
+        to: connection,
+      },
+      function (error) {
+        if (error) {
+          console.log("signal error (" + error.name + "): " + error.message);
+        } else {
+          console.log("signal sent.");
+        }
+      }
+    );
+  });
+}
+document.getElementById("signal-btn")?.addEventListener("click", sendSignal);
+
+session.on("signal", (event) => {
+  console.log("signal", event);
+});
+
+session.on("signal:test", (event) => {
+  console.log("signal:test", event);
+});
