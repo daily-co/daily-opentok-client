@@ -12,10 +12,12 @@ import { getOrCreateCallObject } from "../shared/utils";
 import { OTEventEmitter } from "../OTEventEmitter";
 import { DailyEventHandler } from "./DailyEventHandler";
 import {
+  DailyEventObjectParticipant,
   DailyEventObjectParticipantLeft,
   DailyEventObjectTrack,
 } from "@daily-co/daily-js";
 import { errNotImplemented } from "../shared/errors";
+import { createStream } from "../shared/ot";
 
 export class Subscriber extends OTEventEmitter<{
   audioLevelUpdated: Event<"audioLevelUpdated", Subscriber> & {
@@ -74,8 +76,21 @@ export class Subscriber extends OTEventEmitter<{
 
     this.element = rootElement;
     this.id = options.id;
+    this.stream = options.stream;
     this.eventHandler = new DailyEventHandler(this.ee);
     const call = getOrCreateCallObject();
+
+    const onParticipantUpdated = (dailyEvent?: DailyEventObjectParticipant) => {
+      if (!dailyEvent) return;
+      // Create stream and add it to subscriber
+
+      if (this.id === dailyEvent.participant.session_id) {
+        const stream = createStream(dailyEvent.participant);
+        this.stream = stream;
+        call.off("participant-updated", onParticipantUpdated);
+        completionHandler();
+      }
+    };
 
     call
       .on("track-started", (event?: DailyEventObjectTrack) => {
@@ -89,8 +104,8 @@ export class Subscriber extends OTEventEmitter<{
       .on("participant-left", (event?: DailyEventObjectParticipantLeft) => {
         if (!event?.participant) return;
         this.eventHandler.onParticipantLeft(event.participant.session_id);
-      });
-    completionHandler();
+      })
+      .on("participant-updated", onParticipantUpdated);
   }
 
   getAudioVolume(): number {
