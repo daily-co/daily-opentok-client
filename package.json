@@ -1,6 +1,6 @@
 {
   "name": "daily-opentok-client",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "license": "MIT",
   "description": "Daily's OpenTok client-side shim",
   "type": "module",
@@ -59,9 +59,6 @@
     ">0.2%",
     "not dead"
   ],
-  "engines": {
-    "node": "18.x"
-  },
   "repository": {
     "url": "https://github.com/daily-co/opentok"
   }
