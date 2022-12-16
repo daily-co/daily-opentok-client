@@ -424,10 +424,52 @@ export class Session extends OTEventEmitter<{
     });
   }
   signal(
-    _signal: { type?: string; data?: string; to?: OT.Connection },
-    _callback: (error?: OTError) => void
+    { type, data, to }: { type?: string; data?: string; to?: OT.Connection },
+    callback: (error?: OTError) => void
   ): void {
-    errNotImplemented("signal");
+    const call = getOrCreateCallObject();
+
+    call.on("app-message", (event) => {
+      if (!event) return;
+
+      const d = event.data as { type?: string; data?: string };
+
+      const connection: OT.Connection = {
+        connectionId: event.fromId,
+        creationTime: new Date().getTime(),
+        data: "",
+      };
+
+      const signalEvent: Event<"signal", Session> & {
+        type?: string;
+        data?: string;
+        from: OT.Connection | null;
+      } = {
+        // @ts-expect-error - this is a mistake in the OpenTok types https://tokbox.com/developer/guides/signaling/js/
+        type: d.type,
+        data: d.data,
+        from: connection,
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (signalEvent.type) {
+        this.ee.emit(`signal:${signalEvent.type}`, signalEvent);
+      }
+      this.ee.emit("signal", signalEvent);
+    });
+
+    const dailyData = { type, data };
+
+    if (!to) {
+      console.log("Send everyone");
+      call.sendAppMessage(dailyData, "*");
+    } else {
+      console.log("Send to:", to);
+      call.sendAppMessage(dailyData, to.connectionId);
+    }
+
+    // Put this in a daily error check
+    callback();
   }
   unpublish(publisher: Publisher): void {
     publisher.session = undefined;
