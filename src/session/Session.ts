@@ -15,6 +15,7 @@ import { errNotImplemented } from "../shared/errors";
 import { getOrCreateCallObject } from "../shared/utils";
 import { getConnectionCreatedEvent } from "./OTEvents";
 import { DailyEventObjectParticipant } from "@daily-co/daily-js";
+import jwt_decode from "jwt-decode";
 
 interface SessionCollection {
   length: () => number;
@@ -245,7 +246,7 @@ export class Session extends OTEventEmitter<{
         const connection = {
           connectionId: user_id,
           creationTime,
-          data: "",
+          data: getConnectionData(token),
         };
 
         callback();
@@ -496,4 +497,19 @@ function setupCompletionHandler(
     };
   }
   return { completionHandler, targetElement, properties };
+}
+
+function getConnectionData(token: string): string {
+  if (!token) return "";
+
+  interface Payload {
+    otcd?: string;
+  }
+
+  const payload = jwt_decode(token);
+  const otcd = (payload as Payload).otcd;
+  if (otcd) {
+    return otcd;
+  }
+  return "";
 }
