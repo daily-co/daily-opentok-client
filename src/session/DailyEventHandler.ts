@@ -54,14 +54,14 @@ export class DailyEventHandler {
   }
 
   // onParticipantJoined() handles Daily's "participant-joined" event
-  onParticipantJoined(participant: DailyParticipant) {
+  onParticipantJoined(participant: DailyParticipant, connectionData = "") {
     const { joined_at = new Date(), user_id } = participant;
     const creationTime = joined_at.getTime();
 
     const connection = {
       connectionId: user_id,
       creationTime,
-      data: "",
+      data: connectionData,
     };
 
     const stream = createStream(participant);

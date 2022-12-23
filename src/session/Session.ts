@@ -213,7 +213,7 @@ export class Session extends OTEventEmitter<{
   }
   connect(token: string, callback: (error?: OTError) => void): void {
     const call = getOrCreateCallObject();
-
+    const connectionData = getConnectionData(token);
     const eh = this.eventHandler;
     call
       .on("error", (dailyEvent) => {
@@ -246,7 +246,7 @@ export class Session extends OTEventEmitter<{
         const connection = {
           connectionId: user_id,
           creationTime,
-          data: getConnectionData(token),
+          data: connectionData,
         };
 
         callback();
@@ -266,7 +266,7 @@ export class Session extends OTEventEmitter<{
       .on("participant-joined", (dailyEvent) => {
         // Remote
         if (!dailyEvent) return;
-        eh.onParticipantJoined(dailyEvent.participant);
+        eh.onParticipantJoined(dailyEvent.participant, connectionData);
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
