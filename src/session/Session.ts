@@ -506,10 +506,12 @@ function getConnectionData(token: string): string {
     otcd?: string;
   }
 
-  const payload = jwt_decode(token);
-  const otcd = (payload as Payload).otcd;
-  if (otcd) {
-    return otcd;
+  let payload: Payload;
+  try {
+    payload = jwt_decode(token);
+  } catch (_) {
+    return "";
   }
-  return "";
+  const otcd = payload.otcd;
+  return otcd ?? "";
 }
