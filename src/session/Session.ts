@@ -15,6 +15,7 @@ import { errNotImplemented } from "../shared/errors";
 import { getOrCreateCallObject } from "../shared/utils";
 import { getConnectionCreatedEvent } from "./OTEvents";
 import { DailyEventObjectParticipant } from "@daily-co/daily-js";
+import jwt_decode from "jwt-decode";
 
 interface SessionCollection {
   length: () => number;
@@ -212,7 +213,7 @@ export class Session extends OTEventEmitter<{
   }
   connect(token: string, callback: (error?: OTError) => void): void {
     const call = getOrCreateCallObject();
-
+    const connectionData = getConnectionData(token);
     const eh = this.eventHandler;
     call
       .on("error", (dailyEvent) => {
@@ -245,7 +246,7 @@ export class Session extends OTEventEmitter<{
         const connection = {
           connectionId: user_id,
           creationTime,
-          data: "",
+          data: connectionData,
         };
 
         callback();
@@ -265,7 +266,7 @@ export class Session extends OTEventEmitter<{
       .on("participant-joined", (dailyEvent) => {
         // Remote
         if (!dailyEvent) return;
-        eh.onParticipantJoined(dailyEvent.participant);
+        eh.onParticipantJoined(dailyEvent.participant, connectionData);
       })
       .on("participant-left", (dailyEvent) => {
         if (!dailyEvent) return;
@@ -496,4 +497,21 @@ function setupCompletionHandler(
     };
   }
   return { completionHandler, targetElement, properties };
+}
+
+function getConnectionData(token: string): string {
+  if (!token) return "";
+
+  interface Payload {
+    otcd?: string;
+  }
+
+  let payload: Payload;
+  try {
+    payload = jwt_decode(token);
+  } catch (_) {
+    return "";
+  }
+  const otcd = payload.otcd;
+  return otcd ?? "";
 }
