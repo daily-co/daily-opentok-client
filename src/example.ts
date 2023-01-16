@@ -324,3 +324,11 @@ session.on("signal", (event) => {
 session.on("signal:test", (event) => {
   console.log("signal:test", event);
 });
+
+session.on("sessionDisconnected", (event) => {
+  console.log("sessionDisconnected", event);
+});
+
+session.on("streamDestroyed", (event) => {
+  console.log("streamDestroyed", event);
+});

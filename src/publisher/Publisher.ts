@@ -142,6 +142,20 @@ export class Publisher extends OTEventEmitter<{
         updateMediaDOM(participant, this, rootElementID);
       })
       .on("left-meeting", () => {
+        this.ee.emit("streamDestroyed", {
+          isDefaultPrevented: () => false,
+          preventDefault: () => false,
+          reason: "disconnected",
+          cancelable: false,
+          stream: null,
+        });
+        this.ee.emit("destroyed", {
+          isDefaultPrevented: () => false,
+          preventDefault: () => false,
+          reason: "disconnected",
+          cancelable: false,
+          stream: null,
+        });
         removeAllParticipantMedias();
       })
       .on("participant-updated", onParticipantUpdated);
@@ -165,30 +179,11 @@ export class Publisher extends OTEventEmitter<{
   }
 
   destroy(): void {
-    if (!window.call) {
-      errDailyUndefined();
-    }
-    window.call
-      .leave()
-      .then(() => {
-        this.ee.emit("streamDestroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-        this.ee.emit("destroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    const call = getOrCreateCallObject();
+
+    call.leave().catch((err) => {
+      console.error(err);
+    });
   }
   getImgData(): string | null {
     errNotImplemented(this.getImgData.name);
@@ -222,16 +217,13 @@ export class Publisher extends OTEventEmitter<{
     });
   }
   publishAudio(value: boolean): void {
-    if (!window.call) {
-      errDailyUndefined();
-    }
-    window.call.setLocalAudio(value);
+    const call = getOrCreateCallObject();
+
+    call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
-    if (!window.call) {
-      errDailyUndefined();
-    }
-    window.call.setLocalVideo(value);
+    const call = getOrCreateCallObject();
+    call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -239,11 +231,9 @@ export class Publisher extends OTEventEmitter<{
     errNotImplemented(this.publishCaptions.name);
   }
   cycleVideo(): Promise<{ deviceId: string }> {
-    if (!window.call) {
-      errDailyUndefined();
-    }
+    const call = getOrCreateCallObject();
 
-    return window.call.cycleCamera().then((device) => {
+    return call.cycleCamera().then((device) => {
       return { deviceId: String(device) };
     });
   }

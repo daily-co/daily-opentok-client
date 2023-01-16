@@ -160,9 +160,20 @@ export class DailyEventHandler {
     );
   }
 
+  // onLeftMeeting() handles Daily's "left-meeting" event
+  onLeftMeeting(target: Session) {
+    this.ee.emit(
+      "sessionDisconnected",
+      getSessionDisconnectedEvent(target, "clientDisconnected")
+    );
+  }
+
   // onNetworkConnection() handles Daily's "network-connection" event
   onNetworkConnection(event: string) {
-    const otEvent = getSessionDisconnectedEvent(this.session);
+    const otEvent = getSessionDisconnectedEvent(
+      this.session,
+      "networkDisconnected"
+    );
 
     switch (event) {
       case "interrupted":
