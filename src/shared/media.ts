@@ -48,7 +48,12 @@ export function removeAllParticipantMedias() {
   const allParticipantDOMs = document.getElementsByClassName(
     participantMediaClassName
   );
-  for (const el of allParticipantDOMs) {
+  // An HTMLCollection is live and updated when underlying
+  // elements change; since we are removing every underlying
+  // element, the collection will keep dynamically shrinking
+  // with each iteration until there are no elements left.
+  while (allParticipantDOMs.length > 0) {
+    const el = allParticipantDOMs[0];
     const vid = el as HTMLVideoElement;
     vid.srcObject = null;
     vid.remove();
