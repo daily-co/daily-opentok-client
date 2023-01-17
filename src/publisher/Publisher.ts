@@ -14,10 +14,7 @@ import {
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
 import { errDailyUndefined, errNotImplemented } from "../shared/errors";
-import {
-  removeAllParticipantMedias,
-  removeParticipantMedia,
-} from "../shared/media";
+import { removeParticipantMedia } from "../shared/media";
 import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
