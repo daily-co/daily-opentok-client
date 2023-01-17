@@ -84,6 +84,11 @@ export class Subscriber extends OTEventEmitter<{
       if (!dailyEvent) return;
       // Create stream and add it to subscriber
 
+      if (this.stream?.streamId === dailyEvent.participant.session_id) {
+        call.off("participant-updated", onParticipantUpdated);
+        completionHandler();
+      }
+
       if (this.id === dailyEvent.participant.session_id) {
         const stream = createStream(dailyEvent.participant);
         this.stream = stream;
