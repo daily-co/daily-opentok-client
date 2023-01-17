@@ -129,7 +129,6 @@ OT.getUserMedia()
 publishBtn.addEventListener("click", () => {
   const videoSource = videoSelector.options[videoSelector.selectedIndex].value;
   const audioSource = audioSelector.options[audioSelector.selectedIndex].value;
-  console.log(videoSource, audioSource);
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
     "publisher",
