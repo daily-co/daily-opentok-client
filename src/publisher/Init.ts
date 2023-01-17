@@ -33,6 +33,11 @@ export function initPublisher(
     completionHandler
   );
 
+  const audioSource =
+    properties?.audioSource === null ? undefined : properties?.audioSource;
+  const videoSource =
+    properties?.videoSource === null ? undefined : properties?.videoSource;
+
   // If target element is falsy, invoke completion handler
   // with an error
   if (!targetElement) {
@@ -47,10 +52,15 @@ export function initPublisher(
     case "left-meeting":
     case "loading":
     case "loaded":
-      call.startCamera().catch((err) => {
-        completionHandler(new Error("Failed to start camera"));
-        console.error("startCamera error: ", err);
-      });
+      call
+        .startCamera({
+          audioSource,
+          videoSource,
+        })
+        .catch((err) => {
+          completionHandler(new Error("Failed to start camera"));
+          console.error("startCamera error: ", err);
+        });
       break;
     case "error":
       console.error("error");

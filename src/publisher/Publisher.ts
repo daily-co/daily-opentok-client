@@ -233,8 +233,8 @@ export class Publisher extends OTEventEmitter<{
   cycleVideo(): Promise<{ deviceId: string }> {
     const call = getOrCreateCallObject();
 
-    return call.cycleCamera().then((device) => {
-      return { deviceId: String(device) };
+    return call.cycleCamera().then(({ device }) => {
+      return { deviceId: device?.deviceId ?? "" };
     });
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
