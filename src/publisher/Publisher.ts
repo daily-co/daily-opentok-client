@@ -164,7 +164,17 @@ export class Publisher extends OTEventEmitter<{
   destroy(): this {
     const call = getOrCreateCallObject();
 
-    removeParticipantMedia(call.participants().local.session_id);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
+    const { local } = call.participants();
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!local) {
+      console.warn("No local participant found");
+      return this;
+    }
+
+    removeParticipantMedia(local.session_id);
 
     this.ee.emit("destroyed", {
       isDefaultPrevented: () => false,
