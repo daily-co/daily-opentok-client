@@ -7,6 +7,7 @@ import {
 } from "@daily-co/daily-js";
 import { ExceptionEvent, Stream, Event } from "@opentok/client";
 import { EventEmitter } from "stream";
+import { removeAllParticipantMedias } from "../shared/media";
 import { createStream } from "../shared/ot";
 import {
   getConnectionCreatedEvent,
@@ -166,6 +167,7 @@ export class DailyEventHandler {
       "sessionDisconnected",
       getSessionDisconnectedEvent(target, "clientDisconnected")
     );
+    removeAllParticipantMedias();
   }
 
   // onNetworkConnection() handles Daily's "network-connection" event

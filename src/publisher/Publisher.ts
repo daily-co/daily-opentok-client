@@ -14,7 +14,7 @@ import {
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
 import { errDailyUndefined, errNotImplemented } from "../shared/errors";
-import { removeAllParticipantMedias } from "../shared/media";
+import { removeParticipantMedia } from "../shared/media";
 import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
@@ -141,23 +141,6 @@ export class Publisher extends OTEventEmitter<{
         const { participant } = dailyEvent;
         updateMediaDOM(participant, this, rootElementID);
       })
-      .on("left-meeting", () => {
-        this.ee.emit("streamDestroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-        this.ee.emit("destroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-        removeAllParticipantMedias();
-      })
       .on("participant-updated", onParticipantUpdated);
   }
 
@@ -178,12 +161,38 @@ export class Publisher extends OTEventEmitter<{
     }
   }
 
-  destroy(): void {
+  destroy(): this {
     const call = getOrCreateCallObject();
 
-    call.leave().catch((err) => {
-      console.error(err);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
+    const { local } = call.participants();
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!local) {
+      console.warn("No local participant found");
+      return this;
+    }
+
+    removeParticipantMedia(local.session_id);
+
+    this.ee.emit("destroyed", {
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+      reason: "disconnected",
+      cancelable: false,
+      stream: null,
     });
+
+    this.ee.emit("streamDestroyed", {
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+      reason: "disconnected",
+      cancelable: false,
+      stream: null,
+    });
+
+    return this;
   }
   getImgData(): string | null {
     errNotImplemented(this.getImgData.name);
@@ -233,8 +242,8 @@ export class Publisher extends OTEventEmitter<{
   cycleVideo(): Promise<{ deviceId: string }> {
     const call = getOrCreateCallObject();
 
-    return call.cycleCamera().then((device) => {
-      return { deviceId: String(device) };
+    return call.cycleCamera().then(({ device }) => {
+      return { deviceId: device?.deviceId ?? "" };
     });
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {
