@@ -64,14 +64,31 @@ session.on("streamCreated", function streamCreated(event) {
   // }
 });
 
-const connections: OT.Connection[] = [];
+let connections: OT.Connection[] = [];
 session.on("connectionCreated", (connectionCreatedEvent) => {
   console.log("session connectionCreatedEvent: ", connectionCreatedEvent);
   connections.push(connectionCreatedEvent.connection);
+
+  if (
+    connections.find(
+      (connection) =>
+        connection.connectionId ===
+        connectionCreatedEvent.connection.connectionId
+    )
+  ) {
+    console.log("connection already exists");
+    return;
+  }
+  connections.push(connectionCreatedEvent.connection);
 });
 
-session.on("sessionDisconnected", function sessionDisconnected(event) {
-  console.debug("[sessionDisconnected]", event);
+session.on("connectionDestroyed", (connectionDestroyedEvent) => {
+  console.log("session connectionDestroyedEvent: ", connectionDestroyedEvent);
+  connections = connections.filter(
+    (connection) =>
+      connection.connectionId !==
+      connectionDestroyedEvent.connection.connectionId
+  );
 });
 
 // Get the list of devices and populate the drop down lists
@@ -110,6 +127,8 @@ OT.getUserMedia()
 
 // Start publishing when you click the publish button
 publishBtn.addEventListener("click", () => {
+  const videoSource = videoSelector.options[videoSelector.selectedIndex].value;
+  const audioSource = audioSelector.options[audioSelector.selectedIndex].value;
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
     "publisher",
@@ -117,8 +136,8 @@ publishBtn.addEventListener("click", () => {
       insertMode: "append",
       width: "100%",
       height: "100%",
-      audioSource: audioSelector.value,
-      videoSource: videoSelector.value,
+      audioSource,
+      videoSource,
     },
     (err) => {
       if (err) {
@@ -278,3 +297,41 @@ function networkTest() {
 document
   .getElementById("network-test-btn")
   ?.addEventListener("click", networkTest);
+
+function sendSignal() {
+  console.log("click send signal");
+  connections.forEach((connection) => {
+    session.signal(
+      {
+        type: "test",
+        data: "test message to " + connection.connectionId,
+
+        to: connection,
+      },
+      function (error) {
+        if (error) {
+          console.log("signal error (" + error.name + "): " + error.message);
+        } else {
+          console.log("signal sent.");
+        }
+      }
+    );
+  });
+}
+document.getElementById("signal-btn")?.addEventListener("click", sendSignal);
+
+session.on("signal", (event) => {
+  console.log("signal", event);
+});
+
+session.on("signal:test", (event) => {
+  console.log("signal:test", event);
+});
+
+session.on("sessionDisconnected", (event) => {
+  console.log("sessionDisconnected", event);
+});
+
+session.on("streamDestroyed", (event) => {
+  console.log("streamDestroyed", event);
+});

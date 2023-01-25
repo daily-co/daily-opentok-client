@@ -53,7 +53,7 @@ export class Session extends OTEventEmitter<{
   signal: Event<"signal", Session> & {
     type?: string;
     data?: string;
-    from: OT.Connection | null;
+    from: Connection | null;
   };
 
   streamCreated: Event<"streamCreated", Session> & {
@@ -195,14 +195,6 @@ export class Session extends OTEventEmitter<{
     };
 
     call
-      .on("participant-joined", (dailyEvent) => {
-        // remote
-        if (!dailyEvent) {
-          console.debug("No Daily event");
-          return;
-        }
-        this.eventHandler.onParticipantJoined(dailyEvent.participant);
-      })
       .on("participant-updated", onParticipantUpdated)
       .updateParticipant("local", {
         setAudio: true,
@@ -272,11 +264,38 @@ export class Session extends OTEventEmitter<{
         if (!dailyEvent) return;
         eh.onParticipantLeft(dailyEvent);
       })
+      .on("left-meeting", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        eh.onLeftMeeting(this);
+      })
+      .on("app-message", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        interface AppMessage {
+          type?: string;
+          data?: string;
+        }
+
+        const dailyAppMessage = dailyEvent.data as AppMessage;
+
+        const { type, data } = dailyAppMessage;
+
+        const appMessage = {
+          fromId: dailyEvent.fromId,
+          data: {
+            type: typeof type === "string" ? type : "",
+            data: typeof data === "string" ? data : "",
+          },
+        };
+
+        eh.onAppMessage(appMessage);
+      })
       .join({
         url: this.sessionId,
         token,
-        startVideoOff: call.localVideo(),
-        startAudioOff: call.localAudio(),
+        startVideoOff: !call.localVideo(),
+        startAudioOff: !call.localAudio(),
       })
       .catch((e) => {
         if (typeof e === "string") {
@@ -355,37 +374,16 @@ export class Session extends OTEventEmitter<{
   }
 
   disconnect(): void {
-    if (!window.call) {
-      return;
-    }
+    const call = getOrCreateCallObject();
 
     // sessionDisconnected, connectionDestroyed, streamDestroyed are
     // all handled in listeners setup in connect(). In OpenTok's
     // implementation, this function does not throw any errors,
     // so to keep that behavior the same we're logging Daily
     // errors to the console.
-    window.call
-      .leave()
-      .then(() => {
-        let defaultPrevented = false;
-        const tokboxEvent: Event<"sessionDisconnected", Session> & {
-          reason: string;
-        } = {
-          type: "sessionDisconnected",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          cancelable: true,
-          target: this,
-          reason: "clientDisconnected",
-        };
-
-        this.ee.emit("sessionDisconnected", tokboxEvent);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    call.leave().catch((err) => {
+      console.error(err);
+    });
   }
 
   forceDisconnect(
@@ -425,10 +423,22 @@ export class Session extends OTEventEmitter<{
     });
   }
   signal(
-    _signal: { type?: string; data?: string; to?: OT.Connection },
-    _callback: (error?: OTError) => void
+    { type, data, to }: { type?: string; data?: string; to?: OT.Connection },
+    callback: (error?: OTError) => void
   ): void {
-    errNotImplemented("signal");
+    // Note: Daily does not notify users if an app message fails to send.
+    // This means the callback will always be called with no error.
+
+    const call = getOrCreateCallObject();
+    const dailyData = { type, data };
+
+    if (!to) {
+      call.sendAppMessage(dailyData, "*");
+      callback();
+    } else {
+      call.sendAppMessage(dailyData, to.connectionId);
+      callback();
+    }
   }
   unpublish(publisher: Publisher): void {
     publisher.session = undefined;

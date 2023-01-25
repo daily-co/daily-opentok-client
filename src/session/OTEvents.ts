@@ -23,6 +23,12 @@ type SessionDisconnectedEvent = Event<"sessionDisconnected", Session> & {
   reason: string;
 };
 
+type SignalEvent = Event<"signal", Session> & {
+  type?: string;
+  data?: string;
+  from: Connection | null;
+};
+
 export function getStreamCreatedEvent(
   target: Session,
   stream: Stream
@@ -106,7 +112,8 @@ export function getConnectionDestroyedEvent(
 }
 
 export function getSessionDisconnectedEvent(
-  target: Session
+  target: Session,
+  reason: "clientDisconnected" | "networkDisconnected"
 ): SessionDisconnectedEvent {
   let defaultPrevented = false;
   const event: Event<"sessionDisconnected", Session> & {
@@ -119,7 +126,24 @@ export function getSessionDisconnectedEvent(
     },
     cancelable: true,
     target: target,
-    reason: "networkDisconnected",
+    reason,
   };
   return event;
+}
+
+export function getSignalEvent(
+  target: Session,
+  type: string | undefined,
+  data: string | undefined,
+  connection: Connection | null
+): SignalEvent {
+  const signalEvent: SignalEvent = {
+    // @ts-expect-error - this is a mistake in the OpenTok types https://tokbox.com/developer/guides/signaling/js/
+    type: type,
+    data: data,
+    from: connection,
+    target: target,
+    cancelable: false,
+  };
+  return signalEvent;
 }
