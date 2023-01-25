@@ -14,7 +14,7 @@ import {
 import { OTEventEmitter } from "../OTEventEmitter";
 import { Session } from "../session/Session";
 import { errDailyUndefined, errNotImplemented } from "../shared/errors";
-import { removeAllParticipantMedias } from "../shared/media";
+import { removeParticipantMedia } from "../shared/media";
 import { createStream } from "../shared/ot";
 import { getOrCreateCallObject } from "../shared/utils";
 import { updateMediaDOM } from "./MediaDOM";
@@ -141,9 +141,6 @@ export class Publisher extends OTEventEmitter<{
         const { participant } = dailyEvent;
         updateMediaDOM(participant, this, rootElementID);
       })
-      .on("left-meeting", () => {
-        removeAllParticipantMedias();
-      })
       .on("participant-updated", onParticipantUpdated);
   }
 
@@ -164,31 +161,38 @@ export class Publisher extends OTEventEmitter<{
     }
   }
 
-  destroy(): void {
-    if (!window.call) {
-      errDailyUndefined();
+  destroy(): this {
+    const call = getOrCreateCallObject();
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
+    const { local } = call.participants();
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!local) {
+      console.warn("No local participant found");
+      return this;
     }
-    window.call
-      .leave()
-      .then(() => {
-        this.ee.emit("streamDestroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-        this.ee.emit("destroyed", {
-          isDefaultPrevented: () => false,
-          preventDefault: () => false,
-          reason: "disconnected",
-          cancelable: false,
-          stream: null,
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+
+    removeParticipantMedia(local.session_id);
+
+    this.ee.emit("destroyed", {
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+      reason: "disconnected",
+      cancelable: false,
+      stream: null,
+    });
+
+    this.ee.emit("streamDestroyed", {
+      isDefaultPrevented: () => false,
+      preventDefault: () => false,
+      reason: "disconnected",
+      cancelable: false,
+      stream: null,
+    });
+
+    return this;
   }
   getImgData(): string | null {
     errNotImplemented(this.getImgData.name);
@@ -222,16 +226,13 @@ export class Publisher extends OTEventEmitter<{
     });
   }
   publishAudio(value: boolean): void {
-    if (!window.call) {
-      errDailyUndefined();
-    }
-    window.call.setLocalAudio(value);
+    const call = getOrCreateCallObject();
+
+    call.setLocalAudio(value);
   }
   publishVideo(value: boolean): this {
-    if (!window.call) {
-      errDailyUndefined();
-    }
-    window.call.setLocalVideo(value);
+    const call = getOrCreateCallObject();
+    call.setLocalVideo(value);
     return this;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -239,12 +240,10 @@ export class Publisher extends OTEventEmitter<{
     errNotImplemented(this.publishCaptions.name);
   }
   cycleVideo(): Promise<{ deviceId: string }> {
-    if (!window.call) {
-      errDailyUndefined();
-    }
+    const call = getOrCreateCallObject();
 
-    return window.call.cycleCamera().then((device) => {
-      return { deviceId: String(device) };
+    return call.cycleCamera().then(({ device }) => {
+      return { deviceId: device?.deviceId ?? "" };
     });
   }
   setAudioSource(audioSource: string | MediaStreamTrack): Promise<undefined> {

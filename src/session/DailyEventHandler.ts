@@ -7,6 +7,7 @@ import {
 } from "@daily-co/daily-js";
 import { ExceptionEvent, Stream } from "@opentok/client";
 import { EventEmitter } from "stream";
+import { removeAllParticipantMedias } from "../shared/media";
 import { createStream } from "../shared/ot";
 import {
   getConnectionCreatedEvent,
@@ -157,9 +158,21 @@ export class DailyEventHandler {
     );
   }
 
+  // onLeftMeeting() handles Daily's "left-meeting" event
+  onLeftMeeting(target: Session) {
+    this.ee.emit(
+      "sessionDisconnected",
+      getSessionDisconnectedEvent(target, "clientDisconnected")
+    );
+    removeAllParticipantMedias();
+  }
+
   // onNetworkConnection() handles Daily's "network-connection" event
   onNetworkConnection(event: string) {
-    const otEvent = getSessionDisconnectedEvent(this.session);
+    const otEvent = getSessionDisconnectedEvent(
+      this.session,
+      "networkDisconnected"
+    );
 
     switch (event) {
       case "interrupted":

@@ -127,6 +127,8 @@ OT.getUserMedia()
 
 // Start publishing when you click the publish button
 publishBtn.addEventListener("click", () => {
+  const videoSource = videoSelector.options[videoSelector.selectedIndex].value;
+  const audioSource = audioSelector.options[audioSelector.selectedIndex].value;
   // Start publishing with the selected devices
   publisher = OT.initPublisher(
     "publisher",
@@ -134,8 +136,8 @@ publishBtn.addEventListener("click", () => {
       insertMode: "append",
       width: "100%",
       height: "100%",
-      audioSource: audioSelector.value,
-      videoSource: videoSelector.value,
+      audioSource,
+      videoSource,
     },
     (err) => {
       if (err) {
@@ -324,4 +326,12 @@ session.on("signal", (event) => {
 
 session.on("signal:test", (event) => {
   console.log("signal:test", event);
+});
+
+session.on("sessionDisconnected", (event) => {
+  console.log("sessionDisconnected", event);
+});
+
+session.on("streamDestroyed", (event) => {
+  console.log("streamDestroyed", event);
 });

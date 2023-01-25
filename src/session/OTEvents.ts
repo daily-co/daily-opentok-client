@@ -112,7 +112,8 @@ export function getConnectionDestroyedEvent(
 }
 
 export function getSessionDisconnectedEvent(
-  target: Session
+  target: Session,
+  reason: "clientDisconnected" | "networkDisconnected"
 ): SessionDisconnectedEvent {
   let defaultPrevented = false;
   const event: Event<"sessionDisconnected", Session> & {
@@ -125,7 +126,7 @@ export function getSessionDisconnectedEvent(
     },
     cancelable: true,
     target: target,
-    reason: "networkDisconnected",
+    reason,
   };
   return event;
 }

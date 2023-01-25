@@ -264,6 +264,11 @@ export class Session extends OTEventEmitter<{
         if (!dailyEvent) return;
         eh.onParticipantLeft(dailyEvent);
       })
+      .on("left-meeting", (dailyEvent) => {
+        if (!dailyEvent) return;
+
+        eh.onLeftMeeting(this);
+      })
       .on("app-message", (dailyEvent) => {
         if (!dailyEvent) return;
 
@@ -289,8 +294,8 @@ export class Session extends OTEventEmitter<{
       .join({
         url: this.sessionId,
         token,
-        startVideoOff: call.localVideo(),
-        startAudioOff: call.localAudio(),
+        startVideoOff: !call.localVideo(),
+        startAudioOff: !call.localAudio(),
       })
       .catch((e) => {
         if (typeof e === "string") {
@@ -369,37 +374,16 @@ export class Session extends OTEventEmitter<{
   }
 
   disconnect(): void {
-    if (!window.call) {
-      return;
-    }
+    const call = getOrCreateCallObject();
 
     // sessionDisconnected, connectionDestroyed, streamDestroyed are
     // all handled in listeners setup in connect(). In OpenTok's
     // implementation, this function does not throw any errors,
     // so to keep that behavior the same we're logging Daily
     // errors to the console.
-    window.call
-      .leave()
-      .then(() => {
-        let defaultPrevented = false;
-        const tokboxEvent: Event<"sessionDisconnected", Session> & {
-          reason: string;
-        } = {
-          type: "sessionDisconnected",
-          isDefaultPrevented: () => defaultPrevented,
-          preventDefault: () => {
-            defaultPrevented = true;
-          },
-          cancelable: true,
-          target: this,
-          reason: "clientDisconnected",
-        };
-
-        this.ee.emit("sessionDisconnected", tokboxEvent);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    call.leave().catch((err) => {
+      console.error(err);
+    });
   }
 
   forceDisconnect(
