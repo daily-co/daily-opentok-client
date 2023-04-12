@@ -31,7 +31,7 @@ Replace:
 with:
 
 ```html
-<script src="https://unpkg.com/daily-opentok-client"></script>
+<script src="https://unpkg.com/daily-opentok-client/dist/opentok.iife.js"></script>
 ```
 
 When you call OT.initSession, replace your OpenTok session id with your daily room URL.
