@@ -200,7 +200,7 @@ function registerScreenSharingExtension(
   return;
 }
 
-export default {
+const OT = {
   checkScreenSharingCapability,
   checkSystemRequirements,
   getActiveAudioOutputDevice,
@@ -222,3 +222,8 @@ export default {
     loggingURL: "https://hlg.tokbox.com/prod", // 'https://hlg.tokbox.com/prod/logging/ClientEvent'
   },
 };
+
+// @ts-expect-error copy Opentok's behavior of attaching OT to the window.
+window.OT = OT;
+
+export default OT;
