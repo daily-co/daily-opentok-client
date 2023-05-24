@@ -28,6 +28,13 @@ export default defineConfig(({ command, mode }) => {
       minify: !isDev,
       sourcemap: true,
       lib,
+      output: {
+        footer: `
+for (const key of Object.keys(globalThis.moduleName)) {
+  globalThis[key] = globalThis.moduleName[key]
+}
+`,
+      },
     },
     server: { https: true },
   };
