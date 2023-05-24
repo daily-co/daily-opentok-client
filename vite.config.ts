@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [mkcert()],
     build: {
+      target: "esnext",
       minify: isDev ? false : "terser",
       sourcemap: true,
       lib,

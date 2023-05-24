@@ -223,4 +223,4 @@ const OT = {
   },
 };
 
-export { OT };
+export default OT;
