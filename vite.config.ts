@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
   const fileName = isBuild ? "opentok" : "index";
 
   const lib: LibraryOptions = {
-    formats: ["es", "umd", "iife"],
+    formats: ["es", "umd"],
     entry,
     name: "OT",
     // the proper extensions will be added

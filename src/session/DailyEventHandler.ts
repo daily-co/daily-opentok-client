@@ -59,11 +59,19 @@ export class DailyEventHandler {
   // onFatalError() handles Daily's "error" event
   onFatalError(dailyEvent: DailyEventObjectFatalError | undefined) {
     console.error("fatal error", dailyEvent);
-    const error = dailyEvent?.error;
+
+    const error: unknown = dailyEvent?.error;
+
+    if (!(error && typeof error === "object")) {
+      return;
+    }
+
     let msg = "";
     let type = "";
-    if (error) {
-      msg = error.localizedMsg ?? "";
+    if ("localizedMsg" in error && typeof error.localizedMsg === "string") {
+      msg = error.localizedMsg;
+    }
+    if ("type" in error && typeof error.type === "string") {
       type = error.type;
     }
     this.emitExceptionEvent(msg, type);
@@ -137,6 +145,7 @@ export class DailyEventHandler {
     );
 
     const stream: Stream = {
+      initials: "",
       streamId: session_id,
       frameRate,
       hasAudio,
