@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
   const fileName = isBuild ? "opentok" : "index";
 
   const lib: LibraryOptions = {
-    formats: ["es", "umd"],
+    formats: ["es", "umd", "iife", "cjs"],
     entry,
     name: "OT",
     // the proper extensions will be added
@@ -25,7 +25,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [mkcert()],
     build: {
-      minify: !isDev,
+      minify: isDev ? false : "terser",
       sourcemap: true,
       lib,
       output: {
