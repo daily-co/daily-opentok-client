@@ -30,8 +30,8 @@ export default defineConfig(({ command, mode }) => {
       lib,
       output: {
         footer: `
-for (const key of Object.keys(globalThis.moduleName)) {
-  globalThis[key] = globalThis.moduleName[key]
+for (const key of Object.keys(globalThis.OT)) {
+  globalThis[key] = globalThis.OT[key]
 }
 `,
       },
