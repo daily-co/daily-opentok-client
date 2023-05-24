@@ -223,4 +223,7 @@ const OT = {
   },
 };
 
+// @ts-expect-error copy Opentok's behavior of attaching OT to the window.
+window.OT = OT;
+
 export default OT;
