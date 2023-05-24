@@ -12,14 +12,14 @@ export default defineConfig(({ command, mode }) => {
     ? dirname(fileURLToPath(import.meta.url)) + "/src/index.ts"
     : dirname(fileURLToPath(import.meta.url)) + "/src/example.ts";
 
-  const fileName = isBuild ? "opentok" : "index";
-
   const lib: LibraryOptions = {
     formats: ["es", "umd", "iife", "cjs"],
     entry,
     name: "OT",
     // the proper extensions will be added
-    fileName,
+    fileName: (format) => {
+      return isBuild ? `opentok.${format}.js` : "index.js";
+    },
   };
 
   return {

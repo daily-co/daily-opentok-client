@@ -1,18 +1,18 @@
 {
   "name": "daily-opentok-client",
-  "version": "0.1.2-beta.3",
+  "version": "0.1.2-beta.4",
   "license": "MIT",
   "description": "Daily's OpenTok client-side shim",
   "type": "module",
   "files": [
     "dist"
   ],
-  "main": "./dist/opentok.umd.cjs",
-  "module": "./dist/opentok.js",
+  "main": "./dist/opentok.umd.js",
+  "module": "./dist/opentok.es.js",
   "exports": {
     ".": {
-      "import": "./dist/opentok.js",
-      "require": "./dist/opentok.umd.cjs"
+      "import": "./dist/opentok.es.js",
+      "require": "./dist/opentok.umd.js"
     }
   },
   "types": "./dist/src/index.d.ts",
