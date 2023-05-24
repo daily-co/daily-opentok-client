@@ -1,6 +1,6 @@
 {
   "name": "daily-opentok-client",
-  "version": "0.1.2-beta.4",
+  "version": "0.1.2-beta.5",
   "license": "MIT",
   "description": "Daily's OpenTok client-side shim",
   "type": "module",
