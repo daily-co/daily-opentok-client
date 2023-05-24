@@ -66,5 +66,5 @@ And replace:
 with:
 
 ```html
-<script src="https://127.0.0.1:4173/opentok.umd.cjs"></script>
+<script src="https://127.0.0.1:4173/opentok.umd.js"></script>
 ```
