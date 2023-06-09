@@ -30,7 +30,7 @@
     "lintFix": "eslint . --fix && prettier --write ."
   },
   "dependencies": {
-    "@daily-co/daily-js": "^0.45.0",
+    "@daily-co/daily-js": "^0.46.0",
     "@opentok/client": "^2.25.3",
     "events": "^3.3.0",
     "jwt-decode": "^3.1.2"
@@ -52,7 +52,7 @@
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4",
-    "vite": "^4.3.8",
+    "vite": "^4.3.9",
     "vite-plugin-mkcert": "^1.15.0"
   },
   "browserslist": [
