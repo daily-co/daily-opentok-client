@@ -145,7 +145,6 @@ export class DailyEventHandler {
     );
 
     const stream: Stream = {
-      initials: "",
       streamId: session_id,
       frameRate,
       hasAudio,

@@ -112,13 +112,13 @@ export class Publisher extends OTEventEmitter<{
           this.ee.listeners("accessAllowed")
         );
       })
-      .on("camera-error", (dailyErrorEvent) => {
-        if (!dailyErrorEvent) return;
+      .on("camera-error", (dailyError) => {
+        if (!dailyError) return;
 
-        if (dailyErrorEvent.errorMsg.errorMsg === "not allowed") {
+        if (dailyError.errorMsg.errorMsg === "not allowed") {
           this.accessAllowed = false;
 
-          const { error } = dailyErrorEvent;
+          const { error } = dailyError;
 
           const otError: OTError = {
             message: error.msg,
