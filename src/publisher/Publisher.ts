@@ -112,14 +112,21 @@ export class Publisher extends OTEventEmitter<{
           this.ee.listeners("accessAllowed")
         );
       })
-      .on("camera-error", (error) => {
-        if (!error) return;
+      .on("camera-error", (dailyError) => {
+        if (!dailyError) return;
 
-        if (error.errorMsg.errorMsg === "not allowed") {
+        if (dailyError.errorMsg.errorMsg === "not allowed") {
           this.accessAllowed = false;
 
+          const { error } = dailyError;
+
+          const otError: OTError = {
+            message: error.msg,
+            name: error.type,
+          };
+
           // Completion handler from initPublisher
-          completionHandler?.(error.error as OTError);
+          completionHandler?.(otError);
           this.ee.emit("accessDenied");
         }
       })

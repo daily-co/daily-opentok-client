@@ -6,9 +6,6 @@ export function getOrCreateCallObject(): DailyCall {
   if (window.call) return window.call;
   window.call = DailyIframe.createCallObject({
     subscribeToTracksAutomatically: false,
-    dailyConfig: {
-      experimentalChromeVideoMuteLightOff: true,
-    },
   });
   return window.call;
 }
