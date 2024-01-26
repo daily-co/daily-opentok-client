@@ -151,6 +151,7 @@ export class DailyEventHandler {
       hasVideo,
       // This can be set when a user calls publish() https://tokbox.com/developer/sdks/js/reference/Stream.html
       name: "",
+      initials: "",
       videoDimensions: {
         height,
         width,

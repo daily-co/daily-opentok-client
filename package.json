@@ -30,8 +30,8 @@
     "lintFix": "eslint . --fix && prettier --write ."
   },
   "dependencies": {
-    "@daily-co/daily-js": "^0.46.0",
-    "@opentok/client": "^2.23.0",
+    "@daily-co/daily-js": "^0.57.1",
+    "@opentok/client": "^2.27.1",
     "events": "^3.3.0",
     "jwt-decode": "^3.1.2"
   },
@@ -46,7 +46,6 @@
     "fake-mediastreamtrack": "^1.1.6",
     "jest-environment-jsdom": "^29.0.3",
     "npm-run-all": "^4.1.5",
-    "opentok-network-test-js": "^2.4.4",
     "prettier": "2.7.1",
     "terser": "^5.17.6",
     "ts-jest": "^29.1.1",
