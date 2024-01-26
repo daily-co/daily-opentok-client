@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 import "./example.css";
-import NetworkTest from "opentok-network-test-js";
 
 // import * as OT from "@opentok/client";
 // const {
@@ -16,7 +15,7 @@ import { Publisher } from "./publisher/Publisher";
 const { VITE_DAILY_MEETING_TOKEN } = import.meta.env;
 // apiKey can be blank, Daily's API key is not needed for the shim to work
 const apiKey = "";
-const sessionId = "https://hush.daily.co/sfu";
+const sessionId = "";
 const token =
   typeof VITE_DAILY_MEETING_TOKEN === "string" ? VITE_DAILY_MEETING_TOKEN : "";
 
@@ -266,34 +265,6 @@ function forceDisconnect() {
 document
   .getElementById("force-disconnect-btn")
   ?.addEventListener("click", forceDisconnect);
-
-function networkTest() {
-  const otNetworkTest = new NetworkTest(
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    window.OT,
-    {
-      apiKey: apiKey.length > 0 ? apiKey : "daily-test",
-      sessionId,
-      token: token.length > 0 ? token : "daily-test",
-    },
-    {}
-  );
-  otNetworkTest
-    .testConnectivity()
-    .then((results) => {
-      console.log("OpenTok connectivity test results", results);
-    })
-    .catch(function (error) {
-      console.log("OpenTok connectivity test error", error);
-    })
-    .finally(() => {
-      console.log("FINALLY");
-    });
-}
-document
-  .getElementById("network-test-btn")
-  ?.addEventListener("click", networkTest);
 
 function sendSignal() {
   console.log("click send signal");
