@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **This repository is archived.** The `daily-opentok-client` shim is no longer maintained and is archived. Reference this repo for historical purposes.
+
 # daily-opentok-client
 
 ## Module
